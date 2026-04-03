@@ -247,6 +247,7 @@ var savedRecs = [];
 var estData = [];
 var salesData = [];
 var VAT = 0.10;
+var PP  = 50;   // cards per page in Master Cards
 
 function ct(r,h,ot){return r*(h+ot);}
 function vat(n){return n*(1+VAT);}
@@ -281,10 +282,12 @@ function prevRate(){
 
 function badge(s){
   var m={Running:'br',Recieved:'brc','Off Hire':'bo',Cancel:'bc'};
-  return '<span class="badge '+(m[s]||'bc')+'">'+s+'</span>';
+  return '<span class="badge '+(m[s]||'bc')+'">'+esc(s)+'</span>';
 }
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function fmtD(v){
   if(!v)return'';
@@ -294,7 +297,7 @@ function fmtD(v){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  var t=new Date().toISOString().split('T')[0];
+  var t=fmtD(new Date());
   document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-BH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('edate').value=t;
   document.getElementById('sdate').value=t;
@@ -325,7 +328,7 @@ function renderStats(){
     '<div class="sb"><div class="sn">'+cards.length+'</div><div class="sl">&#x1F4CB; Total 2026</div></div>';
 }
 
-var mPage=1, PP=50;
+var mPage=1;
 
 function renderM(){mPage=1;renderMP();}
 
@@ -378,7 +381,7 @@ function renderMP(){
   for(var i=0;i<pg.length;i++){
     var row=pg[i];
     if(row.t==='g'){
-      html+='<tr class="gr"><td colspan="12">&#x1F464; '+row.key+' | '+row.cnt+' card'+(row.cnt>1?'s':'')+
+      html+='<tr class="gr"><td colspan="12">&#x1F464; '+esc(row.key)+' | '+row.cnt+' card'+(row.cnt>1?'s':'')+
         (row.rn>0?' <span class="badge br">'+row.rn+' Running</span>':'')+
         '</td></tr>';
     } else {
@@ -388,12 +391,12 @@ function renderMP(){
       if(gm==='serial')sn++;
       html+='<tr>'+
         '<td style="color:var(--g400);font-size:11px">'+(gm==='serial'?sn:(row.s2||''))+'</td>'+
-        '<td><b style="color:var(--p)">'+c.Code+'</b></td>'+
-        '<td>'+(c.Date||'')+'</td>'+
-        '<td style="max-width:170px;overflow:hidden;text-overflow:ellipsis">'+c.Customer+'</td>'+
-        '<td>'+(c.Machinery||'')+'</td>'+
-        '<td>'+(c.Location||'')+'</td>'+
-        '<td style="font-size:11px">'+(c.ShiftStart||'07:00')+'-'+(c.ShiftEnd||'19:00')+' ('+h+'h)</td>'+
+        '<td><b style="color:var(--p)">'+esc(c.Code)+'</b></td>'+
+        '<td>'+esc(c.Date||'')+'</td>'+
+        '<td style="max-width:170px;overflow:hidden;text-overflow:ellipsis">'+esc(c.Customer)+'</td>'+
+        '<td>'+esc(c.Machinery||'')+'</td>'+
+        '<td>'+esc(c.Location||'')+'</td>'+
+        '<td style="font-size:11px">'+esc(c.ShiftStart||'07:00')+'-'+esc(c.ShiftEnd||'19:00')+' ('+h+'h)</td>'+
         '<td>'+r.toFixed(3)+'</td>'+
         '<td>'+ot+'h</td>'+
         '<td style="font-size:11px"><b>BD '+sub.toFixed(3)+'</b><br><span style="color:var(--g400)">VAT:'+vat(sub).toFixed(3)+'</span></td>'+
@@ -427,7 +430,7 @@ function openAdd(){
   editIdx=null;
   document.getElementById('mtitle').textContent='New Hiring Card';
   document.getElementById('fCode').value=nxtCode();
-  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fDate').value=fmtD(new Date());
   document.getElementById('fCust').value='';
   document.getElementById('fTel').value='';
   document.getElementById('fMach').value='';
@@ -526,6 +529,16 @@ function genEst(){
   renderEst();
 }
 
+function calcGroupTotals(data){
+  var m={};
+  for(var i=0;i<data.length;i++){
+    var k=data[i].customer;
+    if(!m[k])m[k]={cnt:0,sub:0,vt:0};
+    m[k].cnt++;m[k].sub+=data[i].sub;m[k].vt+=data[i].vt;
+  }
+  return m;
+}
+
 function renderEst(){
   var tb=document.getElementById('ebody');
   var bar=document.getElementById('etbar');
@@ -534,22 +547,22 @@ function renderEst(){
     bar.style.display='none';return;
   }
   var gt=0, gv=0, pc='', html='';
+  var grpTotals=calcGroupTotals(estData);
   for(var i=0;i<estData.length;i++){
     var r=estData[i];
     gt+=r.sub; gv+=r.vt;
     if(r.customer!==pc){
       pc=r.customer;
-      var cr=[], cs=0, cv=0;
-      for(var j=0;j<estData.length;j++){if(estData[j].customer===r.customer){cr.push(estData[j]);cs+=estData[j].sub;cv+=estData[j].vt;}}
-      html+='<tr class="gr"><td colspan="13">&#x1F464; '+r.customer+' - '+cr.length+' card'+(cr.length>1?'s':'')+' | BD '+cs.toFixed(3)+' (+VAT: BD '+cv.toFixed(3)+')</td></tr>';
+      var g=grpTotals[r.customer];
+      html+='<tr class="gr"><td colspan="13">&#x1F464; '+esc(r.customer)+' - '+g.cnt+' card'+(g.cnt>1?'s':'')+' | BD '+g.sub.toFixed(3)+' (+VAT: BD '+g.vt.toFixed(3)+')</td></tr>';
     }
     html+='<tr>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
       '<td>'+r.sn2+'</td>'+
-      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+r.customer+'</td>'+
-      '<td>'+r.machinery+'</td>'+
-      '<td>'+r.location+'</td>'+
-      '<td>'+r.code+'</td>'+
+      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(r.customer)+'</td>'+
+      '<td>'+esc(r.machinery)+'</td>'+
+      '<td>'+esc(r.location)+'</td>'+
+      '<td>'+esc(r.code)+'</td>'+
       '<td><input type="number" value="'+r.hours+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'hours\',this.value)"></td>'+
       '<td>'+r.rate.toFixed(3)+'</td>'+
       '<td><input type="number" value="'+r.ot+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'ot\',this.value)"></td>'+
@@ -610,22 +623,22 @@ function renderSales(data,date,type){
   var bar=document.getElementById('stbar');
   if(!data||!data.length){tb.innerHTML='<tr><td colspan="12" class="emp">No data</td></tr>';bar.style.display='none';return;}
   var gt=0, gv=0, pc='', html='';
+  var grpTotals=calcGroupTotals(data);
   for(var i=0;i<data.length;i++){
     var r=data[i];
     gt+=r.sub; gv+=r.vt;
     if(r.customer!==pc){
       pc=r.customer;
-      var cs=0, cv=0, cnt=0;
-      for(var j=0;j<data.length;j++){if(data[j].customer===r.customer){cs+=data[j].sub;cv+=data[j].vt;cnt++;}}
-      html+='<tr class="gr"><td colspan="12">&#x1F464; '+r.customer+' - '+cnt+' card'+(cnt>1?'s':'')+' | BD '+cs.toFixed(3)+' (+VAT: BD '+cv.toFixed(3)+')</td></tr>';
+      var g=grpTotals[r.customer];
+      html+='<tr class="gr"><td colspan="12">&#x1F464; '+esc(r.customer)+' - '+g.cnt+' card'+(g.cnt>1?'s':'')+' | BD '+g.sub.toFixed(3)+' (+VAT: BD '+g.vt.toFixed(3)+')</td></tr>';
     }
     html+='<tr>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
       '<td>'+r.sn2+'</td>'+
-      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+r.customer+'</td>'+
-      '<td>'+r.machinery+'</td>'+
-      '<td>'+r.location+'</td>'+
-      '<td>'+r.code+'</td>'+
+      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(r.customer)+'</td>'+
+      '<td>'+esc(r.machinery)+'</td>'+
+      '<td>'+esc(r.location)+'</td>'+
+      '<td>'+esc(r.code)+'</td>'+
       '<td>'+r.hours+'</td>'+
       '<td>'+r.rate.toFixed(3)+'</td>'+
       '<td>'+r.ot+'</td>'+
@@ -755,18 +768,22 @@ function procXlsx(file){
       var wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var raw=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+      var VALID_STATUSES=['Running','Recieved','Off Hire','Cancel'];
       function gc(row,keys){for(var i=0;i<keys.length;i++){if(row[keys[i]]!==undefined&&row[keys[i]]!=='')return row[keys[i]];}return'';}
       var imp=[];
       for(var i=0;i<raw.length;i++){
         var row=raw[i];
         var code=gc(row,['Code']);
         var cust=gc(row,['Customer']);
-        var stat=gc(row,['Status']);
+        var stat=String(gc(row,['Status'])).trim();
         if(!code||!cust||!stat)continue;
         var cn=parseInt(String(code).replace(/[^0-9]/g,''));
         if(isNaN(cn)||cn===0)continue;
+        if(VALID_STATUSES.indexOf(stat)===-1)continue;
         var rd=gc(row,['Return Date']);
         var dt=gc(row,['Date']);
+        var rate=parseFloat(gc(row,['Rate']))||0;
+        if(rate<0)rate=0;
         imp.push({
           Code:String(cn),
           Date:fmtD(dt),
@@ -775,9 +792,9 @@ function procXlsx(file){
           Machinery:String(gc(row,['Hiring Machinery'])).toUpperCase().trim(),
           Location:String(gc(row,['Location'])).toUpperCase().trim(),
           LPO:'',
-          Rate:parseFloat(gc(row,['Rate']))||0,
+          Rate:rate,
           'Return Date':fmtD(rd),
-          Status:String(stat).trim(),
+          Status:stat,
           'Total Hours':parseFloat(gc(row,['Total Hours']))||0,
           ShiftStart:'07:00',ShiftEnd:'19:00',DailyHours:8,ExpectedOT:0
         });
@@ -786,9 +803,16 @@ function procXlsx(file){
       imp.sort(function(a,b){return(parseInt(b.Code)||0)-(parseInt(a.Code)||0);});
       var rn=0;for(var i=0;i<imp.length;i++){if(imp[i].Status==='Running')rn++;}
       if(confirm('Import '+imp.length+' cards? This replaces current cards.')){
-        cards=imp;
-        renderStats();renderM();
-        st.innerHTML='<span style="color:var(--gn)">Imported '+imp.length+' cards ('+rn+' Running)</span>';
+        var backup=cards;
+        try{
+          cards=imp;
+          renderStats();renderM();
+          st.innerHTML='<span style="color:var(--gn)">Imported '+imp.length+' cards ('+rn+' Running)</span>';
+        }catch(re){
+          cards=backup;
+          renderStats();renderM();
+          st.innerHTML='<span style="color:var(--rd)">Import failed, previous cards restored: '+re.message+'</span>';
+        }
       }
     }catch(err){
       st.innerHTML='<span style="color:var(--rd)">Error: '+err.message+'</span>';
@@ -814,10 +838,17 @@ function importJSON(inp){
       var p=JSON.parse(e.target.result);
       if(p.cards&&Array.isArray(p.cards)){
         if(confirm('Import '+p.cards.length+' cards + '+(p.recs||[]).length+' records?')){
-          cards=p.cards;
-          savedRecs=p.recs||[];
-          renderStats();renderM();
-          alert('Imported successfully.');
+          var bc=cards, br=savedRecs;
+          try{
+            cards=p.cards;
+            savedRecs=p.recs||[];
+            renderStats();renderM();
+            alert('Imported successfully.');
+          }catch(re){
+            cards=bc;savedRecs=br;
+            renderStats();renderM();
+            alert('Import failed, previous data restored: '+re.message);
+          }
         }
       }else{alert('Invalid file.');}
     }catch(err){alert('Error: '+err.message);}
