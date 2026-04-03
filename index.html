@@ -1077,52 +1077,43 @@ function genPDF(data,dateStr,title){
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   var W=297,PH=210;
-  var C_PUR=[106,82,136],C_DPUR=[78,58,107],C_LPUR=[237,232,245],C_GRN=[29,158,117];
+  var C_PUR=[106,82,136],C_DPUR=[78,58,107],C_GRN=[29,158,117],C_AMB=[186,117,23];
 
-  // ── pre-compute totals ──
+  // ── grand totals ──
   var gt=0,gv=0;
   for(var i=0;i<data.length;i++){gt+=data[i].sub;gv+=data[i].vt;}
-  var grp=calcGroupTotals(data);
 
-  // ── build table body with customer group header rows ──
-  var body=[],prevCust='';
+  // ── flat body — one row per card, no group headers ──
+  var body=[];
   for(var i=0;i<data.length;i++){
     var r=data[i];
-    if(r.customer!==prevCust){
-      prevCust=r.customer;
-      var g=grp[r.customer];
-      body.push([{
-        content:'\u25B6  '+r.customer
-          +'   \u2022  '+g.cnt+' unit'+(g.cnt>1?'s':'')
-          +'   \u2022  Subtotal: BHD '+g.sub.toFixed(3)
-          +'   \u2022  incl.VAT: BHD '+g.vt.toFixed(3),
-        colSpan:12,
-        styles:{fillColor:C_LPUR,textColor:C_DPUR,fontStyle:'bold',
-                fontSize:8,cellPadding:[4,5],lineWidth:.1,lineColor:C_PUR}
-      }]);
-    }
+    var dailyAmt=(r.rate*(r.hours||8)).toFixed(3);   // Rate × shift hours
+    var confirmed=r.confirmed;
     body.push([
-      {content:r.sn,styles:{halign:'center',textColor:[130,120,160]}},
-      {content:r.sn2,styles:{halign:'center'}},
-      r.customer.length>30?r.customer.substring(0,28)+'\u2026':r.customer,
-      r.machinery,r.location,
+      {content:r.sn,  styles:{halign:'center',textColor:[150,140,170]}},
+      {content:r.sn2, styles:{halign:'center'}},
+      r.customer,
+      r.machinery,
+      r.location,
       {content:r.code,styles:{halign:'center',fontStyle:'bold',textColor:C_PUR}},
-      {content:r.hours,styles:{halign:'center'}},
-      {content:r.rate.toFixed(3),styles:{halign:'right'}},
-      {content:r.ot,styles:{halign:'center'}},
-      {content:r.sub.toFixed(3),styles:{halign:'right',fontStyle:'bold',textColor:C_DPUR}},
-      {content:r.vt.toFixed(3),styles:{halign:'right',textColor:C_GRN}},
-      {content:r.rem,styles:{halign:'center',fontStyle:'bold',
-        textColor:r.rem==='NEW'?C_GRN:C_PUR}}
+      {content:dailyAmt,  styles:{halign:'right',fontStyle:'bold'}},
+      {content:r.ot||0,   styles:{halign:'center'}},
+      {content:r.vt.toFixed(3), styles:{halign:'right',textColor:C_GRN,fontStyle:'bold'}},
+      {content:r.rem==='NEW'?'NEW':'CONT.',
+       styles:{halign:'center',fontStyle:'bold',
+               textColor:r.rem==='NEW'?C_GRN:C_PUR}},
+      {content:confirmed?'\u2713':'?',
+       styles:{halign:'center',fontStyle:'bold',
+               textColor:confirmed?C_GRN:C_AMB}}
     ]);
   }
 
-  // ── helper: draw page header ──
+  // ── page header ──
   function drawHeader(pgNum){
     doc.setFillColor.apply(doc,C_DPUR);
-    doc.rect(0,0,W,pgNum===1?28:18,'F');
+    doc.rect(0,0,W,pgNum===1?28:17,'F');
     doc.setFillColor.apply(doc,C_PUR);
-    doc.rect(0,pgNum===1?22:12,W,pgNum===1?6:6,'F');
+    doc.rect(0,pgNum===1?22:11,W,6,'F');
     doc.setTextColor(255,255,255);
     if(pgNum===1){
       doc.setFontSize(15);doc.setFont('helvetica','bold');
@@ -1130,12 +1121,12 @@ function genPDF(data,dateStr,title){
       doc.setFontSize(9);doc.setFont('helvetica','normal');
       doc.text(title+' \u2014 Date: '+dateStr,W/2,19.5,{align:'center'});
     } else {
-      doc.setFontSize(11);doc.setFont('helvetica','bold');
-      doc.text('AL HAIDARIYA \u2014 '+title+' \u2014 '+dateStr,W/2,9,{align:'center'});
+      doc.setFontSize(10);doc.setFont('helvetica','bold');
+      doc.text('AL HAIDARIYA \u2014 '+title+' \u2014 '+dateStr,W/2,8.5,{align:'center'});
     }
   }
 
-  // ── helper: draw page footer ──
+  // ── page footer ──
   function drawFooter(pgNum,pgTotal){
     doc.setFillColor.apply(doc,C_DPUR);
     doc.rect(0,PH-11,W,11,'F');
@@ -1148,19 +1139,34 @@ function genPDF(data,dateStr,title){
 
   drawHeader(1);
 
+  // columns: SN SN2 COMPANY MACHINERY SITE CARD# DAILY-TOTAL OT TOTAL+VAT TYPE STATUS
+  // widths sum target ≈ 265mm (14mm margin each side)
   doc.autoTable({
     startY:30,
-    head:[['SN','SN2','HIRING COMPANY','MACHINERY','SITE','CARD #','HRS','RATE/HR','OT','SUBTOTAL','incl.VAT','TYPE']],
+    head:[['SN','SN2','HIRING COMPANY','MACHINERY','SITE','CARD #','DAILY TOTAL','OT HRS','TOTAL+VAT','TYPE','\u2713']],
     body:body,
-    styles:{fontSize:7.5,cellPadding:2.2,valign:'middle',lineColor:[220,215,235],lineWidth:.1},
-    headStyles:{fillColor:C_PUR,textColor:[255,255,255],fontStyle:'bold',fontSize:8,
-                cellPadding:[3,3],lineWidth:0},
+    styles:{
+      fontSize:7.5,cellPadding:[2,2.5],valign:'middle',
+      overflow:'ellipsize',          // single line — no wrapping
+      lineColor:[220,215,235],lineWidth:.1
+    },
+    headStyles:{
+      fillColor:C_PUR,textColor:[255,255,255],fontStyle:'bold',
+      fontSize:7.5,cellPadding:[3,2.5],lineWidth:0,overflow:'ellipsize'
+    },
     alternateRowStyles:{fillColor:[249,246,253]},
     columnStyles:{
-      0:{cellWidth:8},1:{cellWidth:8},2:{cellWidth:46},
-      3:{cellWidth:34},4:{cellWidth:22},5:{cellWidth:15},
-      6:{cellWidth:10},7:{cellWidth:18},8:{cellWidth:9},
-      9:{cellWidth:21},10:{cellWidth:23},11:{cellWidth:14}
+      0:{cellWidth:9},
+      1:{cellWidth:9},
+      2:{cellWidth:52},
+      3:{cellWidth:38},
+      4:{cellWidth:24},
+      5:{cellWidth:16},
+      6:{cellWidth:23},
+      7:{cellWidth:13},
+      8:{cellWidth:23},
+      9:{cellWidth:16},
+      10:{cellWidth:12}
     },
     didDrawPage:function(d){
       if(d.pageNumber>1)drawHeader(d.pageNumber);
@@ -1169,12 +1175,9 @@ function genPDF(data,dateStr,title){
     margin:{top:30,bottom:13,left:14,right:14}
   });
 
-  // re-draw footer on last page with total page count
+  // stamp correct "of N" on all footers
   var totalPages=doc.internal.getNumberOfPages();
-  for(var p=1;p<=totalPages;p++){
-    doc.setPage(p);
-    drawFooter(p,totalPages);
-  }
+  for(var p=1;p<=totalPages;p++){doc.setPage(p);drawFooter(p,totalPages);}
 
   doc.save('AlHaidariya_'+dateStr+'_'+title.replace(/\s+/g,'_')+'.pdf');
 }
