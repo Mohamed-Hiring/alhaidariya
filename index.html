@@ -206,6 +206,22 @@ tr:last-child td{border-bottom:none;}
   .pag{justify-content:center;}
   #hdate{display:none;}
 }
+/* ── SUPERVISOR FILTER BUTTONS ── */
+.sfb{
+  padding:7px 14px;border-radius:20px;border:1.5px solid var(--g200);
+  background:white;cursor:pointer;font-family:Tahoma,sans-serif;font-size:12px;
+  font-weight:bold;color:var(--g600);transition:all .18s;display:inline-flex;
+  align-items:center;gap:5px;
+}
+.sfb:hover{border-color:var(--p);color:var(--p);background:var(--pb);}
+.sfb-a{background:var(--p);color:white;border-color:var(--p);}
+.sfb-a:hover{background:var(--pd);color:white;}
+.sfb-badge{
+  background:var(--rd);color:white;border-radius:10px;
+  padding:1px 6px;font-size:10px;font-weight:bold;
+}
+.sfb-a .sfb-badge{background:rgba(255,255,255,.3);}
+
 /* ── SMALL PHONES (≤480px) ── */
 @media(max-width:480px){
   .sr{grid-template-columns:repeat(2,1fr);gap:8px;}
@@ -223,6 +239,7 @@ tr:last-child td{border-bottom:none;}
   <button class="nb active" onclick="showPg('master',this)">&#x1F4CB; Master Cards</button>
   <button class="nb" onclick="showPg('est',this)">&#x1F4CA; Estimated</button>
   <button class="nb" onclick="showPg('sales',this)">&#x2705; Sales Report</button>
+  <button class="nb" onclick="showPg('equip',this)">&#x1F6A7; Equipment</button>
   <button class="nb" onclick="showPg('recs',this)">&#x1F5C2; Saved Records</button>
   <button class="nb" onclick="showPg('data',this)">&#x1F4BE; Data / Import</button>
 </div>
@@ -273,9 +290,9 @@ tr:last-child td{border-bottom:none;}
         <button class="btn bs bsm" onclick="pdfEst()">&#x1F4C4; PDF</button>
       </div>
     </div>
-    <p style="color:var(--g400);font-size:12px;margin-bottom:16px">Running cards grouped by customer. Total = Rate/hr x (Hours + OT hrs). X = Off Hire.</p>
+    <div id="supFilterBar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--g50);border-radius:10px;border:1px solid var(--g100)"></div>
     <div class="tw"><table>
-      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th><th>X</th></tr></thead>
+      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th><th>Status</th><th>X</th></tr></thead>
       <tbody id="ebody"></tbody>
     </table></div>
     <div class="tb" id="etbar" style="display:none">
@@ -297,13 +314,26 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
     <div class="tw"><table>
-      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th></tr></thead>
+      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th><th>Status</th></tr></thead>
       <tbody id="sbody"></tbody>
     </table></div>
     <div class="tb" id="stbar" style="display:none">
       <div><div>SALES TOTAL (excl. VAT)</div><div style="font-size:12px;opacity:.8" id="sdlbl"></div></div>
       <div style="text-align:right"><div style="font-size:20px" id="stot">BHD 0.000</div><div style="font-size:12px;opacity:.8" id="stotvat"></div></div>
     </div>
+  </div>
+</div>
+
+<!-- EQUIPMENT -->
+<div class="pg" id="pg-equip">
+  <div class="card">
+    <div class="ct">&#x1F6A7; Equipment — Supervisor Assignment
+      <div style="margin-left:auto">
+        <button class="btn bp bsm" onclick="applySupToCards()">&#x1F4CC; Apply to Running Cards</button>
+      </div>
+    </div>
+    <p style="color:var(--g400);font-size:12px;margin-bottom:16px">Assign each machinery type to a supervisor. Future orders with the same machinery will be auto-assigned.</p>
+    <div id="equipList"></div>
   </div>
 </div>
 
@@ -380,10 +410,39 @@ tr:last-child td{border-bottom:none;}
         <select id="fStat"><option value="Running">Running</option><option value="Recieved">Received</option><option value="Off Hire">Off Hire</option><option value="Cancel">Cancel</option></select>
       </div>
       <div class="fgo"><label>Return Date</label><input type="date" id="fRD"></div>
+      <div class="fgo"><label>Supervisor</label>
+        <select id="fSup"><option value="">— None —</option></select>
+      </div>
     </div>
     <div class="fa">
       <button class="btn bo2" onclick="closeMo()">Cancel</button>
       <button class="btn bp" onclick="saveCard()">Save Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="mo" id="cfmodal">
+  <div class="md" style="max-width:420px">
+    <div class="mt" id="cfTitle">تأكيد الكرت</div>
+    <div style="background:var(--g50);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--g600);line-height:2" id="cfInfo"></div>
+    <div class="fg">
+      <div class="fgo">
+        <label>ساعات العمل الفعلية</label>
+        <input type="number" id="cfHours" step="0.5" min="0" oninput="chkCfReason()">
+      </div>
+      <div class="fgo">
+        <label>أوفرتايم (ساعات)</label>
+        <input type="number" id="cfOT" step="0.5" min="0" value="0">
+      </div>
+      <div class="fgo full" id="cfReasonWrap" style="display:none">
+        <label style="color:var(--rd)">سبب النقص في الساعات <span style="font-weight:normal">(مطلوب)</span></label>
+        <input type="text" id="cfReason" placeholder="مثال: عطل ميكانيكي، انتهى الأوردر...">
+      </div>
+    </div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn bp" onclick="submitConfirm()">&#x2713; تأكيد</button>
     </div>
   </div>
 </div>
@@ -396,6 +455,10 @@ var estData = [];
 var salesData = [];
 var VAT = 0.10;
 var PP  = 50;   // cards per page in Master Cards
+var SUPERVISORS = ["محمد العجمي","محمد سعيد","العاقب","هارون"];
+var machineSup  = {};   // {"JCB 3CX":"العاقب", ...}
+var estSupFilter = '';  // active supervisor filter in Estimated tab
+var confirmIdx   = -1;  // index into estData being confirmed
 
 function ct(r,h,ot){return r*(h+ot);}
 function vat(n){return n*(1+VAT);}
@@ -458,8 +521,53 @@ function showPg(n,btn){
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
   document.getElementById('pg-'+n).classList.add('active');
   btn.classList.add('active');
-  if(n==='est')genEst();
+  if(n==='est'){genEst();}
   if(n==='recs')renderRecs();
+  if(n==='equip')renderEquip();
+}
+
+/* ── EQUIPMENT TAB ── */
+function renderEquip(){
+  var types={};
+  for(var i=0;i<cards.length;i++){
+    var m=cards[i].Machinery;
+    if(m)types[m]=(types[m]||0)+1;
+  }
+  var keys=Object.keys(types).sort();
+  if(!keys.length){
+    document.getElementById('equipList').innerHTML='<div class="emp">No machinery found. Import cards first.</div>';
+    return;
+  }
+  var opts='<option value="">— None —</option>';
+  for(var s=0;s<SUPERVISORS.length;s++)opts+='<option value="'+esc(SUPERVISORS[s])+'">'+esc(SUPERVISORS[s])+'</option>';
+  var html='<div class="tw"><table><thead><tr><th>Machinery Type</th><th>Cards</th><th>Supervisor</th></tr></thead><tbody>';
+  for(var k=0;k<keys.length;k++){
+    var m=keys[k];
+    var cur=machineSup[m]||'';
+    html+='<tr><td><b>'+esc(m)+'</b></td><td style="color:var(--g400)">'+types[m]+'</td>'+
+      '<td><select onchange="saveMachineSup(\''+esc(m)+'\',this.value)" style="padding:6px 10px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px">'+
+      opts.replace('value="'+esc(cur)+'"','value="'+esc(cur)+'" selected')+
+      '</select></td></tr>';
+  }
+  html+='</tbody></table></div>';
+  document.getElementById('equipList').innerHTML=html;
+}
+
+function saveMachineSup(machinery,sup){
+  if(sup)machineSup[machinery]=sup;
+  else delete machineSup[machinery];
+}
+
+function applySupToCards(){
+  var count=0;
+  for(var i=0;i<cards.length;i++){
+    if(cards[i].Status==='Running'&&cards[i].Machinery&&machineSup[cards[i].Machinery]){
+      cards[i].Supervisor=machineSup[cards[i].Machinery];
+      count++;
+    }
+  }
+  alert('Applied supervisor to '+count+' Running cards.');
+  renderEquip();
 }
 
 function renderStats(){
@@ -574,6 +682,17 @@ function mkOH(idx){
   renderStats();renderM();
 }
 
+function buildSupOpts(sel){
+  var s=document.getElementById('fSup');
+  s.innerHTML='<option value="">— None —</option>';
+  for(var i=0;i<SUPERVISORS.length;i++){
+    var o=document.createElement('option');
+    o.value=SUPERVISORS[i];o.textContent=SUPERVISORS[i];
+    if(SUPERVISORS[i]===sel)o.selected=true;
+    s.appendChild(o);
+  }
+}
+
 function openAdd(){
   editIdx=null;
   document.getElementById('mtitle').textContent='New Hiring Card';
@@ -592,6 +711,7 @@ function openAdd(){
   document.getElementById('fStat').value='Running';
   document.getElementById('fRD').value='';
   document.getElementById('rprev').innerHTML='Enter rate to see daily calculation.';
+  buildSupOpts('');
   document.getElementById('cmodal').classList.add('open');
 }
 
@@ -613,6 +733,7 @@ function openEdit(idx){
   document.getElementById('fOT').value=c.ExpectedOT||0;
   document.getElementById('fStat').value=c.Status;
   document.getElementById('fRD').value=c['Return Date']||'';
+  buildSupOpts(c.Supervisor||machineSup[c.Machinery]||'');
   prevRate();
   document.getElementById('cmodal').classList.add('open');
 }
@@ -635,7 +756,8 @@ function saveCard(){
     ExpectedOT:parseFloat(document.getElementById('fOT').value)||0,
     Status:document.getElementById('fStat').value,
     'Return Date':document.getElementById('fRD').value,
-    'Total Hours':0
+    'Total Hours':0,
+    Supervisor:document.getElementById('fSup').value
   };
   if(!card.Code||!card.Customer){alert('Card number and customer are required.');return;}
   if(editIdx!==null)cards[editIdx]=card;
@@ -670,10 +792,43 @@ function genEst(){
         machinery:c.Machinery, location:c.Location||'',
         hours:h, rate:r, ot:ot,
         sub:sub, vt:vat(sub),
-        rem:(c.Date&&c.Date<date)?'CONTINUE':'NEW'
+        rem:(c.Date&&c.Date<date)?'CONTINUE':'NEW',
+        supervisor:c.Supervisor||machineSup[c.Machinery]||'',
+        confirmed:false, shortReason:''
       });
     }
   }
+  estSupFilter='';
+  renderSupFilterBar();
+  renderEst();
+}
+
+function renderSupFilterBar(){
+  var bar=document.getElementById('supFilterBar');
+  if(!bar)return;
+  var pending={};
+  for(var i=0;i<estData.length;i++){
+    var s=estData[i].supervisor||'—';
+    if(!pending[s])pending[s]={total:0,pend:0};
+    pending[s].total++;
+    if(!estData[i].confirmed)pending[s].pend++;
+  }
+  var html='<span style="font-size:12px;font-weight:bold;color:var(--g600);margin-right:4px">السوبرفايزر:</span>';
+  var allPend=0;
+  for(var i=0;i<estData.length;i++){if(!estData[i].confirmed)allPend++;}
+  html+='<button class="sfb'+(estSupFilter===''?' sfb-a':'')+'" onclick="filterEst(\'\')">الكل'+(allPend?' <span class="sfb-badge">'+allPend+'</span>':'')+'</button>';
+  for(var s=0;s<SUPERVISORS.length;s++){
+    var nm=SUPERVISORS[s];
+    var d=pending[nm]||{total:0,pend:0};
+    if(!d.total)continue;
+    html+='<button class="sfb'+(estSupFilter===nm?' sfb-a':'')+'" onclick="filterEst(\''+esc(nm)+'\')">'+esc(nm)+(d.pend?' <span class="sfb-badge">'+d.pend+'</span>':'')+'</button>';
+  }
+  bar.innerHTML=html;
+}
+
+function filterEst(sup){
+  estSupFilter=sup;
+  renderSupFilterBar();
   renderEst();
 }
 
@@ -691,33 +846,50 @@ function renderEst(){
   var tb=document.getElementById('ebody');
   var bar=document.getElementById('etbar');
   if(!estData.length){
-    tb.innerHTML='<tr><td colspan="13" class="emp">No running cards.</td></tr>';
+    tb.innerHTML='<tr><td colspan="14" class="emp">No running cards. Click Generate.</td></tr>';
     bar.style.display='none';return;
   }
-  var gt=0, gv=0, pc='', html='';
-  var grpTotals=calcGroupTotals(estData);
+  var visible=[];
   for(var i=0;i<estData.length;i++){
-    var r=estData[i];
+    if(!estSupFilter||estData[i].supervisor===estSupFilter)visible.push(i);
+  }
+  if(!visible.length){
+    tb.innerHTML='<tr><td colspan="14" class="emp">No cards for this supervisor.</td></tr>';
+    bar.style.display='none';return;
+  }
+  var visData=[];for(var v=0;v<visible.length;v++)visData.push(estData[visible[v]]);
+  var gt=0,gv=0,pc='',html='';
+  var grpTotals=calcGroupTotals(visData);
+  for(var v=0;v<visible.length;v++){
+    var i=visible[v]; var r=estData[i];
     gt+=r.sub; gv+=r.vt;
     if(r.customer!==pc){
       pc=r.customer;
       var g=grpTotals[r.customer];
-      html+='<tr class="gr"><td colspan="13">&#x1F464; '+esc(r.customer)+' - '+g.cnt+' card'+(g.cnt>1?'s':'')+' | BD '+g.sub.toFixed(3)+' (+VAT: BD '+g.vt.toFixed(3)+')</td></tr>';
+      html+='<tr class="gr"><td colspan="14">&#x1F464; '+esc(r.customer)+' \u2014 '+g.cnt+' card'+(g.cnt>1?'s':'')+' | BD '+g.sub.toFixed(3)+' (+VAT '+g.vt.toFixed(3)+')</td></tr>';
     }
-    html+='<tr>'+
+    var statusCell='';
+    if(r.confirmed){
+      var note=r.shortReason?' <span style="color:var(--am);font-size:10px">('+esc(r.shortReason)+')</span>':'';
+      statusCell='<span class="badge br" style="white-space:normal">&#x2713; Confirmed</span>'+note;
+    } else {
+      statusCell='<button class="btn bsm bw" onclick="openConfirm('+i+')" style="white-space:nowrap">&#x23F3; Confirm</button>';
+    }
+    html+='<tr'+(r.confirmed?' style="opacity:.85"':'')+'>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
       '<td>'+r.sn2+'</td>'+
-      '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis">'+esc(r.customer)+'</td>'+
+      '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(r.customer)+'</td>'+
       '<td>'+esc(r.machinery)+'</td>'+
       '<td>'+esc(r.location)+'</td>'+
-      '<td>'+esc(r.code)+'</td>'+
-      '<td><input type="number" value="'+r.hours+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'hours\',this.value)"></td>'+
+      '<td><b style="color:var(--p)">'+esc(r.code)+'</b></td>'+
+      '<td><input type="number" value="'+r.hours+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'hours\',this.value)"'+(r.confirmed?' disabled':'')+' ></td>'+
       '<td>'+r.rate.toFixed(3)+'</td>'+
-      '<td><input type="number" value="'+r.ot+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'ot\',this.value)"></td>'+
+      '<td><input type="number" value="'+r.ot+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'ot\',this.value)"'+(r.confirmed?' disabled':'')+' ></td>'+
       '<td><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
       '<td style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
       '<td><span class="badge '+(r.rem==='NEW'?'br':'brc')+'">'+r.rem+'</span></td>'+
-      '<td><button class="btn bsm bd" onclick="rmEst('+i+')">X</button></td>'+
+      '<td>'+statusCell+'</td>'+
+      '<td>'+(r.confirmed?'':'<button class="btn bsm bd" onclick="rmEst('+i+')">X</button>')+'</td>'+
       '</tr>';
   }
   tb.innerHTML=html;
@@ -725,6 +897,46 @@ function renderEst(){
   document.getElementById('edlbl').textContent='Estimated for '+document.getElementById('edate').value;
   document.getElementById('etot').textContent='BHD '+gt.toFixed(3);
   document.getElementById('etotvat').textContent='incl. VAT: BHD '+gv.toFixed(3);
+}
+
+/* ── CONFIRMATION MODAL ── */
+function openConfirm(i){
+  confirmIdx=i;
+  var r=estData[i];
+  document.getElementById('cfTitle').textContent='تأكيد الكرت #'+r.code;
+  document.getElementById('cfInfo').innerHTML=
+    '<b>'+esc(r.customer)+'</b><br>'+esc(r.machinery)+' &mdash; '+esc(r.location)+
+    '<br>الساعات العادية: <b>'+r.hours+' h</b>'+(r.supervisor?' &nbsp;|&nbsp; السوبرفايزر: <b>'+esc(r.supervisor)+'</b>':'');
+  document.getElementById('cfHours').value=r.hours;
+  document.getElementById('cfOT').value=r.ot;
+  document.getElementById('cfReason').value='';
+  document.getElementById('cfReasonWrap').style.display='none';
+  document.getElementById('cfmodal').classList.add('open');
+}
+
+function closeConfirm(){document.getElementById('cfmodal').classList.remove('open');confirmIdx=-1;}
+
+function chkCfReason(){
+  var h=parseFloat(document.getElementById('cfHours').value)||0;
+  var norm=(confirmIdx>=0?(estData[confirmIdx].hours||8):8);
+  document.getElementById('cfReasonWrap').style.display=(h<norm)?'block':'none';
+}
+
+function submitConfirm(){
+  if(confirmIdx<0)return;
+  var h=parseFloat(document.getElementById('cfHours').value)||0;
+  var ot=parseFloat(document.getElementById('cfOT').value)||0;
+  var reason=document.getElementById('cfReason').value.trim();
+  var norm=estData[confirmIdx].hours||8;
+  if(h<norm&&!reason){alert('يرجى ذكر سبب نقص الساعات.');return;}
+  var r=estData[confirmIdx];
+  r.confirmed=true;
+  r.hours=h; r.ot=ot;
+  r.sub=ct(r.rate,h,ot); r.vt=vat(r.sub);
+  r.shortReason=reason;
+  closeConfirm();
+  renderSupFilterBar();
+  renderEst();
 }
 
 function updEst(i,f,v){
@@ -780,6 +992,9 @@ function renderSales(data,date,type){
       var g=grpTotals[r.customer];
       html+='<tr class="gr"><td colspan="12">&#x1F464; '+esc(r.customer)+' - '+g.cnt+' card'+(g.cnt>1?'s':'')+' | BD '+g.sub.toFixed(3)+' (+VAT: BD '+g.vt.toFixed(3)+')</td></tr>';
     }
+    var sc=r.confirmed
+      ?'<span class="badge br">&#x2713; Confirmed</span>'+(r.shortReason?'<br><span style="font-size:10px;color:var(--am)">'+esc(r.shortReason)+'</span>':'')
+      :'<span class="badge bo">&#x26A0; Pending</span>';
     html+='<tr>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
       '<td>'+r.sn2+'</td>'+
@@ -793,6 +1008,7 @@ function renderSales(data,date,type){
       '<td><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
       '<td style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
       '<td><span class="badge '+(r.rem==='NEW'?'br':'brc')+'">'+r.rem+'</span></td>'+
+      '<td>'+sc+'</td>'+
       '</tr>';
   }
   tb.innerHTML=html;
@@ -1012,7 +1228,8 @@ function procXlsx(file){
           'Return Date':fmtD(rd),
           Status:stat,
           'Total Hours':parseFloat(gc(row,['Total Hours']))||0,
-          ShiftStart:'07:00',ShiftEnd:'19:00',DailyHours:8,ExpectedOT:0
+          ShiftStart:'07:00',ShiftEnd:'19:00',DailyHours:8,ExpectedOT:0,
+          Supervisor:machineSup[String(gc(row,['Hiring Machinery'])).toUpperCase().trim()]||''
         });
       }
       if(!imp.length){st.innerHTML='<span style="color:var(--rd)">No valid cards found.</span>';return;}
@@ -1038,7 +1255,7 @@ function procXlsx(file){
 }
 
 function exportJSON(){
-  var p={v:6,d:new Date().toISOString(),cards:cards,recs:savedRecs};
+  var p={v:7,d:new Date().toISOString(),cards:cards,recs:savedRecs,machineSup:machineSup};
   var b=new Blob([JSON.stringify(p)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(b);
@@ -1058,6 +1275,7 @@ function importJSON(inp){
           try{
             cards=p.cards;
             savedRecs=p.recs||[];
+            if(p.machineSup&&typeof p.machineSup==='object')machineSup=p.machineSup;
             renderStats();renderM();
             alert('Imported successfully.');
           }catch(re){
