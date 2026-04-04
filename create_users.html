@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Haidariya — Create User Accounts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;padding:20px;display:flex;justify-content:center;}
+.wrap{width:100%;max-width:640px;}
+.box{background:white;border-radius:20px;padding:28px 24px;margin-bottom:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+h1{font-size:19px;color:#6A5288;margin-bottom:4px;}
+.sub{font-size:12px;color:#9990B0;margin-bottom:20px;}
+.user-row{border:1.5px solid #D8D4E4;border-radius:10px;padding:14px;margin-bottom:10px;background:#F8F7FA;}
+.user-row.admin-row{border-color:#185FA5;background:#E6F1FB;}
+.row-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.role-badge{font-size:10px;font-weight:bold;padding:3px 10px;border-radius:20px;}
+.rb-sup{background:#E1F5EE;color:#1D9E75;}
+.rb-admin{background:#E6F1FB;color:#185FA5;}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:480px){.fields{grid-template-columns:1fr;}}
+.fg{display:flex;flex-direction:column;gap:3px;}
+label{font-size:10px;font-weight:bold;color:#5C5472;text-transform:uppercase;letter-spacing:.3px;}
+input{padding:9px 11px;border:1.5px solid #D8D4E4;border-radius:7px;font-family:Tahoma;font-size:13px;outline:none;width:100%;}
+input:focus{border-color:#6A5288;box-shadow:0 0 0 2px rgba(106,82,136,.12);}
+.name-line{font-size:14px;font-weight:bold;color:#2C2838;}
+.btn{padding:13px 20px;border:none;border-radius:10px;font-family:Tahoma;font-size:14px;font-weight:bold;cursor:pointer;width:100%;margin-top:4px;transition:all .2s;}
+.btn-p{background:#6A5288;color:white;}
+.btn-p:hover:not(:disabled){background:#4E3A6B;}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px;}
+.r-ok{background:#E1F5EE;color:#167a5b;}
+.r-err{background:#FCEBEB;color:#b03030;}
+.r-wait{background:#F8F7FA;color:#9990B0;}
+.creds-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.creds-table th{background:#6A5288;color:white;padding:9px 12px;text-align:left;font-size:11px;}
+.creds-table td{padding:9px 12px;border-bottom:1px solid #EEECF3;}
+.creds-table tr:last-child td{border-bottom:none;}
+.creds-table tr:nth-child(even) td{background:#F8F7FA;}
+.print-btn{background:#EEECF3;color:#4E3A6B;border:none;border-radius:8px;padding:9px 16px;font-family:Tahoma;font-size:12px;font-weight:bold;cursor:pointer;margin-top:10px;}
+.print-btn:hover{background:#D8D4E4;}
+.back-link{display:block;text-align:center;color:white;font-size:13px;margin-top:10px;text-decoration:none;opacity:.85;}
+.back-link:hover{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="box">
+    <h1>👥 Create User Accounts</h1>
+    <p class="sub">Set email and password for each person. Click "Create All" when ready.</p>
+
+    <!-- Supervisors + IT rows -->
+    <div id="usersForm">
+
+      <div class="user-row">
+        <div class="row-head">
+          <span class="name-line">Mohamed Al Ajmi</span>
+          <span class="role-badge rb-sup">Supervisor</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e0" value="m.alajmi@alhaidariya.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p0" value="Ajmi@2026"></div>
+        </div>
+      </div>
+
+      <div class="user-row">
+        <div class="row-head">
+          <span class="name-line">Mohamed Saeed</span>
+          <span class="role-badge rb-sup">Supervisor</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e1" value="m.saeed@alhaidariya.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p1" value="Saeed@2026"></div>
+        </div>
+      </div>
+
+      <div class="user-row">
+        <div class="row-head">
+          <span class="name-line">Al Aqib</span>
+          <span class="role-badge rb-sup">Supervisor</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e2" value="alaqib@alhaidariya.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p2" value="Aqib@2026"></div>
+        </div>
+      </div>
+
+      <div class="user-row">
+        <div class="row-head">
+          <span class="name-line">Haroun</span>
+          <span class="role-badge rb-sup">Supervisor</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e3" value="haroun@alhaidariya.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p3" value="Haroun@2026"></div>
+        </div>
+      </div>
+
+      <div class="user-row admin-row">
+        <div class="row-head">
+          <span class="name-line">IT / Full Access</span>
+          <span class="role-badge rb-admin">Admin</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e4" value="it@alhaidariya.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p4" value="IT@AlHaid2026"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <button class="btn btn-p" id="createBtn" onclick="createAll()" style="margin-top:14px">
+      ⚡ Create All Accounts
+    </button>
+  </div>
+
+  <!-- Progress + results -->
+  <div class="box" id="resultsBox" style="display:none">
+    <h2 style="font-size:16px;color:#6A5288;margin-bottom:14px">📊 Results</h2>
+    <div id="resultsList"></div>
+  </div>
+
+  <!-- Credentials table -->
+  <div class="box" id="credsBox" style="display:none">
+    <h2 style="font-size:16px;color:#6A5288;margin-bottom:4px">🔑 Login Credentials</h2>
+    <p style="font-size:12px;color:#9990B0;margin-bottom:12px">Screenshot this and share with each person.</p>
+    <table class="creds-table" id="credsTable">
+      <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Password</th></tr></thead>
+      <tbody id="credsTbody"></tbody>
+    </table>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Screenshot</button>
+    <br><br>
+    <a href="index.html" style="display:block;background:#6A5288;color:white;border-radius:10px;padding:13px;text-align:center;font-size:14px;font-weight:bold;text-decoration:none;">
+      ✅ Done — Open the App
+    </a>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to App</a>
+</div>
+
+<script>
+var SUPA_URL = 'https://utjraxkqkrelgrqgllpj.supabase.co';
+var SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyOTQ4MDAsImV4cCI6MjA5MDg3MDgwMH0.-tSVJ-19Y_c4LR0e9e-T4tQop_E6K5wsfHhR9Tyruu8';
+var SUPA_SVC  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
+
+var USERS = [
+  {name:'Mohamed Al Ajmi', role:'supervisor', supName:'Mohamed Al Ajmi', ei:0},
+  {name:'Mohamed Saeed',   role:'supervisor', supName:'Mohamed Saeed',   ei:1},
+  {name:'Al Aqib',         role:'supervisor', supName:'Al Aqib',         ei:2},
+  {name:'Haroun',          role:'supervisor', supName:'Haroun',          ei:3},
+  {name:'IT / Full Access',role:'admin',      supName:null,              ei:4}
+];
+
+function setResult(idx, state, msg){
+  var el = document.getElementById('res'+idx);
+  if(!el) return;
+  el.className = 'result-row ' + (state==='ok'?'r-ok':state==='err'?'r-err':'r-wait');
+  el.textContent = USERS[idx].name + ': ' + msg;
+}
+
+async function createAll(){
+  var btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+
+  // Show results box
+  var resList = document.getElementById('resultsList');
+  resList.innerHTML = '';
+  USERS.forEach(function(u,i){
+    var div = document.createElement('div');
+    div.className = 'result-row r-wait';
+    div.id = 'res'+i;
+    div.textContent = u.name + ': Waiting…';
+    resList.appendChild(div);
+  });
+  document.getElementById('resultsBox').style.display = 'block';
+
+  var credsRows = '';
+  var allOk = true;
+
+  for(var i=0;i<USERS.length;i++){
+    var u = USERS[i];
+    var email = document.getElementById('e'+u.ei).value.trim();
+    var pass  = document.getElementById('p'+u.ei).value.trim();
+
+    setResult(i, 'wait', 'Creating…');
+
+    try {
+      // Create auth user
+      var authR = await fetch(SUPA_URL+'/auth/v1/admin/users',{
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+SUPA_SVC,
+          'apikey':SUPA_SVC,
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({email:email,password:pass,email_confirm:true})
+      });
+      var authD = await authR.json();
+      var userId = authD.id || (authD.user && authD.user.id);
+
+      if(!userId){
+        throw new Error(authD.msg || authD.error_description || JSON.stringify(authD));
+      }
+
+      // Create profile
+      await fetch(SUPA_URL+'/rest/v1/user_profiles',{
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+SUPA_SVC,
+          'apikey':SUPA_SVC,
+          'Content-Type':'application/json',
+          'Prefer':'resolution=merge-duplicates'
+        },
+        body:JSON.stringify({
+          id:userId,
+          full_name:u.name,
+          role:u.role,
+          supervisor_name:u.supName
+        })
+      });
+
+      setResult(i, 'ok', '✓ Created');
+      credsRows += '<tr><td><b>'+u.name+'</b></td><td>'+u.role+'</td><td>'+email+'</td><td><b>'+pass+'</b></td></tr>';
+
+    } catch(e){
+      setResult(i, 'err', '✗ ' + e.message);
+      allOk = false;
+      credsRows += '<tr><td><b>'+u.name+'</b></td><td>'+u.role+'</td><td>'+email+'</td><td style="color:#E24B4A">Error</td></tr>';
+    }
+  }
+
+  // Show credentials table
+  document.getElementById('credsTbody').innerHTML = credsRows;
+  document.getElementById('credsBox').style.display = 'block';
+
+  btn.textContent = allOk ? '✅ All Done!' : '⚠️ Some errors — scroll up';
+  btn.disabled = false;
+
+  // Scroll to creds
+  document.getElementById('credsBox').scrollIntoView({behavior:'smooth'});
+}
+</script>
+
+<style>
+@media print {
+  body{background:white !important;}
+  .box{box-shadow:none !important;}
+  #usersForm, #createBtn, .print-btn, .back-link, #resultsBox{display:none !important;}
+}
+</style>
+</body>
+</html>
