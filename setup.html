@@ -7,66 +7,120 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-.box{background:white;border-radius:20px;padding:36px 32px;max-width:480px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.35);}
-h1{font-size:20px;color:#6A5288;margin-bottom:6px;}
+.box{background:white;border-radius:20px;padding:32px 28px;max-width:500px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.35);}
+h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
 .sub{font-size:13px;color:#9990B0;margin-bottom:24px;}
-.step{background:#F8F7FA;border-radius:12px;padding:16px 18px;margin-bottom:14px;border-left:4px solid #D8D4E4;}
-.step.done{border-left-color:#1D9E75;background:#E1F5EE;}
-.step.err{border-left-color:#E24B4A;background:#FCEBEB;}
-.step.run{border-left-color:#BA7517;background:#FAEEDA;}
-.step-title{font-weight:bold;font-size:14px;margin-bottom:4px;}
-.step-msg{font-size:12px;color:#5C5472;}
-.step.done .step-msg{color:#1D9E75;}
-.step.err .step-msg{color:#E24B4A;}
-label{display:block;font-size:12px;font-weight:bold;color:#5C5472;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;}
-input{width:100%;padding:11px 13px;border:1.5px solid #D8D4E4;border-radius:8px;font-family:Tahoma;font-size:14px;outline:none;margin-bottom:14px;}
+.section{background:#F8F7FA;border-radius:12px;padding:18px;margin-bottom:16px;border:2px solid #EEECF3;}
+.section.active{border-color:#6A5288;background:#F0EBF8;}
+.section.done{border-color:#1D9E75;background:#E1F5EE;}
+.section-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#6A5288;color:white;border-radius:50%;font-size:13px;font-weight:bold;margin-right:8px;flex-shrink:0;}
+.section.done .section-num{background:#1D9E75;}
+.section-title{display:flex;align-items:center;font-size:15px;font-weight:bold;color:#2C2838;margin-bottom:12px;}
+label{display:block;font-size:11px;font-weight:bold;color:#5C5472;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;margin-top:10px;}
+input{width:100%;padding:11px 13px;border:1.5px solid #D8D4E4;border-radius:8px;font-family:Tahoma;font-size:14px;outline:none;}
 input:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,136,.12);}
-.btn{width:100%;padding:14px;background:#6A5288;color:white;border:none;border-radius:10px;font-family:Tahoma;font-size:15px;font-weight:bold;cursor:pointer;transition:background .2s;}
-.btn:hover:not(:disabled){background:#4E3A6B;}
-.btn:disabled{opacity:.6;cursor:not-allowed;}
-.creds{background:#F0EBF8;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#4E3A6B;line-height:1.8;}
-.creds b{color:#6A5288;}
-.done-box{display:none;background:#E1F5EE;border-radius:12px;padding:20px;margin-top:16px;text-align:center;}
-.done-box h2{color:#1D9E75;font-size:18px;margin-bottom:8px;}
-.done-box p{font-size:13px;color:#5C5472;line-height:1.8;}
-.done-box a{color:#6A5288;font-weight:bold;}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-family:Tahoma;font-size:14px;font-weight:bold;cursor:pointer;margin-top:12px;transition:all .2s;}
+.btn-p{background:#6A5288;color:white;}
+.btn-p:hover:not(:disabled){background:#4E3A6B;}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;}
+.btn-g{background:#1D9E75;color:white;}
+.btn-g:hover{background:#167a5b;}
+.sql-block{background:#1e1e2e;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#cdd6f4;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6;max-height:200px;overflow-y:auto;}
+.copy-btn{background:#E4DAF2;color:#4E3A6B;border:none;border-radius:6px;padding:6px 14px;font-family:Tahoma;font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:10px;width:100%;}
+.copy-btn:hover{background:#D8D4E4;}
+.link-btn{display:block;background:#185FA5;color:white;border-radius:8px;padding:10px;text-align:center;text-decoration:none;font-size:13px;font-weight:bold;margin:8px 0;}
+.done-badge{display:none;background:#1D9E75;color:white;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:bold;margin-left:auto;}
+.section.done .done-badge{display:inline-block;}
+.note{font-size:12px;color:#5C5472;line-height:1.7;margin-top:6px;}
+.err{background:#FCEBEB;border-radius:8px;padding:10px 12px;font-size:12px;color:#E24B4A;margin-top:10px;display:none;}
+.final{display:none;background:#E1F5EE;border-radius:12px;padding:24px;text-align:center;margin-top:4px;}
+.final h2{color:#1D9E75;font-size:20px;margin-bottom:12px;}
+.final p{font-size:13px;color:#5C5472;margin-bottom:8px;line-height:1.8;}
+.final a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;}
 </style>
 </head>
 <body>
 <div class="box">
-  <h1>🏗️ Al Haidariya — First-Time Setup</h1>
-  <p class="sub">This page sets up your database automatically. Run it once, then delete it.</p>
+  <h1>🏗️ Al Haidariya — Setup</h1>
+  <p class="sub">Two steps: paste SQL once, then fill your info. Takes 2 minutes.</p>
 
-  <div id="form-section">
-    <label>Your Name (for admin account)</label>
-    <input type="text" id="adminName" placeholder="e.g. Abu Noor" value="">
+  <!-- STEP 1: SQL -->
+  <div class="section active" id="sec1">
+    <div class="section-title">
+      <span class="section-num">1</span> Create Database Tables
+      <span class="done-badge" id="s1badge">✓ Done</span>
+    </div>
+    <p class="note">Copy the SQL below, paste it in Supabase, and click Run.</p>
 
-    <label>Admin Email</label>
-    <input type="email" id="adminEmail" placeholder="your@email.com" value="m.khalid.skd@gmail.com">
+    <button class="copy-btn" onclick="copySql()">📋 Copy SQL</button>
+    <div class="sql-block" id="sqlblock">CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'supervisor'
+    CHECK (role IN ('admin','supervisor')),
+  supervisor_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-    <label>Admin Password (you'll use this to log in)</label>
-    <input type="password" id="adminPass" placeholder="Min 8 characters">
+CREATE TABLE IF NOT EXISTS app_data (
+  key TEXT PRIMARY KEY,
+  value JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-    <button class="btn" id="startBtn" onclick="runSetup()">⚡ Start Setup</button>
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_data ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "auth_all_profiles" ON user_profiles;
+DROP POLICY IF EXISTS "auth_all_data" ON app_data;
+
+CREATE POLICY "auth_all_profiles" ON user_profiles
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "auth_all_data" ON app_data
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+INSERT INTO app_data (key, value) VALUES
+  ('cards','[]'::jsonb),
+  ('saved_recs','[]'::jsonb),
+  ('machine_sup','{}'::jsonb)
+ON CONFLICT (key) DO NOTHING;</div>
+
+    <a class="link-btn" href="https://supabase.com/dashboard/project/utjraxkqkrelgrqgllpj/sql/new" target="_blank">
+      🔗 Open Supabase SQL Editor (click here)
+    </a>
+    <p class="note" style="color:#BA7517">👆 Opens in a new tab → paste the SQL → click <b>RUN</b> (bottom right)</p>
+
+    <button class="btn btn-g" onclick="markSqlDone()">✅ I ran the SQL — Continue</button>
   </div>
 
-  <div id="steps" style="margin-top:20px;display:none">
-    <div class="step" id="s1"><div class="step-title">1. Create database tables</div><div class="step-msg" id="s1m">Waiting…</div></div>
-    <div class="step" id="s2"><div class="step-title">2. Set up security rules</div><div class="step-msg" id="s2m">Waiting…</div></div>
-    <div class="step" id="s3"><div class="step-title">3. Create your admin account</div><div class="step-msg" id="s3m">Waiting…</div></div>
-    <div class="step" id="s4"><div class="step-title">4. Save admin profile</div><div class="step-msg" id="s4m">Waiting…</div></div>
-    <div class="step" id="s5"><div class="step-title">5. Upload your existing cards</div><div class="step-msg" id="s5m">Waiting…</div></div>
+  <!-- STEP 2: Account -->
+  <div class="section" id="sec2" style="opacity:.5">
+    <div class="section-title">
+      <span class="section-num">2</span> Create Your Admin Account
+      <span class="done-badge" id="s2badge">✓ Done</span>
+    </div>
+
+    <label>Your Name</label>
+    <input type="text" id="adminName" placeholder="e.g. Abu Noor" disabled>
+
+    <label>Email</label>
+    <input type="email" id="adminEmail" placeholder="your@email.com" value="m.khalid.skd@gmail.com" disabled>
+
+    <label>Password (to log in to the app)</label>
+    <input type="password" id="adminPass" placeholder="Min 8 characters" disabled>
+
+    <div class="err" id="accErr"></div>
+    <button class="btn btn-p" id="accBtn" onclick="createAccount()" disabled>⚡ Create Account & Finish</button>
   </div>
 
-  <div class="done-box" id="doneBox">
+  <!-- DONE -->
+  <div class="final" id="finalBox">
     <h2>✅ Setup Complete!</h2>
-    <p id="credLine"></p>
-    <p style="margin-top:10px">
-      <a href="index.html">👉 Open the App</a>
-    </p>
-    <p style="margin-top:14px;font-size:11px;color:#9990B0">
-      ⚠️ Delete this setup.html file from GitHub after use.
-    </p>
+    <p>Your admin account is ready.</p>
+    <p id="finalCreds" style="background:#F0EBF8;border-radius:8px;padding:12px;font-size:13px;text-align:left;line-height:2"></p>
+    <a href="index.html">👉 Open the App →</a>
+    <p style="margin-top:14px;font-size:11px;color:#9990B0">⚠️ Delete this setup.html file from GitHub after use.</p>
   </div>
 </div>
 
@@ -74,148 +128,112 @@ input:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,136,.12);}
 var SUPA_URL  = 'https://utjraxkqkrelgrqgllpj.supabase.co';
 var SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyOTQ4MDAsImV4cCI6MjA5MDg3MDgwMH0.-tSVJ-19Y_c4LR0e9e-T4tQop_E6K5wsfHhR9Tyruu8';
 var SUPA_SVC  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
-var MGMT_PAT  = 'sbp_93d82e47721413d8f9c9f600ede7351d91ff0a34';
-var PROJ_REF  = 'utjraxkqkrelgrqgllpj';
 
-function step(id, state, msg){
-  var el = document.getElementById(id);
-  el.className = 'step ' + state;
-  document.getElementById(id+'m').textContent = msg;
-}
-
-async function sql(query){
-  var r = await fetch('https://api.supabase.com/v1/projects/'+PROJ_REF+'/database/query', {
-    method:'POST',
-    headers:{'Authorization':'Bearer '+MGMT_PAT,'Content-Type':'application/json'},
-    body: JSON.stringify({query: query})
+function copySql(){
+  var text = document.getElementById('sqlblock').textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    document.querySelector('.copy-btn').textContent = '✅ Copied!';
+    setTimeout(function(){document.querySelector('.copy-btn').textContent='📋 Copy SQL';},2000);
+  }).catch(function(){
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.querySelector('.copy-btn').textContent = '✅ Copied!';
+    setTimeout(function(){document.querySelector('.copy-btn').textContent='📋 Copy SQL';},2000);
   });
-  var d = await r.json();
-  if(!r.ok) throw new Error(d.message || d.error || JSON.stringify(d));
-  return d;
 }
 
-async function runSetup(){
+function markSqlDone(){
+  // Verify tables exist by trying to SELECT from them
+  fetch(SUPA_URL+'/rest/v1/app_data?limit=1', {
+    headers:{'apikey':SUPA_ANON,'Authorization':'Bearer '+SUPA_ANON}
+  }).then(function(r){
+    if(r.ok){
+      document.getElementById('sec1').classList.add('done');
+      document.getElementById('s1badge').style.display='inline-block';
+      // Unlock step 2
+      document.getElementById('sec2').style.opacity='1';
+      document.getElementById('adminName').disabled=false;
+      document.getElementById('adminEmail').disabled=false;
+      document.getElementById('adminPass').disabled=false;
+      document.getElementById('accBtn').disabled=false;
+      document.getElementById('sec2').classList.add('active');
+      document.getElementById('adminName').focus();
+    } else {
+      alert('Tables not found yet. Please run the SQL in Supabase first, then try again.');
+    }
+  }).catch(function(){
+    alert('Could not verify. Please check your internet connection and try again.');
+  });
+}
+
+async function createAccount(){
   var name  = document.getElementById('adminName').value.trim();
   var email = document.getElementById('adminEmail').value.trim();
   var pass  = document.getElementById('adminPass').value;
+  var errEl = document.getElementById('accErr');
+  errEl.style.display='none';
 
-  if(!name||!email||!pass){alert('Please fill in all fields.');return;}
-  if(pass.length < 8){alert('Password must be at least 8 characters.');return;}
+  if(!name){errEl.textContent='Please enter your name.';errEl.style.display='block';return;}
+  if(!email){errEl.textContent='Please enter your email.';errEl.style.display='block';return;}
+  if(pass.length<8){errEl.textContent='Password must be at least 8 characters.';errEl.style.display='block';return;}
 
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('startBtn').textContent = 'Setting up…';
-  document.getElementById('steps').style.display = 'block';
+  var btn=document.getElementById('accBtn');
+  btn.disabled=true; btn.textContent='Creating…';
 
   try {
-    // ── Step 1: Create tables ──
-    step('s1','run','Creating tables…');
-    await sql(`
-      CREATE TABLE IF NOT EXISTS user_profiles (
-        id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-        full_name TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'supervisor' CHECK (role IN ('admin','supervisor')),
-        supervisor_name TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-    await sql(`
-      CREATE TABLE IF NOT EXISTS app_data (
-        key TEXT PRIMARY KEY,
-        value JSONB,
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `);
-    step('s1','done','Tables created ✓');
-
-    // ── Step 2: RLS Policies ──
-    step('s2','run','Setting up security rules…');
-    await sql(`ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY`);
-    await sql(`ALTER TABLE app_data ENABLE ROW LEVEL SECURITY`);
-    // Drop existing policies if any
-    await sql(`DROP POLICY IF EXISTS "auth_all_profiles" ON user_profiles`);
-    await sql(`DROP POLICY IF EXISTS "auth_all_data" ON app_data`);
-    await sql(`CREATE POLICY "auth_all_profiles" ON user_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true)`);
-    await sql(`CREATE POLICY "auth_all_data" ON app_data FOR ALL TO authenticated USING (true) WITH CHECK (true)`);
-    // Seed app_data rows
-    await sql(`
-      INSERT INTO app_data (key, value) VALUES
-        ('cards','[]'::jsonb),
-        ('saved_recs','[]'::jsonb),
-        ('machine_sup','{}'::jsonb)
-      ON CONFLICT (key) DO NOTHING
-    `);
-    // Enable realtime
-    try { await sql(`ALTER PUBLICATION supabase_realtime ADD TABLE app_data`); } catch(e){}
-    step('s2','done','Security rules applied ✓');
-
-    // ── Step 3: Create auth user ──
-    step('s3','run','Creating your admin account…');
-    var authR = await fetch(SUPA_URL+'/auth/v1/admin/users', {
+    // Create auth user
+    var authR = await fetch(SUPA_URL+'/auth/v1/admin/users',{
       method:'POST',
       headers:{'Authorization':'Bearer '+SUPA_SVC,'apikey':SUPA_SVC,'Content-Type':'application/json'},
-      body: JSON.stringify({email:email, password:pass, email_confirm:true})
+      body:JSON.stringify({email:email,password:pass,email_confirm:true})
     });
     var authD = await authR.json();
-    if(!authR.ok && !authD.id){
-      // Might already exist — try to get user
-      if(authD.msg && authD.msg.includes('already')){
-        step('s3','done','Account already exists — using it ✓');
-        // Get user ID by listing users
-        var listR = await fetch(SUPA_URL+'/auth/v1/admin/users?email='+encodeURIComponent(email), {
-          headers:{'Authorization':'Bearer '+SUPA_SVC,'apikey':SUPA_SVC}
-        });
-        var listD = await listR.json();
-        authD = {id: listD.users && listD.users[0] ? listD.users[0].id : null};
-        if(!authD.id) throw new Error('Could not find existing user. Error: '+JSON.stringify(authD));
-      } else {
-        throw new Error(authD.msg || authD.error_description || JSON.stringify(authD));
-      }
-    } else {
-      step('s3','done','Admin account created ✓');
-    }
-    var userId = authD.id || (authD.user && authD.user.id);
-    if(!userId) throw new Error('Could not get user ID: '+JSON.stringify(authD));
+    var userId = authD.id || (authD.user&&authD.user.id);
 
-    // ── Step 4: Insert profile ──
-    step('s4','run','Saving admin profile…');
-    var profR = await fetch(SUPA_URL+'/rest/v1/user_profiles', {
+    // If user already exists, sign in to get ID
+    if(!userId){
+      var sigR = await fetch(SUPA_URL+'/auth/v1/token?grant_type=password',{
+        method:'POST',
+        headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({email:email,password:pass})
+      });
+      var sigD = await sigR.json();
+      userId = sigD.user&&sigD.user.id;
+      if(!userId) throw new Error('Could not create or sign in account. ' + JSON.stringify(authD));
+    }
+
+    // Save profile
+    var profR = await fetch(SUPA_URL+'/rest/v1/user_profiles',{
       method:'POST',
       headers:{
         'Authorization':'Bearer '+SUPA_SVC,
-        'apikey':SUPA_ANON,
+        'apikey':SUPA_SVC,
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates'
       },
-      body: JSON.stringify({id:userId, full_name:name, role:'admin', supervisor_name:null})
+      body:JSON.stringify({id:userId,full_name:name,role:'admin',supervisor_name:null})
     });
     if(!profR.ok){
-      var pe = await profR.text();
+      var pe=await profR.text();
       throw new Error('Profile error: '+pe);
     }
-    step('s4','done','Admin profile saved ✓');
 
-    // ── Step 5: Upload existing cards ──
-    step('s5','run','Uploading existing cards to cloud…');
-    // We'll trigger this from the main app on first login
-    step('s5','done','Cards will sync automatically on first login ✓');
+    // Done
+    document.getElementById('sec2').classList.add('done');
+    document.getElementById('s2badge').style.display='inline-block';
+    document.getElementById('finalBox').style.display='block';
+    document.getElementById('finalCreds').innerHTML =
+      '📧 <b>Email:</b> '+email+'<br>🔑 <b>Password:</b> the one you just entered';
 
-    // ── Done ──
-    document.getElementById('doneBox').style.display = 'block';
-    document.getElementById('credLine').innerHTML =
-      '<b>Email:</b> '+email+'<br><b>Password:</b> the one you just entered<br><br>Use these to log in to the app.';
-
-  } catch(err) {
-    // Find which step failed
-    var steps = ['s1','s2','s3','s4','s5'];
-    for(var i=0;i<steps.length;i++){
-      if(document.getElementById(steps[i]).className.includes('run')){
-        step(steps[i],'err','Error: '+err.message);
-        break;
-      }
-    }
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('startBtn').textContent = '⚡ Retry Setup';
-    console.error(err);
+  } catch(e){
+    errEl.textContent = 'Error: '+e.message;
+    errEl.style.display='block';
+    btn.disabled=false;
+    btn.textContent='⚡ Create Account & Finish';
   }
 }
 </script>
