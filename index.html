@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --p:#6A5288;--pd:#4E3A6B;--pl:#8B6FAD;--pb:#F0EBF8;--pb2:#E4DAF2;
@@ -228,12 +229,156 @@ tr:last-child td{border-bottom:none;}
   .hdr-sub{display:none;}
   .nb{padding:11px 9px;font-size:11px;}
 }
+
+/* ── LOGIN SCREEN ── */
+#loginScreen{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,var(--pd) 0%,var(--p) 60%,var(--pl) 100%);
+  display:flex;align-items:center;justify-content:center;z-index:9999;
+  padding:16px;
+}
+.login-box{
+  background:white;border-radius:24px;padding:40px 36px;
+  width:100%;max-width:400px;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  animation:mdIn .3s ease;
+}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo-icon{font-size:40px;display:block;margin-bottom:8px;}
+.login-logo-name{font-size:22px;font-weight:bold;color:var(--p);}
+.login-logo-sub{font-size:12px;color:var(--g400);margin-top:3px;}
+.login-err{
+  background:var(--rdb);color:var(--rd);border:1px solid rgba(226,75,74,.2);
+  border-radius:var(--rsm);padding:10px 14px;font-size:13px;
+  margin-top:12px;display:none;
+}
+@media(max-width:480px){
+  .login-box{padding:28px 20px;border-radius:18px;}
+}
+
+/* ── USER MANAGEMENT ── */
+.user-role-badge{
+  padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;
+  display:inline-block;
+}
+.urb-admin{background:var(--blb);color:var(--bl);}
+.urb-supervisor{background:var(--gnb);color:var(--gn);}
+
+/* ── FIXED HOURS PROGRESS ── */
+.fhbar{
+  display:inline-block;width:120px;height:8px;border-radius:4px;
+  background:var(--g200);vertical-align:middle;margin:0 6px;overflow:hidden;
+}
+.fhbar-fill{height:100%;border-radius:4px;background:var(--gn);transition:width .3s;}
+.fhbar-fill.warn{background:var(--am);}
+.fhbar-fill.crit{background:var(--rd);}
+.fh-label{font-size:11px;color:var(--g600);}
+
+/* ── HEADER USER INFO ── */
+.hdr-user{
+  display:flex;align-items:center;gap:10px;font-size:12px;
+}
+.hdr-user-name{
+  opacity:.9;font-weight:bold;max-width:140px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.btn-logout{
+  padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.12);color:white;cursor:pointer;
+  font-family:Tahoma,sans-serif;font-size:11px;font-weight:bold;
+  transition:all .18s;white-space:nowrap;
+}
+.btn-logout:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.7);}
+@media(max-width:480px){
+  .hdr-user-name{display:none;}
+}
+
+/* ── ROLE-BASED VISIBILITY ── */
+.admin-only{display:none;}
+
+/* ── DESIGN IMPROVEMENTS ── */
+/* Stat boxes — stronger status colors */
+.sb-run{border-top-color:var(--gn)!important;}
+.sb-rec{border-top-color:var(--bl)!important;}
+.sb-off{border-top-color:var(--am)!important;}
+.sb-tot{border-top-color:var(--p)!important;}
+
+/* Table improvements */
+td{padding:11px 13px;line-height:1.4;}
+tr:nth-child(even) td{background:var(--g50);}
+tr:nth-child(even):hover td{background:var(--pb);}
+.gr tr:nth-child(even) td{background:inherit;}
+
+/* Better card title toolbar */
+.ct-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;}
+
+/* Improved filter bar spacing */
+.fil{padding:4px 0;}
+
+/* Modal inner scroll area */
+.md{scrollbar-width:thin;scrollbar-color:var(--g200) transparent;}
+.md::-webkit-scrollbar{width:5px;}
+.md::-webkit-scrollbar-thumb{background:var(--g200);border-radius:3px;}
+
+/* Sync indicator */
+.sync-dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--gn);margin-left:6px;vertical-align:middle;
+  transition:background .3s;
+}
+.sync-dot.saving{background:var(--am);animation:pulse .8s infinite;}
+.sync-dot.error{background:var(--rd);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Improved pagination */
+.pg-btn{min-height:34px;min-width:34px;}
+
+/* Better mobile table */
+@media(max-width:768px){
+  .tw{border-radius:var(--rsm);}
+  td,th{padding:9px 10px;}
+}
 </style>
 </head>
 <body>
+
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="login-logo-icon">&#x1F3D7;</span>
+      <div class="login-logo-name">AL HAIDARIYA</div>
+      <div class="login-logo-sub">Heavy Equipment Hiring System</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="fgo">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"
+          onkeydown="if(event.key==='Enter')signIn()" style="font-size:15px;padding:12px 14px">
+      </div>
+      <div class="fgo">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')signIn()" style="font-size:15px;padding:12px 14px">
+      </div>
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn bp" id="loginBtn" onclick="signIn()" style="margin-top:6px;min-height:52px;font-size:15px;border-radius:12px">
+        Sign In
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP WRAPPER ═══════════════ -->
+<div id="appWrapper" style="display:none">
+
 <div class="hdr">
   <div><div class="hdr-logo">&#x1F3D7; AL HAIDARIYA</div><div class="hdr-sub">Heavy Equipment Hiring &mdash; Sales System</div></div>
-  <div style="font-size:13px;opacity:.85" id="hdate"></div>
+  <div class="hdr-user">
+    <div class="hdr-user-name" id="userInfoName"></div>
+    <div id="hdate" style="font-size:12px;opacity:.88"></div>
+    <button class="btn-logout" onclick="signOut()">&#x2192; Sign Out</button>
+  </div>
 </div>
 <div class="nav">
   <button class="nb active" onclick="showPg('master',this)">&#x1F4CB; Master Cards</button>
@@ -242,6 +387,7 @@ tr:last-child td{border-bottom:none;}
   <button class="nb" onclick="showPg('equip',this)">&#x1F6A7; Equipment</button>
   <button class="nb" onclick="showPg('recs',this)">&#x1F5C2; Saved Records</button>
   <button class="nb" onclick="showPg('data',this)">&#x1F4BE; Data / Import</button>
+  <button class="nb admin-only" id="usersNavBtn" onclick="showPg('users',this)">&#x1F465; Users</button>
 </div>
 
 <!-- MASTER -->
@@ -272,7 +418,7 @@ tr:last-child td{border-bottom:none;}
       <span class="pi" id="mcount"></span>
     </div>
     <div class="tw"><table>
-      <thead><tr><th>#</th><th>Card #</th><th>Date</th><th>Customer</th><th>Machinery</th><th>Location</th><th>Shift</th><th>Rate/Hr</th><th>OT</th><th>Daily Total</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Card #</th><th>Date</th><th>Customer</th><th>Machinery</th><th>Location</th><th>Shift</th><th class="admin-only">Rate/Hr</th><th class="admin-only">OT</th><th class="admin-only">Daily Total</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="mbody"></tbody>
     </table></div>
     <div class="pag" id="mpag"></div>
@@ -292,7 +438,7 @@ tr:last-child td{border-bottom:none;}
     </div>
     <div id="supFilterBar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--g50);border-radius:10px;border:1px solid var(--g100)"></div>
     <div class="tw"><table>
-      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th><th>Status</th><th>X</th></tr></thead>
+      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th class="admin-only">Rate/Hr</th><th>OT Hrs</th><th class="admin-only">Subtotal</th><th class="admin-only">+VAT 10%</th><th>Remarks</th><th>Status</th><th>X</th></tr></thead>
       <tbody id="ebody"></tbody>
     </table></div>
     <div class="tb" id="etbar" style="display:none">
@@ -314,7 +460,7 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
     <div class="tw"><table>
-      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th>Rate/Hr</th><th>OT Hrs</th><th>Subtotal</th><th>+VAT 10%</th><th>Remarks</th><th>Status</th></tr></thead>
+      <thead><tr><th>SN</th><th>SN2</th><th>Customer</th><th>Machinery</th><th>Site</th><th>Card #</th><th>Hours</th><th class="admin-only">Rate/Hr</th><th>OT Hrs</th><th class="admin-only">Subtotal</th><th class="admin-only">+VAT 10%</th><th>Remarks</th><th>Status</th></tr></thead>
       <tbody id="sbody"></tbody>
     </table></div>
     <div class="tb" id="stbar" style="display:none">
@@ -388,6 +534,23 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+<!-- USERS (admin only) -->
+<div class="pg admin-only" id="pg-users">
+  <div class="card">
+    <div class="ct">&#x1F465; User Management
+      <div class="ct-toolbar">
+        <span style="font-size:12px;color:var(--g400)" id="syncStatus"></span>
+        <button class="btn bp bsm" onclick="openAddUser()">+ New User</button>
+      </div>
+    </div>
+    <p style="color:var(--g400);font-size:12px;margin-bottom:16px">Create accounts for supervisors and admins. Each person logs in with their own email and password from any device.</p>
+    <div class="tw"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Supervisor Name</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody id="usersBody"><tr><td colspan="6" class="emp">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="mo" id="cmodal">
   <div class="md">
@@ -413,10 +576,54 @@ tr:last-child td{border-bottom:none;}
       <div class="fgo"><label>Supervisor</label>
         <select id="fSup"><option value="">— None —</option></select>
       </div>
+      <div class="fgo"><label>Order Type</label>
+        <select id="fOrderType" onchange="toggleFHFields()">
+          <option value="Daily">Daily (per day)</option>
+          <option value="Fixed">Fixed Hours (contract)</option>
+        </select>
+      </div>
+      <div class="fgo" id="fContractedWrap" style="display:none">
+        <label>Contracted Hours Total</label>
+        <input type="number" id="fContractedHours" step="1" min="1" placeholder="e.g. 120">
+      </div>
     </div>
     <div class="fa">
       <button class="btn bo2" onclick="closeMo()">Cancel</button>
       <button class="btn bp" onclick="saveCard()">Save Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL (admin only) -->
+<div class="mo" id="umodal">
+  <div class="md" style="max-width:440px">
+    <div class="mt">&#x1F465; New User</div>
+    <div class="fg">
+      <div class="fgo full"><label>Full Name</label>
+        <input type="text" id="uName" placeholder="e.g. Mohamed Al Ajmi">
+      </div>
+      <div class="fgo full"><label>Email</label>
+        <input type="email" id="uEmail" placeholder="supervisor@email.com">
+      </div>
+      <div class="fgo full"><label>Password</label>
+        <input type="password" id="uPass" placeholder="Min 6 characters">
+      </div>
+      <div class="fgo"><label>Role</label>
+        <select id="uRole" onchange="toggleUSupField()">
+          <option value="supervisor">Supervisor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fgo" id="uSupWrap"><label>Supervisor Name (links to cards)</label>
+        <select id="uSupName">
+          <option value="">— None —</option>
+        </select>
+      </div>
+    </div>
+    <div id="uErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeUserMo()">Cancel</button>
+      <button class="btn bp" id="uSaveBtn" onclick="saveUser()">&#x2713; Create User</button>
     </div>
   </div>
 </div>
@@ -459,6 +666,262 @@ var SUPERVISORS = ["Mohamed Al Ajmi","Mohamed Saeed","Al Aqib","Haroun"];
 var machineSup  = {};   // {"JCB 3CX":"العاقب", ...}
 var estSupFilter = '';  // active supervisor filter in Estimated tab
 var confirmIdx   = -1;  // index into estData being confirmed
+
+/* ═══════════════════════════════════════════
+   SUPABASE — CONFIG & STATE
+═══════════════════════════════════════════ */
+var SUPA_URL  = 'https://utjraxkqkrelgrqgllpj.supabase.co';
+var SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyOTQ4MDAsImV4cCI6MjA5MDg3MDgwMH0.-tSVJ-19Y_c4LR0e9e-T4tQop_E6K5wsfHhR9Tyruu8';
+var SUPA_SVC  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
+
+var supa      = null;
+var supaAdmin = null;
+var currentUser    = null;
+var currentProfile = null;
+var _syncTimer     = null;
+
+/* ── AUTH ── */
+async function initApp(){
+  supa      = supabase.createClient(SUPA_URL, SUPA_ANON);
+  supaAdmin = supabase.createClient(SUPA_URL, SUPA_SVC);
+  var res = await supa.auth.getSession();
+  if(res.data && res.data.session){
+    await afterLogin(res.data.session.user);
+  }
+  supa.auth.onAuthStateChange(function(event,session){
+    if(event==='SIGNED_OUT'){
+      currentUser=null;currentProfile=null;
+      document.getElementById('appWrapper').style.display='none';
+      document.getElementById('loginScreen').style.display='flex';
+    }
+  });
+}
+
+async function signIn(){
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass  = document.getElementById('loginPassword').value;
+  var errEl = document.getElementById('loginErr');
+  var btn   = document.getElementById('loginBtn');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
+  btn.textContent='Signing in…';btn.disabled=true;
+  var res = await supa.auth.signInWithPassword({email:email,password:pass});
+  if(res.error){
+    errEl.textContent=res.error.message;
+    errEl.style.display='block';
+    btn.textContent='Sign In';btn.disabled=false;
+    return;
+  }
+  await afterLogin(res.data.user);
+}
+
+async function signOut(){
+  await supa.auth.signOut();
+}
+
+async function afterLogin(user){
+  currentUser=user;
+  var res = await supa.from('user_profiles').select('*').eq('id',user.id).single();
+  if(res.error||!res.data){
+    document.getElementById('loginErr').textContent='Account not set up. Contact admin.';
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('loginBtn').textContent='Sign In';
+    document.getElementById('loginBtn').disabled=false;
+    await supa.auth.signOut();return;
+  }
+  currentProfile=res.data;
+  await loadAllData();
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appWrapper').style.display='block';
+  document.getElementById('loginBtn').textContent='Sign In';
+  document.getElementById('loginBtn').disabled=false;
+  applyRole();
+  renderStats();renderM();
+  setupRealtime();
+  initDate();
+}
+
+function applyRole(){
+  if(!currentProfile)return;
+  var isAdmin = currentProfile.role==='admin';
+  document.querySelectorAll('.admin-only').forEach(function(el){
+    el.style.display=isAdmin?'':'none';
+  });
+  document.getElementById('userInfoName').textContent=
+    currentProfile.full_name+' ('+currentProfile.role+')';
+}
+
+/* ── DATA LOAD/SYNC ── */
+async function loadAllData(){
+  var res = await supa.from('app_data').select('key,value');
+  if(res.data){
+    res.data.forEach(function(row){
+      if(row.key==='cards'){
+        // Merge: prefer DB data unless DB is empty, use embedded data as seed
+        var dbCards = row.value||[];
+        if(dbCards.length===0 && cards.length>0){
+          // First-time: upload embedded cards to DB
+          supa.from('app_data').upsert({key:'cards',value:cards,updated_at:new Date().toISOString()},{onConflict:'key'});
+        } else {
+          cards=dbCards;
+        }
+      }
+      if(row.key==='saved_recs') savedRecs=row.value||[];
+      if(row.key==='machine_sup') machineSup=row.value||{};
+    });
+  }
+}
+
+function setSyncDot(state){
+  // state: 'ok' | 'saving' | 'error'
+  // Used internally — no visible dot in UI currently
+}
+
+async function syncCards(){
+  if(!supa)return;
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(async function(){
+    var res = await supa.from('app_data').upsert(
+      {key:'cards',value:cards,updated_at:new Date().toISOString()},
+      {onConflict:'key'}
+    );
+  },400);
+}
+
+async function syncSavedRecs(){
+  if(!supa)return;
+  await supa.from('app_data').upsert(
+    {key:'saved_recs',value:savedRecs,updated_at:new Date().toISOString()},
+    {onConflict:'key'}
+  );
+}
+
+async function syncMachineSupDB(){
+  if(!supa)return;
+  await supa.from('app_data').upsert(
+    {key:'machine_sup',value:machineSup,updated_at:new Date().toISOString()},
+    {onConflict:'key'}
+  );
+}
+
+function setupRealtime(){
+  supa.channel('app_data_rt')
+    .on('postgres_changes',
+      {event:'UPDATE',schema:'public',table:'app_data'},
+      function(payload){
+        if(!payload.new)return;
+        if(payload.new.key==='cards'){
+          // Only update if we didn't just push this change ourselves
+          cards=payload.new.value||[];
+          renderStats();renderM();
+        }
+      }
+    ).subscribe();
+}
+
+/* ── USER MANAGEMENT ── */
+async function renderUsers(){
+  var authRes = await supaAdmin.auth.admin.listUsers({perPage:200});
+  var profRes = await supa.from('user_profiles').select('*');
+  var profiles={};
+  if(profRes.data) profRes.data.forEach(function(p){profiles[p.id]=p;});
+  var users = authRes.data?authRes.data.users:[];
+  if(!users.length){
+    document.getElementById('usersBody').innerHTML='<tr><td colspan="6" class="emp">No users yet. Create the first user above.</td></tr>';
+    return;
+  }
+  var html='';
+  users.forEach(function(u){
+    var p=profiles[u.id]||{};
+    var roleBadge='<span class="user-role-badge '+(p.role==='admin'?'urb-admin':'urb-supervisor')+'">'+(p.role||'—')+'</span>';
+    var created=u.created_at?u.created_at.split('T')[0]:'—';
+    html+='<tr>'+
+      '<td><b>'+esc(p.full_name||'—')+'</b></td>'+
+      '<td style="color:var(--g600)">'+esc(u.email||'')+'</td>'+
+      '<td>'+roleBadge+'</td>'+
+      '<td>'+esc(p.supervisor_name||'—')+'</td>'+
+      '<td style="color:var(--g400);font-size:12px">'+created+'</td>'+
+      '<td><button class="btn bsm bd" onclick="deleteUser(\''+u.id+'\',\''+esc(p.full_name||u.email)+'\')">Delete</button></td>'+
+      '</tr>';
+  });
+  document.getElementById('usersBody').innerHTML=html;
+  document.getElementById('syncStatus').textContent=users.length+' user'+(users.length!==1?'s':'');
+}
+
+function openAddUser(){
+  document.getElementById('uName').value='';
+  document.getElementById('uEmail').value='';
+  document.getElementById('uPass').value='';
+  document.getElementById('uRole').value='supervisor';
+  document.getElementById('uErr').style.display='none';
+  var sel=document.getElementById('uSupName');
+  sel.innerHTML='<option value="">— None —</option>';
+  for(var i=0;i<SUPERVISORS.length;i++){
+    sel.innerHTML+='<option value="'+esc(SUPERVISORS[i])+'">'+esc(SUPERVISORS[i])+'</option>';
+  }
+  toggleUSupField();
+  document.getElementById('umodal').classList.add('open');
+}
+
+function closeUserMo(){document.getElementById('umodal').classList.remove('open');}
+
+function toggleUSupField(){
+  var role=document.getElementById('uRole').value;
+  document.getElementById('uSupWrap').style.display=(role==='supervisor')?'':'none';
+}
+
+async function saveUser(){
+  var name    = document.getElementById('uName').value.trim();
+  var email   = document.getElementById('uEmail').value.trim();
+  var pass    = document.getElementById('uPass').value;
+  var role    = document.getElementById('uRole').value;
+  var supName = document.getElementById('uSupName').value;
+  var errEl   = document.getElementById('uErr');
+  if(!name||!email||!pass){errEl.textContent='Name, email and password are required.';errEl.style.display='block';return;}
+  if(pass.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  var btn=document.getElementById('uSaveBtn');
+  btn.textContent='Creating…';btn.disabled=true;
+  var res=await supaAdmin.auth.admin.createUser({email:email,password:pass,email_confirm:true});
+  if(res.error){
+    errEl.textContent=res.error.message;errEl.style.display='block';
+    btn.textContent='✓ Create User';btn.disabled=false;return;
+  }
+  await supa.from('user_profiles').insert({
+    id:res.data.user.id,full_name:name,role:role,
+    supervisor_name:supName||null
+  });
+  btn.textContent='✓ Create User';btn.disabled=false;
+  closeUserMo();
+  renderUsers();
+  alert('User "'+name+'" created successfully.');
+}
+
+async function deleteUser(id,name){
+  if(!confirm('Delete user "'+name+'"? This cannot be undone.'))return;
+  await supaAdmin.auth.admin.deleteUser(id);
+  await supa.from('user_profiles').delete().eq('id',id);
+  renderUsers();
+}
+
+/* ── FIXED HOURS HELPER ── */
+function toggleFHFields(){
+  var t=document.getElementById('fOrderType').value;
+  document.getElementById('fContractedWrap').style.display=(t==='Fixed')?'':'none';
+}
+
+function fhProgress(card){
+  if(card.OrderType!=='Fixed'||!card.ContractedHours)return '';
+  var used=card.UsedHours||0;
+  var total=card.ContractedHours||1;
+  var pct=Math.min(100,Math.round(used/total*100));
+  var cls=pct>=100?'crit':pct>=75?'warn':'';
+  return '<br><span class="fh-label">'+used+'h / '+total+'h</span>'+
+    '<span class="fhbar"><span class="fhbar-fill '+cls+'" style="width:'+pct+'%"></span></span>';
+}
+
+function initDate(){
+  document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
 
 function ct(r,h,ot){return r*(h+ot);}
 function vat(n){return n*(1+VAT);}
@@ -509,11 +972,10 @@ function fmtD(v){
 
 document.addEventListener('DOMContentLoaded',function(){
   var t=fmtD(new Date());
-  document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-BH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('edate').value=t;
   document.getElementById('sdate').value=t;
-  renderStats();
-  renderM();
+  // Boot Supabase — shows login screen
+  initApp();
 });
 
 function showPg(n,btn){
@@ -524,6 +986,7 @@ function showPg(n,btn){
   if(n==='est'){genEst();}
   if(n==='recs')renderRecs();
   if(n==='equip')renderEquip();
+  if(n==='users')renderUsers();
 }
 
 /* ── EQUIPMENT TAB ── */
@@ -556,6 +1019,7 @@ function renderEquip(){
 function saveMachineSup(machinery,sup){
   if(sup)machineSup[machinery]=sup;
   else delete machineSup[machinery];
+  syncMachineSupDB();
 }
 
 function applySupToCards(){
@@ -568,6 +1032,7 @@ function applySupToCards(){
   }
   alert('Applied supervisor to '+count+' Running cards.');
   renderEquip();
+  syncCards();
 }
 
 function renderStats(){
@@ -593,9 +1058,12 @@ function renderMP(){
   var sf=document.getElementById('mstatus').value;
   var mf=document.getElementById('mmonth').value;
   var gm=document.getElementById('grpMode').value;
+  var supFilter=(currentProfile&&currentProfile.role==='supervisor')?currentProfile.supervisor_name:'';
+  var isAdmin=!currentProfile||currentProfile.role==='admin';
   var f=[];
   for(var i=0;i<cards.length;i++){
     var c=cards[i];
+    if(supFilter&&c.Supervisor!==supFilter)continue;
     if(sf&&c.Status!==sf)continue;
     if(mf&&(!c.Date||c.Date.indexOf(mf)!==0))continue;
     if(s){
@@ -645,17 +1113,19 @@ function renderMP(){
       var h=c.DailyHours||8, ot=c.ExpectedOT||0, r=c.Rate||0;
       var sub=ct(r,h,ot);
       if(gm==='serial')sn++;
+      var fhBadge=fhProgress(c);
+      var orderTag=c.OrderType==='Fixed'?'<span class="badge brc" style="font-size:10px;padding:2px 7px">Fixed</span> ':'';
       html+='<tr>'+
         '<td style="color:var(--g400);font-size:11px">'+(gm==='serial'?sn:(row.s2||''))+'</td>'+
-        '<td><b style="color:var(--p)">'+esc(c.Code)+'</b></td>'+
+        '<td><b style="color:var(--p)">'+esc(c.Code)+'</b> '+orderTag+'</td>'+
         '<td>'+esc(c.Date||'')+'</td>'+
         '<td style="max-width:170px;overflow:hidden;text-overflow:ellipsis">'+esc(c.Customer)+'</td>'+
         '<td>'+esc(c.Machinery||'')+'</td>'+
         '<td>'+esc(c.Location||'')+'</td>'+
-        '<td style="font-size:11px">'+esc(c.ShiftStart||'07:00')+'-'+esc(c.ShiftEnd||'19:00')+' ('+h+'h)</td>'+
-        '<td>'+r.toFixed(3)+'</td>'+
-        '<td>'+ot+'h</td>'+
-        '<td style="font-size:11px"><b>BD '+sub.toFixed(3)+'</b><br><span style="color:var(--g400)">VAT:'+vat(sub).toFixed(3)+'</span></td>'+
+        '<td style="font-size:11px">'+esc(c.ShiftStart||'07:00')+'-'+esc(c.ShiftEnd||'19:00')+' ('+h+'h)'+fhBadge+'</td>'+
+        '<td class="admin-only">'+(isAdmin?r.toFixed(3):'—')+'</td>'+
+        '<td class="admin-only">'+(isAdmin?ot+'h':'—')+'</td>'+
+        '<td class="admin-only" style="font-size:11px">'+(isAdmin?'<b>BD '+sub.toFixed(3)+'</b><br><span style="color:var(--g400)">VAT:'+vat(sub).toFixed(3)+'</span>':'—')+'</td>'+
         '<td>'+badge(c.Status)+'</td>'+
         '<td><div style="display:flex;gap:4px">'+
         '<button class="btn bo2 bsm" onclick="openEdit('+idx+')">Edit</button>'+
@@ -680,6 +1150,7 @@ function mkOH(idx){
   if(!confirm('Mark card '+cards[idx].Code+' as Off Hire?'))return;
   cards[idx].Status='Off Hire';
   renderStats();renderM();
+  syncCards();
 }
 
 function buildSupOpts(sel){
@@ -711,6 +1182,9 @@ function openAdd(){
   document.getElementById('fStat').value='Running';
   document.getElementById('fRD').value='';
   document.getElementById('rprev').innerHTML='Enter rate to see daily calculation.';
+  document.getElementById('fOrderType').value='Daily';
+  document.getElementById('fContractedHours').value='';
+  toggleFHFields();
   buildSupOpts('');
   document.getElementById('cmodal').classList.add('open');
 }
@@ -734,6 +1208,9 @@ function openEdit(idx){
   document.getElementById('fStat').value=c.Status;
   document.getElementById('fRD').value=c['Return Date']||'';
   buildSupOpts(c.Supervisor||machineSup[c.Machinery]||'');
+  document.getElementById('fOrderType').value=c.OrderType||'Daily';
+  document.getElementById('fContractedHours').value=c.ContractedHours||'';
+  toggleFHFields();
   prevRate();
   document.getElementById('cmodal').classList.add('open');
 }
@@ -741,6 +1218,7 @@ function openEdit(idx){
 function closeMo(){document.getElementById('cmodal').classList.remove('open');}
 
 function saveCard(){
+  var orderType=document.getElementById('fOrderType').value;
   var card={
     Code:document.getElementById('fCode').value.trim(),
     Date:document.getElementById('fDate').value,
@@ -756,13 +1234,17 @@ function saveCard(){
     ExpectedOT:parseFloat(document.getElementById('fOT').value)||0,
     Status:document.getElementById('fStat').value,
     'Return Date':document.getElementById('fRD').value,
-    'Total Hours':0,
-    Supervisor:document.getElementById('fSup').value
+    'Total Hours':editIdx!==null?(cards[editIdx]['Total Hours']||0):0,
+    Supervisor:document.getElementById('fSup').value,
+    OrderType:orderType,
+    ContractedHours:orderType==='Fixed'?(parseFloat(document.getElementById('fContractedHours').value)||0):0,
+    UsedHours:editIdx!==null?(cards[editIdx].UsedHours||0):0
   };
   if(!card.Code||!card.Customer){alert('Card number and customer are required.');return;}
   if(editIdx!==null)cards[editIdx]=card;
   else cards.unshift(card);
   closeMo();renderStats();renderM();
+  syncCards();
 }
 
 function genEst(){
@@ -883,10 +1365,10 @@ function renderEst(){
       '<td>'+esc(r.location)+'</td>'+
       '<td><b style="color:var(--p)">'+esc(r.code)+'</b></td>'+
       '<td><input type="number" value="'+r.hours+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'hours\',this.value)"'+(r.confirmed?' disabled':'')+' ></td>'+
-      '<td>'+r.rate.toFixed(3)+'</td>'+
+      '<td class="admin-only">'+r.rate.toFixed(3)+'</td>'+
       '<td><input type="number" value="'+r.ot+'" step="0.5" min="0" style="width:54px;padding:3px 6px;border:1px solid #D8D4E4;border-radius:5px;font-family:Tahoma" onchange="updEst('+i+',\'ot\',this.value)"'+(r.confirmed?' disabled':'')+' ></td>'+
-      '<td><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
-      '<td style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
+      '<td class="admin-only"><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
+      '<td class="admin-only" style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
       '<td><span class="badge '+(r.rem==='NEW'?'br':'brc')+'">'+r.rem+'</span></td>'+
       '<td>'+statusCell+'</td>'+
       '<td>'+(r.confirmed?'':'<button class="btn bsm bd" onclick="rmEst('+i+')">X</button>')+'</td>'+
@@ -934,6 +1416,23 @@ function submitConfirm(){
   r.hours=h; r.ot=ot;
   r.sub=ct(r.rate,h,ot); r.vt=vat(r.sub);
   r.shortReason=reason;
+  // Fixed Hours: deduct from contracted hours
+  if(r.ci>=0&&r.ci<cards.length){
+    var c=cards[r.ci];
+    if(c.OrderType==='Fixed'&&c.ContractedHours>0){
+      c.UsedHours=(c.UsedHours||0)+(h+ot);
+      var remaining=c.ContractedHours-c.UsedHours;
+      if(remaining<=0){
+        if(confirm('Fixed hours order COMPLETE for card '+c.Code+'.\nUsed: '+c.UsedHours+'h / '+c.ContractedHours+'h\n\nMark as Off Hire?')){
+          c.Status='Off Hire';
+          renderStats();renderM();
+        }
+      } else if(remaining<=c.DailyHours*3){
+        alert('Warning: Only '+remaining.toFixed(1)+'h remaining for card '+c.Code+'.');
+      }
+      syncCards();
+    }
+  }
   closeConfirm();
   renderSupFilterBar();
   renderEst();
@@ -952,6 +1451,7 @@ function rmEst(i){
     cards[estData[i].ci].Status='Off Hire';
     estData.splice(i,1);
     renderStats();renderM();renderEst();
+    syncCards();
   }
 }
 
@@ -966,6 +1466,7 @@ function saveRec(type){
   for(var i=0;i<data.length;i++){tot+=data[i].sub;tv+=data[i].vt;}
   savedRecs.push({id:uid(),type:type,date:date,savedAt:new Date().toISOString(),data:JSON.parse(JSON.stringify(data)),tot:tot,tv:tv});
   savedRecs.sort(function(a,b){return b.date.localeCompare(a.date);});
+  syncSavedRecs();
   alert('Saved '+(type==='est'?'Estimated':'Sales')+' for '+date);
 }
 
@@ -1003,10 +1504,10 @@ function renderSales(data,date,type){
       '<td>'+esc(r.location)+'</td>'+
       '<td>'+esc(r.code)+'</td>'+
       '<td>'+r.hours+'</td>'+
-      '<td>'+r.rate.toFixed(3)+'</td>'+
+      '<td class="admin-only">'+r.rate.toFixed(3)+'</td>'+
       '<td>'+r.ot+'</td>'+
-      '<td><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
-      '<td style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
+      '<td class="admin-only"><b style="color:var(--p)">BD '+r.sub.toFixed(3)+'</b></td>'+
+      '<td class="admin-only" style="color:var(--gn)"><b>BD '+r.vt.toFixed(3)+'</b></td>'+
       '<td><span class="badge '+(r.rem==='NEW'?'br':'brc')+'">'+r.rem+'</span></td>'+
       '<td>'+sc+'</td>'+
       '</tr>';
@@ -1070,6 +1571,7 @@ function delRec(id){
   if(!confirm('Delete this record?'))return;
   savedRecs=savedRecs.filter(function(r){return r.id!==id;});
   renderRecs();
+  syncSavedRecs();
 }
 
 function genPDF(data,dateStr,title){
@@ -1280,6 +1782,7 @@ function importJSON(inp){
             savedRecs=p.recs||[];
             if(p.machineSup&&typeof p.machineSup==='object')machineSup=p.machineSup;
             renderStats();renderM();
+            syncCards();syncSavedRecs();syncMachineSupDB();
             alert('Imported successfully.');
           }catch(re){
             cards=bc;savedRecs=br;
@@ -1294,5 +1797,7 @@ function importJSON(inp){
 }
 
 </script>
+
+</div><!-- /appWrapper -->
 </body>
 </html>
