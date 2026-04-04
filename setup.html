@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Haidariya — First-Time Setup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.box{background:white;border-radius:20px;padding:36px 32px;max-width:480px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.35);}
+h1{font-size:20px;color:#6A5288;margin-bottom:6px;}
+.sub{font-size:13px;color:#9990B0;margin-bottom:24px;}
+.step{background:#F8F7FA;border-radius:12px;padding:16px 18px;margin-bottom:14px;border-left:4px solid #D8D4E4;}
+.step.done{border-left-color:#1D9E75;background:#E1F5EE;}
+.step.err{border-left-color:#E24B4A;background:#FCEBEB;}
+.step.run{border-left-color:#BA7517;background:#FAEEDA;}
+.step-title{font-weight:bold;font-size:14px;margin-bottom:4px;}
+.step-msg{font-size:12px;color:#5C5472;}
+.step.done .step-msg{color:#1D9E75;}
+.step.err .step-msg{color:#E24B4A;}
+label{display:block;font-size:12px;font-weight:bold;color:#5C5472;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;}
+input{width:100%;padding:11px 13px;border:1.5px solid #D8D4E4;border-radius:8px;font-family:Tahoma;font-size:14px;outline:none;margin-bottom:14px;}
+input:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,136,.12);}
+.btn{width:100%;padding:14px;background:#6A5288;color:white;border:none;border-radius:10px;font-family:Tahoma;font-size:15px;font-weight:bold;cursor:pointer;transition:background .2s;}
+.btn:hover:not(:disabled){background:#4E3A6B;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.creds{background:#F0EBF8;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;color:#4E3A6B;line-height:1.8;}
+.creds b{color:#6A5288;}
+.done-box{display:none;background:#E1F5EE;border-radius:12px;padding:20px;margin-top:16px;text-align:center;}
+.done-box h2{color:#1D9E75;font-size:18px;margin-bottom:8px;}
+.done-box p{font-size:13px;color:#5C5472;line-height:1.8;}
+.done-box a{color:#6A5288;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>🏗️ Al Haidariya — First-Time Setup</h1>
+  <p class="sub">This page sets up your database automatically. Run it once, then delete it.</p>
+
+  <div id="form-section">
+    <label>Your Name (for admin account)</label>
+    <input type="text" id="adminName" placeholder="e.g. Abu Noor" value="">
+
+    <label>Admin Email</label>
+    <input type="email" id="adminEmail" placeholder="your@email.com" value="m.khalid.skd@gmail.com">
+
+    <label>Admin Password (you'll use this to log in)</label>
+    <input type="password" id="adminPass" placeholder="Min 8 characters">
+
+    <button class="btn" id="startBtn" onclick="runSetup()">⚡ Start Setup</button>
+  </div>
+
+  <div id="steps" style="margin-top:20px;display:none">
+    <div class="step" id="s1"><div class="step-title">1. Create database tables</div><div class="step-msg" id="s1m">Waiting…</div></div>
+    <div class="step" id="s2"><div class="step-title">2. Set up security rules</div><div class="step-msg" id="s2m">Waiting…</div></div>
+    <div class="step" id="s3"><div class="step-title">3. Create your admin account</div><div class="step-msg" id="s3m">Waiting…</div></div>
+    <div class="step" id="s4"><div class="step-title">4. Save admin profile</div><div class="step-msg" id="s4m">Waiting…</div></div>
+    <div class="step" id="s5"><div class="step-title">5. Upload your existing cards</div><div class="step-msg" id="s5m">Waiting…</div></div>
+  </div>
+
+  <div class="done-box" id="doneBox">
+    <h2>✅ Setup Complete!</h2>
+    <p id="credLine"></p>
+    <p style="margin-top:10px">
+      <a href="index.html">👉 Open the App</a>
+    </p>
+    <p style="margin-top:14px;font-size:11px;color:#9990B0">
+      ⚠️ Delete this setup.html file from GitHub after use.
+    </p>
+  </div>
+</div>
+
+<script>
+var SUPA_URL  = 'https://utjraxkqkrelgrqgllpj.supabase.co';
+var SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyOTQ4MDAsImV4cCI6MjA5MDg3MDgwMH0.-tSVJ-19Y_c4LR0e9e-T4tQop_E6K5wsfHhR9Tyruu8';
+var SUPA_SVC  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
+var MGMT_PAT  = 'sbp_93d82e47721413d8f9c9f600ede7351d91ff0a34';
+var PROJ_REF  = 'utjraxkqkrelgrqgllpj';
+
+function step(id, state, msg){
+  var el = document.getElementById(id);
+  el.className = 'step ' + state;
+  document.getElementById(id+'m').textContent = msg;
+}
+
+async function sql(query){
+  var r = await fetch('https://api.supabase.com/v1/projects/'+PROJ_REF+'/database/query', {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+MGMT_PAT,'Content-Type':'application/json'},
+    body: JSON.stringify({query: query})
+  });
+  var d = await r.json();
+  if(!r.ok) throw new Error(d.message || d.error || JSON.stringify(d));
+  return d;
+}
+
+async function runSetup(){
+  var name  = document.getElementById('adminName').value.trim();
+  var email = document.getElementById('adminEmail').value.trim();
+  var pass  = document.getElementById('adminPass').value;
+
+  if(!name||!email||!pass){alert('Please fill in all fields.');return;}
+  if(pass.length < 8){alert('Password must be at least 8 characters.');return;}
+
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = 'Setting up…';
+  document.getElementById('steps').style.display = 'block';
+
+  try {
+    // ── Step 1: Create tables ──
+    step('s1','run','Creating tables…');
+    await sql(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'supervisor' CHECK (role IN ('admin','supervisor')),
+        supervisor_name TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await sql(`
+      CREATE TABLE IF NOT EXISTS app_data (
+        key TEXT PRIMARY KEY,
+        value JSONB,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    step('s1','done','Tables created ✓');
+
+    // ── Step 2: RLS Policies ──
+    step('s2','run','Setting up security rules…');
+    await sql(`ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY`);
+    await sql(`ALTER TABLE app_data ENABLE ROW LEVEL SECURITY`);
+    // Drop existing policies if any
+    await sql(`DROP POLICY IF EXISTS "auth_all_profiles" ON user_profiles`);
+    await sql(`DROP POLICY IF EXISTS "auth_all_data" ON app_data`);
+    await sql(`CREATE POLICY "auth_all_profiles" ON user_profiles FOR ALL TO authenticated USING (true) WITH CHECK (true)`);
+    await sql(`CREATE POLICY "auth_all_data" ON app_data FOR ALL TO authenticated USING (true) WITH CHECK (true)`);
+    // Seed app_data rows
+    await sql(`
+      INSERT INTO app_data (key, value) VALUES
+        ('cards','[]'::jsonb),
+        ('saved_recs','[]'::jsonb),
+        ('machine_sup','{}'::jsonb)
+      ON CONFLICT (key) DO NOTHING
+    `);
+    // Enable realtime
+    try { await sql(`ALTER PUBLICATION supabase_realtime ADD TABLE app_data`); } catch(e){}
+    step('s2','done','Security rules applied ✓');
+
+    // ── Step 3: Create auth user ──
+    step('s3','run','Creating your admin account…');
+    var authR = await fetch(SUPA_URL+'/auth/v1/admin/users', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+SUPA_SVC,'apikey':SUPA_SVC,'Content-Type':'application/json'},
+      body: JSON.stringify({email:email, password:pass, email_confirm:true})
+    });
+    var authD = await authR.json();
+    if(!authR.ok && !authD.id){
+      // Might already exist — try to get user
+      if(authD.msg && authD.msg.includes('already')){
+        step('s3','done','Account already exists — using it ✓');
+        // Get user ID by listing users
+        var listR = await fetch(SUPA_URL+'/auth/v1/admin/users?email='+encodeURIComponent(email), {
+          headers:{'Authorization':'Bearer '+SUPA_SVC,'apikey':SUPA_SVC}
+        });
+        var listD = await listR.json();
+        authD = {id: listD.users && listD.users[0] ? listD.users[0].id : null};
+        if(!authD.id) throw new Error('Could not find existing user. Error: '+JSON.stringify(authD));
+      } else {
+        throw new Error(authD.msg || authD.error_description || JSON.stringify(authD));
+      }
+    } else {
+      step('s3','done','Admin account created ✓');
+    }
+    var userId = authD.id || (authD.user && authD.user.id);
+    if(!userId) throw new Error('Could not get user ID: '+JSON.stringify(authD));
+
+    // ── Step 4: Insert profile ──
+    step('s4','run','Saving admin profile…');
+    var profR = await fetch(SUPA_URL+'/rest/v1/user_profiles', {
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+SUPA_SVC,
+        'apikey':SUPA_ANON,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({id:userId, full_name:name, role:'admin', supervisor_name:null})
+    });
+    if(!profR.ok){
+      var pe = await profR.text();
+      throw new Error('Profile error: '+pe);
+    }
+    step('s4','done','Admin profile saved ✓');
+
+    // ── Step 5: Upload existing cards ──
+    step('s5','run','Uploading existing cards to cloud…');
+    // We'll trigger this from the main app on first login
+    step('s5','done','Cards will sync automatically on first login ✓');
+
+    // ── Done ──
+    document.getElementById('doneBox').style.display = 'block';
+    document.getElementById('credLine').innerHTML =
+      '<b>Email:</b> '+email+'<br><b>Password:</b> the one you just entered<br><br>Use these to log in to the app.';
+
+  } catch(err) {
+    // Find which step failed
+    var steps = ['s1','s2','s3','s4','s5'];
+    for(var i=0;i<steps.length;i++){
+      if(document.getElementById(steps[i]).className.includes('run')){
+        step(steps[i],'err','Error: '+err.message);
+        break;
+      }
+    }
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = '⚡ Retry Setup';
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
