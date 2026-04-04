@@ -424,25 +424,25 @@ tr:last-child td{border-bottom:none;}
 <!-- CONFIRM MODAL -->
 <div class="mo" id="cfmodal">
   <div class="md" style="max-width:420px">
-    <div class="mt" id="cfTitle">تأكيد الكرت</div>
+    <div class="mt" id="cfTitle">Confirm Card</div>
     <div style="background:var(--g50);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--g600);line-height:2" id="cfInfo"></div>
     <div class="fg">
       <div class="fgo">
-        <label>ساعات العمل الفعلية</label>
+        <label>Actual Hours Worked</label>
         <input type="number" id="cfHours" step="0.5" min="0" oninput="chkCfReason()">
       </div>
       <div class="fgo">
-        <label>أوفرتايم (ساعات)</label>
+        <label>Overtime (hours)</label>
         <input type="number" id="cfOT" step="0.5" min="0" value="0">
       </div>
       <div class="fgo full" id="cfReasonWrap" style="display:none">
-        <label style="color:var(--rd)">سبب النقص في الساعات <span style="font-weight:normal">(مطلوب)</span></label>
-        <input type="text" id="cfReason" placeholder="مثال: عطل ميكانيكي، انتهى الأوردر...">
+        <label style="color:var(--rd)">Reason for reduced hours <span style="font-weight:normal">(required)</span></label>
+        <input type="text" id="cfReason" placeholder="e.g. Mechanical breakdown, Order completed...">
       </div>
     </div>
     <div class="fa">
-      <button class="btn bo2" onclick="closeConfirm()">إلغاء</button>
-      <button class="btn bp" onclick="submitConfirm()">&#x2713; تأكيد</button>
+      <button class="btn bo2" onclick="closeConfirm()">Cancel</button>
+      <button class="btn bp" onclick="submitConfirm()">&#x2713; Confirm</button>
     </div>
   </div>
 </div>
@@ -455,7 +455,7 @@ var estData = [];
 var salesData = [];
 var VAT = 0.10;
 var PP  = 50;   // cards per page in Master Cards
-var SUPERVISORS = ["محمد العجمي","محمد سعيد","العاقب","هارون"];
+var SUPERVISORS = ["Mohamed Al Ajmi","Mohamed Saeed","Al Aqib","Haroun"];
 var machineSup  = {};   // {"JCB 3CX":"العاقب", ...}
 var estSupFilter = '';  // active supervisor filter in Estimated tab
 var confirmIdx   = -1;  // index into estData being confirmed
@@ -813,10 +813,10 @@ function renderSupFilterBar(){
     pending[s].total++;
     if(!estData[i].confirmed)pending[s].pend++;
   }
-  var html='<span style="font-size:12px;font-weight:bold;color:var(--g600);margin-right:4px">السوبرفايزر:</span>';
+  var html='<span style="font-size:12px;font-weight:bold;color:var(--g600);margin-right:4px">Supervisor:</span>';
   var allPend=0;
   for(var i=0;i<estData.length;i++){if(!estData[i].confirmed)allPend++;}
-  html+='<button class="sfb'+(estSupFilter===''?' sfb-a':'')+'" onclick="filterEst(\'\')">الكل'+(allPend?' <span class="sfb-badge">'+allPend+'</span>':'')+'</button>';
+  html+='<button class="sfb'+(estSupFilter===''?' sfb-a':'')+'" onclick="filterEst(\'\')">All'+(allPend?' <span class="sfb-badge">'+allPend+'</span>':'')+'</button>';
   for(var s=0;s<SUPERVISORS.length;s++){
     var nm=SUPERVISORS[s];
     var d=pending[nm]||{total:0,pend:0};
@@ -903,10 +903,10 @@ function renderEst(){
 function openConfirm(i){
   confirmIdx=i;
   var r=estData[i];
-  document.getElementById('cfTitle').textContent='تأكيد الكرت #'+r.code;
+  document.getElementById('cfTitle').textContent='Confirm Card #'+r.code;
   document.getElementById('cfInfo').innerHTML=
     '<b>'+esc(r.customer)+'</b><br>'+esc(r.machinery)+' &mdash; '+esc(r.location)+
-    '<br>الساعات العادية: <b>'+r.hours+' h</b>'+(r.supervisor?' &nbsp;|&nbsp; السوبرفايزر: <b>'+esc(r.supervisor)+'</b>':'');
+    '<br>Normal hours: <b>'+r.hours+' h</b>'+(r.supervisor?' &nbsp;|&nbsp; Supervisor: <b>'+esc(r.supervisor)+'</b>':'');
   document.getElementById('cfHours').value=r.hours;
   document.getElementById('cfOT').value=r.ot;
   document.getElementById('cfReason').value='';
@@ -928,7 +928,7 @@ function submitConfirm(){
   var ot=parseFloat(document.getElementById('cfOT').value)||0;
   var reason=document.getElementById('cfReason').value.trim();
   var norm=estData[confirmIdx].hours||8;
-  if(h<norm&&!reason){alert('يرجى ذكر سبب نقص الساعات.');return;}
+  if(h<norm&&!reason){alert('Please enter a reason for the reduced hours.');return;}
   var r=estData[confirmIdx];
   r.confirmed=true;
   r.hours=h; r.ot=ot;
