@@ -76,7 +76,7 @@ body{
 .nb:hover:not(.active){color:var(--p);background:var(--g50);}
 
 /* ── PAGES ── */
-.pg{display:none;padding:24px;max-width:1400px;margin:0 auto;}
+.pg{display:none;padding:20px 16px;}
 .pg.active{display:block;}
 
 /* ── UI CARDS ── */
@@ -1410,9 +1410,10 @@ function renderEst(){
     var statusCell='';
     if(r.confirmed){
       var note=r.shortReason?' <span style="color:var(--am);font-size:10px">('+esc(r.shortReason)+')</span>':'';
-      statusCell='<span class="badge br" style="white-space:normal">&#x2713; Confirmed</span>'+note;
+      var supLabel=r.supervisor?' by '+esc(r.supervisor):'';
+      statusCell='<span class="badge br" style="white-space:normal">&#x2713; Confirmed'+supLabel+'</span>'+note;
     } else {
-      statusCell='<button class="btn bsm bw" onclick="openConfirm('+i+')" style="white-space:nowrap">&#x23F3; Confirm</button>';
+      statusCell='<span class="badge bo" style="display:inline-block;margin-bottom:4px">Not Confirmed</span><br><button class="btn bsm bw" onclick="openConfirm('+i+')" style="white-space:nowrap;margin-top:2px">Confirm</button>';
     }
     html+='<tr'+(r.confirmed?' style="opacity:.85"':'')+'>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
@@ -1552,7 +1553,7 @@ function renderSales(data,date,type){
     }
     var sc=r.confirmed
       ?'<span class="badge br">&#x2713; Confirmed</span>'+(r.shortReason?'<br><span style="font-size:10px;color:var(--am)">'+esc(r.shortReason)+'</span>':'')
-      :'<span class="badge bo">&#x26A0; Pending</span>';
+      :'<span class="badge bo">Not Confirmed</span>';
     html+='<tr>'+
       '<td style="color:var(--g400);font-size:11px">'+r.sn+'</td>'+
       '<td>'+r.sn2+'</td>'+
