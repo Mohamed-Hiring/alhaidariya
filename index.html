@@ -356,6 +356,18 @@ body.is-admin .admin-only{display:revert!important;}
 .fhbar-fill.crit{background:var(--rd);}
 .fh-label{font-size:10.5px;color:var(--g400);}
 
+/* ── ASSIGNMENT LOG ROWS ── */
+.asgn-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:var(--rm);
+  background:white;border:1.5px solid var(--g100);
+  box-shadow:var(--sh);
+}
+.asgn-main{flex:1;display:flex;flex-direction:column;gap:4px;}
+.asgn-mach{font-size:13px;color:var(--g800);}
+.asgn-op{font-size:12px;color:var(--g600);}
+.asgn-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--g400);margin-top:2px;}
+
 /* ── FLEET TABS ── */
 .fleet-tab{
   padding:13px 20px;border:none;background:none;cursor:pointer;
@@ -901,6 +913,43 @@ body.is-admin .admin-only{display:revert!important;}
   </div>
 </div>
 
+<!-- ASSIGNMENTS MODAL -->
+<div class="mo" id="assignModal">
+  <div class="md" style="max-width:700px">
+    <div class="mt" id="assignTitle">Assignments</div>
+    <!-- existing assignments list -->
+    <div id="assignList" style="margin-bottom:18px;display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:4px"></div>
+    <!-- add new assignment form -->
+    <div style="background:var(--g50);border-radius:var(--rm);padding:16px;border:1px solid var(--g100)">
+      <div style="font-size:12px;font-weight:bold;color:var(--g600);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">Add / Replace Assignment</div>
+      <div class="fg">
+        <div class="fgo">
+          <label>Machine</label>
+          <select id="asgnMachine"><option value="">— None —</option></select>
+        </div>
+        <div class="fgo">
+          <label>Operator</label>
+          <select id="asgnOperator"><option value="">— None —</option></select>
+        </div>
+        <div class="fgo">
+          <label>Date Started</label>
+          <input type="date" id="asgnDate">
+        </div>
+        <div class="fgo">
+          <label>Notes <span style="color:var(--g400);font-weight:normal">(optional)</span></label>
+          <input type="text" id="asgnNotes" placeholder="e.g. Replacement after breakdown">
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn bp bsm" onclick="addAssignment()">+ Add Assignment</button>
+      </div>
+    </div>
+    <div class="fa" style="margin-top:16px">
+      <button class="btn bo2" onclick="closeAssignments()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTIFICATION PANEL -->
 <div class="mo" id="notifPanel">
   <div class="md" style="max-width:520px">
@@ -1389,6 +1438,121 @@ function showPg(n,btn){
    FLEET & OPS
 ═══════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════
+   ASSIGNMENT LOG
+═══════════════════════════════════════════ */
+
+var _assignCardIdx = -1;
+
+function openAssignments(idx){
+  _assignCardIdx = idx;
+  var c = cards[idx];
+  if(!c.assignments) c.assignments = [];
+  document.getElementById('assignTitle').textContent = 'Assignments — Card #' + c.Code + ' (' + c.Customer + ')';
+  // Populate machine dropdown (supervisor's fleet)
+  var sup = c.Supervisor || (currentProfile ? currentProfile.full_name : '');
+  var myFleet = (currentProfile && currentProfile.role === 'admin') ? fleet : fleet.filter(function(m){return m.supervisor === sup;});
+  var mSel = document.getElementById('asgnMachine');
+  mSel.innerHTML = '<option value="">— None —</option>';
+  myFleet.forEach(function(m){
+    mSel.innerHTML += '<option value="'+m.id+'">'+esc(m.name)+' ('+esc(m.plateNumber)+(m.doorNumber ? '/'+m.doorNumber : '')+')</option>';
+  });
+  // Populate operator dropdown
+  var myOps = (currentProfile && currentProfile.role === 'admin') ? operators : operators.filter(function(o){return o.supervisor === sup;});
+  var oSel = document.getElementById('asgnOperator');
+  oSel.innerHTML = '<option value="">— None —</option>';
+  myOps.forEach(function(o){
+    oSel.innerHTML += '<option value="'+o.id+'">'+esc(o.name)+' ('+esc(o.fileNumber)+')</option>';
+  });
+  // Default date = today
+  document.getElementById('asgnDate').value = fmtD(new Date());
+  document.getElementById('asgnNotes').value = '';
+  renderAssignmentsList();
+  document.getElementById('assignModal').classList.add('open');
+}
+
+function closeAssignments(){
+  document.getElementById('assignModal').classList.remove('open');
+  _assignCardIdx = -1;
+}
+
+function renderAssignmentsList(){
+  var list = document.getElementById('assignList');
+  if(_assignCardIdx < 0){ list.innerHTML = ''; return; }
+  var c = cards[_assignCardIdx];
+  if(!c.assignments || !c.assignments.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--g400);padding:18px;font-size:13px">No assignments yet — add the first one below.</div>';
+    return;
+  }
+  var html = '';
+  c.assignments.forEach(function(a, i){
+    html += '<div class="asgn-row">'+
+      '<div class="asgn-main">'+
+        '<div class="asgn-mach"><b>'+esc(a.machineName||'—')+'</b>'+(a.machinePlate?' <span style="color:var(--g400);font-size:11px">'+esc(a.machinePlate)+'</span>':'')+'</div>'+
+        '<div class="asgn-op">'+esc(a.operatorName||'—')+(a.operatorFile?' <span style="color:var(--g400);font-size:11px">#'+esc(a.operatorFile)+'</span>':'')+'</div>'+
+        '<div class="asgn-meta">'+
+          '<span>Started: <b>'+esc(a.dateStarted||'—')+'</b></span>'+
+          (a.hoursConfirmed ? '<span class="badge br" style="font-size:10px">'+a.hoursConfirmed.toFixed(1)+' h confirmed</span>' : '')+
+          (a.notes ? '<span style="color:var(--am);font-size:11px">'+esc(a.notes)+'</span>' : '')+
+        '</div>'+
+      '</div>'+
+      '<button class="btn bsm bd" onclick="removeAssignment('+i+')">X</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function addAssignment(){
+  if(_assignCardIdx < 0) return;
+  var c = cards[_assignCardIdx];
+  if(!c.assignments) c.assignments = [];
+  var maId = document.getElementById('asgnMachine').value;
+  var opId = document.getElementById('asgnOperator').value;
+  var dt   = document.getElementById('asgnDate').value;
+  var notes= document.getElementById('asgnNotes').value.trim();
+  var maObj = fleet.find(function(m){return m.id === maId;}) || null;
+  var opObj = operators.find(function(o){return o.id === opId;}) || null;
+  c.assignments.push({
+    id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    machineId:    maObj ? maObj.id : '',
+    machineName:  maObj ? maObj.name : '',
+    machinePlate: maObj ? maObj.plateNumber : '',
+    operatorId:   opObj ? opObj.id : '',
+    operatorName: opObj ? opObj.name : '',
+    operatorFile: opObj ? opObj.fileNumber : '',
+    dateStarted:  dt,
+    hoursConfirmed: 0,
+    notes: notes,
+    addedAt: new Date().toISOString(),
+    addedBy: currentProfile ? currentProfile.full_name : ''
+  });
+  syncCards();
+  renderAssignmentsList();
+  renderM();
+  // Reset form
+  document.getElementById('asgnMachine').value = '';
+  document.getElementById('asgnOperator').value = '';
+  document.getElementById('asgnNotes').value = '';
+}
+
+function removeAssignment(aIdx){
+  if(_assignCardIdx < 0) return;
+  var c = cards[_assignCardIdx];
+  if(!c.assignments) return;
+  if(!confirm('Remove this assignment?')) return;
+  c.assignments.splice(aIdx, 1);
+  syncCards();
+  renderAssignmentsList();
+  renderM();
+}
+
+/* Helper: find active assignment on a card (most recent with a machine) */
+function latestAssignment(c){
+  if(!c.assignments || !c.assignments.length) return null;
+  // Return the last one added
+  return c.assignments[c.assignments.length - 1];
+}
+
 var _fleetTab='machines';
 
 function switchFleetTab(tab){
@@ -1423,27 +1587,31 @@ function renderFleetMachines(){
     tb.innerHTML='<tr><td colspan="10" class="emp">No machines yet. Click + Add Machine.</td></tr>';
     return;
   }
-  // Build a quick map: machineId → running cards assigned to it
+  // Build busy map from assignment log on Running cards
   var busyMap={};
   cards.forEach(function(c){
-    if(c.Status==='Running'&&c.AssignedMachineId){
-      if(!busyMap[c.AssignedMachineId])busyMap[c.AssignedMachineId]=[];
-      busyMap[c.AssignedMachineId].push(c);
-    }
+    if(c.Status!=='Running')return;
+    (c.assignments||[]).forEach(function(a){
+      if(!a.machineId)return;
+      if(!busyMap[a.machineId])busyMap[a.machineId]=[];
+      busyMap[a.machineId].push({card:c,asgn:a});
+    });
   });
   var html='';
   myFleet.forEach(function(m){
     var bc=busyMap[m.id]||[];
     if(bc.length){
-      bc.forEach(function(c,idx){
+      bc.forEach(function(entry,idx){
+        var c=entry.card; var a=entry.asgn;
         var shift=(c.ShiftStart&&c.ShiftEnd)?(c.ShiftStart+' - '+c.ShiftEnd):'—';
+        var opLabel=a.operatorName?(esc(a.operatorName)+(a.operatorFile?' <span style="color:rgba(255,255,255,.6);font-size:10px">#'+esc(a.operatorFile)+'</span>':'')):'—';
         html+='<tr>'+
           (idx===0?'<td rowspan="'+bc.length+'"><b>'+esc(m.name)+'</b></td><td rowspan="'+bc.length+'">'+esc(m.plateNumber)+'</td><td rowspan="'+bc.length+'">'+esc(m.doorNumber||'—')+'</td><td rowspan="'+bc.length+'">'+esc(m.supervisor)+'</td>':'')+
           '<td><span class="badge bc">Busy</span></td>'+
           '<td>'+esc(c.Customer)+'</td>'+
           '<td>'+esc(c.Location||'—')+'</td>'+
           '<td>'+shift+'</td>'+
-          '<td>'+esc(c.DailyHours||8)+' h/day</td>'+
+          '<td>'+esc(c.DailyHours||8)+' h/day<br><span style="font-size:10px;color:var(--g400)">Op: '+opLabel+'</span></td>'+
           (idx===0?'<td rowspan="'+bc.length+'"><button class="btn bsm bd" onclick="deleteMachine(\''+m.id+'\')">Delete</button></td>':'')+
           '</tr>';
       });
@@ -1509,23 +1677,26 @@ function renderFleetOperators(){
     tb.innerHTML='<tr><td colspan="8" class="emp">No operators yet. Click + Add Operator.</td></tr>';
     return;
   }
-  // Build busy map: operatorId → running cards
+  // Build busy map from assignment log on Running cards
   var busyMap={};
   cards.forEach(function(c){
-    if(c.Status==='Running'&&c.AssignedOperatorId){
-      if(!busyMap[c.AssignedOperatorId])busyMap[c.AssignedOperatorId]=[];
-      busyMap[c.AssignedOperatorId].push(c);
-    }
+    if(c.Status!=='Running')return;
+    (c.assignments||[]).forEach(function(a){
+      if(!a.operatorId)return;
+      if(!busyMap[a.operatorId])busyMap[a.operatorId]=[];
+      busyMap[a.operatorId].push({card:c,asgn:a});
+    });
   });
   var html='';
   myOps.forEach(function(o){
     var bc=busyMap[o.id]||[];
     if(bc.length){
-      bc.forEach(function(c,idx){
+      bc.forEach(function(entry,idx){
+        var c=entry.card; var a=entry.asgn;
         html+='<tr>'+
           (idx===0?'<td rowspan="'+bc.length+'"><b>'+esc(o.name)+'</b></td><td rowspan="'+bc.length+'">'+esc(o.fileNumber)+'</td><td rowspan="'+bc.length+'">'+esc(o.supervisor)+'</td>':'')+
           '<td><span class="badge bc">Busy</span></td>'+
-          '<td>'+esc(c.AssignedMachineName||'—')+'</td>'+
+          '<td>'+(a.machineName?esc(a.machineName)+(a.machinePlate?' <span style="color:var(--g400);font-size:10px">'+esc(a.machinePlate)+'</span>':''):'—')+'</td>'+
           '<td>'+esc(c.Customer)+'</td>'+
           '<td>'+esc(c.Location||'—')+'</td>'+
           (idx===0?'<td rowspan="'+bc.length+'"><button class="btn bsm bd" onclick="deleteOperator(\''+o.id+'\')">Delete</button></td>':'')+
@@ -1795,9 +1966,10 @@ function renderMP(){
         '<td class="admin-only">'+(isAdmin?ot+'h':'—')+'</td>'+
         '<td class="admin-only" style="font-size:11px">'+(isAdmin?'<b>BD '+sub.toFixed(3)+'</b><br><span style="color:var(--g400)">VAT:'+vat(sub).toFixed(3)+'</span>':'—')+'</td>'+
         '<td>'+badge(c.Status)+'</td>'+
-        '<td><div style="display:flex;gap:4px">'+
+        '<td><div style="display:flex;gap:4px;flex-wrap:wrap">'+
         '<button class="btn bo2 bsm" onclick="openEdit('+idx+')">Edit</button>'+
         (c.Status==='Running'?'<button class="btn bw bsm" onclick="mkOH('+idx+')">Off Hire</button>':'')+
+        '<button class="btn bsm" style="background:var(--blb);color:var(--bld);border:1.5px solid rgba(21,96,168,.25)" onclick="openAssignments('+idx+')">'+(c.assignments&&c.assignments.length?'&#x1F477; '+c.assignments.length:'&#x1F477; Assignments')+'</button>'+
         '</div></td></tr>';
     }
   }
@@ -2112,12 +2284,36 @@ function submitConfirm(){
   r.assignedMachineId=maObj?maObj.id:'';
   r.assignedMachineName=maObj?maObj.name:'';
   r.assignedMachinePlate=maObj?maObj.plateNumber:'';
-  // Persist assignments back to the card so fleet status view can read it
+  // Persist assignments back to the card + update assignment log hours
   if(r.ci>=0&&r.ci<cards.length){
-    cards[r.ci].AssignedOperatorId=r.assignedOperatorId;
-    cards[r.ci].AssignedOperatorName=r.assignedOperatorName;
-    cards[r.ci].AssignedMachineId=r.assignedMachineId;
-    cards[r.ci].AssignedMachineName=r.assignedMachineName;
+    var cc=cards[r.ci];
+    cc.AssignedOperatorId=r.assignedOperatorId;
+    cc.AssignedOperatorName=r.assignedOperatorName;
+    cc.AssignedMachineId=r.assignedMachineId;
+    cc.AssignedMachineName=r.assignedMachineName;
+    // Find matching assignment in log and add confirmed hours to it
+    if(!cc.assignments)cc.assignments=[];
+    var matchAsgn=null;
+    if(r.assignedMachineId||r.assignedOperatorId){
+      for(var ai=cc.assignments.length-1;ai>=0;ai--){
+        var a=cc.assignments[ai];
+        var mMatch=!r.assignedMachineId||a.machineId===r.assignedMachineId;
+        var oMatch=!r.assignedOperatorId||a.operatorId===r.assignedOperatorId;
+        if(mMatch&&oMatch){matchAsgn=a;break;}
+      }
+      if(!matchAsgn){
+        // No existing assignment — create one automatically
+        matchAsgn={
+          id:Date.now()+'_auto',
+          machineId:r.assignedMachineId,machineName:r.assignedMachineName,machinePlate:r.assignedMachinePlate,
+          operatorId:r.assignedOperatorId,operatorName:r.assignedOperatorName,operatorFile:r.assignedOperatorFile,
+          dateStarted:document.getElementById('edate').value,hoursConfirmed:0,
+          notes:'Auto-created from confirmation',addedAt:new Date().toISOString(),addedBy:currentProfile?currentProfile.full_name:''
+        };
+        cc.assignments.push(matchAsgn);
+      }
+      matchAsgn.hoursConfirmed=(matchAsgn.hoursConfirmed||0)+(h+ot);
+    }
   }
   // Fixed Hours: deduct from contracted hours
   if(r.ci>=0&&r.ci<cards.length){
