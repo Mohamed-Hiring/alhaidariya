@@ -356,6 +356,16 @@ body.is-admin .admin-only{display:revert!important;}
 .fhbar-fill.crit{background:var(--rd);}
 .fh-label{font-size:10.5px;color:var(--g400);}
 
+/* ── FLEET TABS ── */
+.fleet-tab{
+  padding:13px 20px;border:none;background:none;cursor:pointer;
+  font-family:Tahoma,sans-serif;font-size:13px;font-weight:bold;
+  color:var(--g400);border-bottom:3px solid transparent;
+  transition:all var(--t);white-space:nowrap;
+}
+.fleet-tab:hover:not(.fleet-tab-a){color:var(--p);background:var(--g50);}
+.fleet-tab-a{color:var(--p);border-bottom-color:var(--p);background:var(--pb);}
+
 /* ── NOTIFICATION BELL ── */
 .notif-bell{
   position:relative;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.22);
@@ -484,6 +494,7 @@ body.is-admin .admin-only{display:revert!important;}
   <button class="nb active" onclick="showPg('master',this)">&#x1F4CB; Master Cards</button>
   <button class="nb" onclick="showPg('est',this)">&#x1F4CA; Estimated</button>
   <button class="nb" onclick="showPg('sales',this)">&#x2705; Sales Report</button>
+  <button class="nb" onclick="showPg('fleet',this)">&#x1F69C; Fleet &amp; Ops</button>
   <button class="nb" onclick="showPg('equip',this)">&#x1F6A7; Equipment</button>
   <button class="nb" onclick="showPg('recs',this)">&#x1F5C2; Saved Records</button>
   <button class="nb" onclick="showPg('data',this)">&#x1F4BE; Data / Import</button>
@@ -566,6 +577,73 @@ body.is-admin .admin-only{display:revert!important;}
     <div class="tb" id="stbar" style="display:none">
       <div><div>SALES TOTAL (excl. VAT)</div><div style="font-size:12px;opacity:.8" id="sdlbl"></div></div>
       <div style="text-align:right"><div style="font-size:20px" id="stot">BHD 0.000</div><div style="font-size:12px;opacity:.8" id="stotvat"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FLEET & OPS -->
+<div class="pg" id="pg-fleet">
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:0;margin-bottom:18px;background:white;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--g100)">
+    <button class="fleet-tab fleet-tab-a" id="ftab-machines" onclick="switchFleetTab('machines')">&#x1F69C; My Machines</button>
+    <button class="fleet-tab" id="ftab-operators" onclick="switchFleetTab('operators')">&#x1F477; My Operators</button>
+    <button class="fleet-tab" id="ftab-hours" onclick="switchFleetTab('hours')">&#x1F4CA; Operator Hours</button>
+  </div>
+
+  <!-- MACHINES sub-page -->
+  <div id="flp-machines">
+    <div class="card">
+      <div class="ct">&#x1F69C; Fleet Machines
+        <div class="ct-toolbar">
+          <button class="btn bp bsm" onclick="openAddMachine()">+ Add Machine</button>
+        </div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Machine / Type</th><th>Plate #</th><th>Door #</th><th>Supervisor</th><th>Status</th><th>Customer</th><th>Location</th><th>Shift</th><th>Hours/Day</th><th>Actions</th></tr></thead>
+        <tbody id="fleetBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- OPERATORS sub-page -->
+  <div id="flp-operators" style="display:none">
+    <div class="card">
+      <div class="ct">&#x1F477; Operators
+        <div class="ct-toolbar">
+          <button class="btn bp bsm" onclick="openAddOperator()">+ Add Operator</button>
+        </div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Name</th><th>File #</th><th>Supervisor</th><th>Status</th><th>On Machine</th><th>Customer</th><th>Location</th><th>Actions</th></tr></thead>
+        <tbody id="opsBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- HOURS REPORT sub-page -->
+  <div id="flp-hours" style="display:none">
+    <div class="card">
+      <div class="ct">&#x1F4CA; Operator Hours Report <span style="font-size:12px;color:var(--g400);font-weight:normal">(from confirmed Sales Reports)</span>
+        <div class="ct-toolbar">
+          <select id="hrOpSel" style="padding:6px 10px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px" onchange="renderHoursReport()">
+            <option value="">— Select Operator —</option>
+          </select>
+          <select id="hrMonthSel" style="padding:6px 10px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px" onchange="renderHoursReport()">
+            <option value="">All Months</option>
+            <option value="2026-01">Jan 2026</option>
+            <option value="2026-02">Feb 2026</option>
+            <option value="2026-03">Mar 2026</option>
+            <option value="2026-04">Apr 2026</option>
+            <option value="2026-05">May 2026</option>
+            <option value="2026-06">Jun 2026</option>
+          </select>
+        </div>
+      </div>
+      <div id="hrSummary" style="display:none;margin-bottom:14px"></div>
+      <div class="tw"><table>
+        <thead><tr><th>Date</th><th>Card #</th><th>Machinery</th><th>Customer</th><th>Location</th><th>Hours</th><th>OT Hrs</th><th>Total Hrs</th></tr></thead>
+        <tbody id="hrBody"></tbody>
+      </table></div>
     </div>
   </div>
 </div>
@@ -746,10 +824,79 @@ body.is-admin .admin-only{display:revert!important;}
         <label style="color:var(--rd)">Reason for reduced hours <span style="font-weight:normal">(required)</span></label>
         <input type="text" id="cfReason" placeholder="e.g. Mechanical breakdown, Order completed...">
       </div>
+      <div class="fgo">
+        <label>Assign Operator <span style="color:var(--g400);font-weight:normal">(optional)</span></label>
+        <select id="cfOperator"><option value="">— None —</option></select>
+      </div>
+      <div class="fgo">
+        <label>Assign Machine <span style="color:var(--g400);font-weight:normal">(optional)</span></label>
+        <select id="cfMachine"><option value="">— None —</option></select>
+      </div>
     </div>
     <div class="fa">
       <button class="btn bo2" onclick="closeConfirm()">Cancel</button>
       <button class="btn bp" onclick="submitConfirm()">&#x2713; Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MACHINE MODAL -->
+<div class="mo" id="addMachineModal">
+  <div class="md" style="max-width:440px">
+    <div class="mt">&#x1F69C; Add Machine</div>
+    <div class="fg">
+      <div class="fgo full"><label>Machine Name / Type</label>
+        <input type="text" id="mName" placeholder="e.g. JCB 3CX">
+      </div>
+      <div class="fgo"><label>Plate Number</label>
+        <input type="text" id="mPlate" placeholder="e.g. 120245">
+      </div>
+      <div class="fgo"><label>Door Number</label>
+        <input type="text" id="mDoor" placeholder="e.g. 16">
+      </div>
+      <div class="fgo full admin-only"><label>Assign to Supervisor</label>
+        <select id="mSup">
+          <option value="">— Select Supervisor —</option>
+          <option value="Mohamed Al Ajmi">Mohamed Al Ajmi</option>
+          <option value="Mohamed Saeed">Mohamed Saeed</option>
+          <option value="Al Aqib">Al Aqib</option>
+          <option value="Haroun">Haroun</option>
+        </select>
+      </div>
+    </div>
+    <div id="mErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeAddMachine()">Cancel</button>
+      <button class="btn bp" onclick="saveMachine()">&#x2713; Save Machine</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD OPERATOR MODAL -->
+<div class="mo" id="addOpModal">
+  <div class="md" style="max-width:440px">
+    <div class="mt">&#x1F477; Add Operator</div>
+    <div class="fg">
+      <div class="fgo full"><label>Operator Name</label>
+        <input type="text" id="opName" placeholder="e.g. MOHAMED MONIR">
+      </div>
+      <div class="fgo full"><label>File Number</label>
+        <input type="text" id="opFile" placeholder="e.g. 8906">
+      </div>
+      <div class="fgo full admin-only"><label>Assign to Supervisor</label>
+        <select id="opSup">
+          <option value="">— Select Supervisor —</option>
+          <option value="Mohamed Al Ajmi">Mohamed Al Ajmi</option>
+          <option value="Mohamed Saeed">Mohamed Saeed</option>
+          <option value="Al Aqib">Al Aqib</option>
+          <option value="Haroun">Haroun</option>
+        </select>
+      </div>
+    </div>
+    <div id="opErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeAddOp()">Cancel</button>
+      <button class="btn bp" onclick="saveOperator()">&#x2713; Save Operator</button>
     </div>
   </div>
 </div>
@@ -780,7 +927,9 @@ var SUPERVISORS = ["Mohamed Al Ajmi","Mohamed Saeed","Al Aqib","Haroun"];
 var machineSup  = {};   // {"JCB 3CX":"العاقب", ...}
 var estSupFilter = '';  // active supervisor filter in Estimated tab
 var confirmIdx   = -1;  // index into estData being confirmed
-var notifications = []; // [{id,supervisor,cardCode,machinery,location,customer,hours,orderType,createdBy,createdAt,acknowledged}]
+var notifications = []; // [{id,supervisor,cardCode,...}]
+var fleet         = []; // [{id,supervisor,name,plateNumber,doorNumber,createdAt}]
+var operators     = []; // [{id,supervisor,name,fileNumber,createdAt}]
 
 /* ═══════════════════════════════════════════
    SUPABASE — CONFIG & STATE
@@ -885,6 +1034,8 @@ async function loadAllData(){
       if(row.key==='saved_recs') savedRecs=row.value||[];
       if(row.key==='machine_sup') machineSup=row.value||{};
       if(row.key==='notifications') notifications=row.value||[];
+      if(row.key==='fleet') fleet=row.value||[];
+      if(row.key==='operators') operators=row.value||[];
     });
   }
 }
@@ -919,6 +1070,15 @@ async function syncMachineSupDB(){
     {key:'machine_sup',value:machineSup,updated_at:new Date().toISOString()},
     {onConflict:'key'}
   );
+}
+
+async function syncFleet(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'fleet',value:fleet,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+async function syncOperators(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'operators',value:operators,updated_at:new Date().toISOString()},{onConflict:'key'});
 }
 
 async function syncNotifications(){
@@ -1221,7 +1381,280 @@ function showPg(n,btn){
   if(n==='est'){genEst();}
   if(n==='recs')renderRecs();
   if(n==='equip')renderEquip();
+  if(n==='fleet')renderFleetPage();
   if(n==='users')renderUsers();
+}
+
+/* ═══════════════════════════════════════════
+   FLEET & OPS
+═══════════════════════════════════════════ */
+
+var _fleetTab='machines';
+
+function switchFleetTab(tab){
+  _fleetTab=tab;
+  ['machines','operators','hours'].forEach(function(t){
+    document.getElementById('flp-'+t).style.display=(t===tab)?'':'none';
+    var btn=document.getElementById('ftab-'+t);
+    if(btn){btn.classList.toggle('fleet-tab-a',t===tab);}
+  });
+  if(tab==='machines')renderFleetMachines();
+  if(tab==='operators')renderFleetOperators();
+  if(tab==='hours')initHoursReport();
+}
+
+function renderFleetPage(){
+  switchFleetTab(_fleetTab);
+}
+
+/* helper: get my supervisor name */
+function mySup(){
+  if(!currentProfile)return'';
+  if(currentProfile.role==='admin')return'';// admin = all
+  return currentProfile.full_name;
+}
+
+/* ── MACHINES ── */
+function renderFleetMachines(){
+  var sup=mySup();
+  var myFleet=sup?fleet.filter(function(m){return m.supervisor===sup;}):fleet;
+  var tb=document.getElementById('fleetBody');
+  if(!myFleet.length){
+    tb.innerHTML='<tr><td colspan="10" class="emp">No machines yet. Click + Add Machine.</td></tr>';
+    return;
+  }
+  // Build a quick map: machineId → running cards assigned to it
+  var busyMap={};
+  cards.forEach(function(c){
+    if(c.Status==='Running'&&c.AssignedMachineId){
+      if(!busyMap[c.AssignedMachineId])busyMap[c.AssignedMachineId]=[];
+      busyMap[c.AssignedMachineId].push(c);
+    }
+  });
+  var html='';
+  myFleet.forEach(function(m){
+    var bc=busyMap[m.id]||[];
+    if(bc.length){
+      bc.forEach(function(c,idx){
+        var shift=(c.ShiftStart&&c.ShiftEnd)?(c.ShiftStart+' - '+c.ShiftEnd):'—';
+        html+='<tr>'+
+          (idx===0?'<td rowspan="'+bc.length+'"><b>'+esc(m.name)+'</b></td><td rowspan="'+bc.length+'">'+esc(m.plateNumber)+'</td><td rowspan="'+bc.length+'">'+esc(m.doorNumber||'—')+'</td><td rowspan="'+bc.length+'">'+esc(m.supervisor)+'</td>':'')+
+          '<td><span class="badge bc">Busy</span></td>'+
+          '<td>'+esc(c.Customer)+'</td>'+
+          '<td>'+esc(c.Location||'—')+'</td>'+
+          '<td>'+shift+'</td>'+
+          '<td>'+esc(c.DailyHours||8)+' h/day</td>'+
+          (idx===0?'<td rowspan="'+bc.length+'"><button class="btn bsm bd" onclick="deleteMachine(\''+m.id+'\')">Delete</button></td>':'')+
+          '</tr>';
+      });
+    } else {
+      html+='<tr>'+
+        '<td><b>'+esc(m.name)+'</b></td>'+
+        '<td>'+esc(m.plateNumber)+'</td>'+
+        '<td>'+esc(m.doorNumber||'—')+'</td>'+
+        '<td>'+esc(m.supervisor)+'</td>'+
+        '<td><span class="badge br">Free</span></td>'+
+        '<td colspan="3" style="color:var(--g400)">—</td>'+
+        '<td>—</td>'+
+        '<td><button class="btn bsm bd" onclick="deleteMachine(\''+m.id+'\')">Delete</button></td>'+
+        '</tr>';
+    }
+  });
+  tb.innerHTML=html;
+}
+
+function openAddMachine(){
+  var sup=mySup();
+  document.getElementById('mName').value='';
+  document.getElementById('mPlate').value='';
+  document.getElementById('mDoor').value='';
+  var mSupEl=document.getElementById('mSup');
+  if(sup)mSupEl.value=sup;
+  document.getElementById('mErr').style.display='none';
+  document.getElementById('addMachineModal').classList.add('open');
+}
+function closeAddMachine(){document.getElementById('addMachineModal').classList.remove('open');}
+
+async function saveMachine(){
+  var name=document.getElementById('mName').value.trim().toUpperCase();
+  var plate=document.getElementById('mPlate').value.trim();
+  var door=document.getElementById('mDoor').value.trim();
+  var sup=mySup()||document.getElementById('mSup').value;
+  var errEl=document.getElementById('mErr');
+  if(!name){errEl.textContent='Machine name is required.';errEl.style.display='block';return;}
+  if(!sup){errEl.textContent='Supervisor is required.';errEl.style.display='block';return;}
+  fleet.push({
+    id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    supervisor:sup,name:name,plateNumber:plate,doorNumber:door,
+    createdAt:new Date().toISOString()
+  });
+  await syncFleet();
+  closeAddMachine();
+  renderFleetMachines();
+}
+
+async function deleteMachine(id){
+  if(!confirm('Delete this machine?'))return;
+  fleet=fleet.filter(function(m){return m.id!==id;});
+  await syncFleet();
+  renderFleetMachines();
+}
+
+/* ── OPERATORS ── */
+function renderFleetOperators(){
+  var sup=mySup();
+  var myOps=sup?operators.filter(function(o){return o.supervisor===sup;}):operators;
+  var tb=document.getElementById('opsBody');
+  if(!myOps.length){
+    tb.innerHTML='<tr><td colspan="8" class="emp">No operators yet. Click + Add Operator.</td></tr>';
+    return;
+  }
+  // Build busy map: operatorId → running cards
+  var busyMap={};
+  cards.forEach(function(c){
+    if(c.Status==='Running'&&c.AssignedOperatorId){
+      if(!busyMap[c.AssignedOperatorId])busyMap[c.AssignedOperatorId]=[];
+      busyMap[c.AssignedOperatorId].push(c);
+    }
+  });
+  var html='';
+  myOps.forEach(function(o){
+    var bc=busyMap[o.id]||[];
+    if(bc.length){
+      bc.forEach(function(c,idx){
+        html+='<tr>'+
+          (idx===0?'<td rowspan="'+bc.length+'"><b>'+esc(o.name)+'</b></td><td rowspan="'+bc.length+'">'+esc(o.fileNumber)+'</td><td rowspan="'+bc.length+'">'+esc(o.supervisor)+'</td>':'')+
+          '<td><span class="badge bc">Busy</span></td>'+
+          '<td>'+esc(c.AssignedMachineName||'—')+'</td>'+
+          '<td>'+esc(c.Customer)+'</td>'+
+          '<td>'+esc(c.Location||'—')+'</td>'+
+          (idx===0?'<td rowspan="'+bc.length+'"><button class="btn bsm bd" onclick="deleteOperator(\''+o.id+'\')">Delete</button></td>':'')+
+          '</tr>';
+      });
+    } else {
+      html+='<tr>'+
+        '<td><b>'+esc(o.name)+'</b></td>'+
+        '<td>'+esc(o.fileNumber)+'</td>'+
+        '<td>'+esc(o.supervisor)+'</td>'+
+        '<td><span class="badge br">Free</span></td>'+
+        '<td colspan="3" style="color:var(--g400)">—</td>'+
+        '<td><button class="btn bsm bd" onclick="deleteOperator(\''+o.id+'\')">Delete</button></td>'+
+        '</tr>';
+    }
+  });
+  tb.innerHTML=html;
+}
+
+function openAddOperator(){
+  var sup=mySup();
+  document.getElementById('opName').value='';
+  document.getElementById('opFile').value='';
+  var opSupEl=document.getElementById('opSup');
+  if(sup)opSupEl.value=sup;
+  document.getElementById('opErr').style.display='none';
+  document.getElementById('addOpModal').classList.add('open');
+}
+function closeAddOp(){document.getElementById('addOpModal').classList.remove('open');}
+
+async function saveOperator(){
+  var name=document.getElementById('opName').value.trim().toUpperCase();
+  var fileNum=document.getElementById('opFile').value.trim();
+  var sup=mySup()||document.getElementById('opSup').value;
+  var errEl=document.getElementById('opErr');
+  if(!name){errEl.textContent='Operator name is required.';errEl.style.display='block';return;}
+  if(!sup){errEl.textContent='Supervisor is required.';errEl.style.display='block';return;}
+  operators.push({
+    id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    supervisor:sup,name:name,fileNumber:fileNum,
+    createdAt:new Date().toISOString()
+  });
+  await syncOperators();
+  closeAddOp();
+  renderFleetOperators();
+}
+
+async function deleteOperator(id){
+  if(!confirm('Delete this operator?'))return;
+  operators=operators.filter(function(o){return o.id!==id;});
+  await syncOperators();
+  renderFleetOperators();
+}
+
+/* ── OPERATOR HOURS REPORT ── */
+function initHoursReport(){
+  var sup=mySup();
+  var myOps=sup?operators.filter(function(o){return o.supervisor===sup;}):operators;
+  var sel=document.getElementById('hrOpSel');
+  sel.innerHTML='<option value="">— Select Operator —</option>';
+  myOps.forEach(function(o){
+    sel.innerHTML+='<option value="'+o.id+'">'+esc(o.name)+' ('+esc(o.fileNumber)+')</option>';
+  });
+  renderHoursReport();
+}
+
+function renderHoursReport(){
+  var opId=document.getElementById('hrOpSel').value;
+  var month=document.getElementById('hrMonthSel').value;
+  var tb=document.getElementById('hrBody');
+  var sumEl=document.getElementById('hrSummary');
+  if(!opId){
+    tb.innerHTML='<tr><td colspan="8" class="emp">Select an operator above to view hours.</td></tr>';
+    sumEl.style.display='none';
+    return;
+  }
+  var opObj=operators.find(function(o){return o.id===opId;});
+  var rows=[];
+  // Scan savedRecs of type 'sales'
+  savedRecs.forEach(function(rec){
+    if(rec.type!=='sales')return;
+    if(month&&!rec.date.startsWith(month))return;
+    if(!rec.data)return;
+    rec.data.forEach(function(r){
+      if(r.confirmed&&r.assignedOperatorId===opId){
+        rows.push({
+          date:rec.date,
+          code:r.code||r.sn,
+          machinery:r.machinery||'',
+          customer:r.customer||'',
+          location:r.location||'',
+          hours:r.hours||0,
+          ot:r.ot||0
+        });
+      }
+    });
+  });
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="8" class="emp">No confirmed records found for this operator'+(month?' in this month':'')+'.</td></tr>';
+    sumEl.style.display='none';
+    return;
+  }
+  rows.sort(function(a,b){return a.date<b.date?-1:1;});
+  var totalH=0,totalOT=0;
+  var html='';
+  rows.forEach(function(r){
+    var tot=(r.hours||0)+(r.ot||0);
+    totalH+=r.hours||0;totalOT+=r.ot||0;
+    html+='<tr>'+
+      '<td>'+esc(r.date)+'</td>'+
+      '<td><b style="color:var(--p)">'+esc(String(r.code))+'</b></td>'+
+      '<td>'+esc(r.machinery)+'</td>'+
+      '<td>'+esc(r.customer)+'</td>'+
+      '<td>'+esc(r.location)+'</td>'+
+      '<td>'+r.hours+'</td>'+
+      '<td>'+(r.ot||0)+'</td>'+
+      '<td><b>'+tot.toFixed(1)+'</b></td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+  var grandTotal=totalH+totalOT;
+  sumEl.style.display='block';
+  sumEl.innerHTML='<div style="display:flex;gap:16px;flex-wrap:wrap;padding:14px 18px;background:linear-gradient(100deg,var(--pd),var(--p));border-radius:var(--rm);color:white;font-size:13px">'+
+    '<div><div style="opacity:.7;font-size:11px">Operator</div><div style="font-weight:bold">'+(opObj?esc(opObj.name):'')+'</div></div>'+
+    '<div><div style="opacity:.7;font-size:11px">Days worked</div><div style="font-weight:bold">'+rows.length+'</div></div>'+
+    '<div><div style="opacity:.7;font-size:11px">Normal hours</div><div style="font-weight:bold">'+totalH.toFixed(1)+' h</div></div>'+
+    '<div><div style="opacity:.7;font-size:11px">Overtime</div><div style="font-weight:bold">'+totalOT.toFixed(1)+' h</div></div>'+
+    '<div style="margin-left:auto"><div style="opacity:.7;font-size:11px">Total hours</div><div style="font-weight:bold;font-size:20px">'+grandTotal.toFixed(1)+' h</div></div>'+
+    '</div>';
 }
 
 /* ── EQUIPMENT TAB ── */
@@ -1631,6 +2064,20 @@ function openConfirm(i){
   document.getElementById('cfOT').value=r.ot;
   document.getElementById('cfReason').value='';
   document.getElementById('cfReasonWrap').style.display='none';
+  // Populate operator dropdown (filter by supervisor)
+  var supName=r.supervisor||(currentProfile?currentProfile.full_name:'');
+  var myOps=operators.filter(function(o){return currentProfile&&currentProfile.role==='admin'?true:o.supervisor===supName;});
+  var opSel=document.getElementById('cfOperator');
+  opSel.innerHTML='<option value="">— None —</option>';
+  myOps.forEach(function(o){opSel.innerHTML+='<option value="'+o.id+'">'+esc(o.name)+' ('+esc(o.fileNumber)+')</option>';});
+  // Pre-select if already assigned
+  if(r.assignedOperatorId)opSel.value=r.assignedOperatorId;
+  // Populate machine dropdown
+  var myMach=fleet.filter(function(m){return currentProfile&&currentProfile.role==='admin'?true:m.supervisor===supName;});
+  var maSel=document.getElementById('cfMachine');
+  maSel.innerHTML='<option value="">— None —</option>';
+  myMach.forEach(function(m){maSel.innerHTML+='<option value="'+m.id+'">'+esc(m.name)+' — '+esc(m.plateNumber)+(m.doorNumber?' / Door '+esc(m.doorNumber):'')+'</option>';});
+  if(r.assignedMachineId)maSel.value=r.assignedMachineId;
   document.getElementById('cfmodal').classList.add('open');
 }
 
@@ -1654,6 +2101,24 @@ function submitConfirm(){
   r.hours=h; r.ot=ot;
   r.sub=ct(r.rate,h,ot); r.vt=vat(r.sub);
   r.shortReason=reason;
+  // Save operator & machine assignments
+  var opId=document.getElementById('cfOperator').value;
+  var maId=document.getElementById('cfMachine').value;
+  var opObj=operators.find(function(o){return o.id===opId;})||null;
+  var maObj=fleet.find(function(m){return m.id===maId;})||null;
+  r.assignedOperatorId=opObj?opObj.id:'';
+  r.assignedOperatorName=opObj?opObj.name:'';
+  r.assignedOperatorFile=opObj?opObj.fileNumber:'';
+  r.assignedMachineId=maObj?maObj.id:'';
+  r.assignedMachineName=maObj?maObj.name:'';
+  r.assignedMachinePlate=maObj?maObj.plateNumber:'';
+  // Persist assignments back to the card so fleet status view can read it
+  if(r.ci>=0&&r.ci<cards.length){
+    cards[r.ci].AssignedOperatorId=r.assignedOperatorId;
+    cards[r.ci].AssignedOperatorName=r.assignedOperatorName;
+    cards[r.ci].AssignedMachineId=r.assignedMachineId;
+    cards[r.ci].AssignedMachineName=r.assignedMachineName;
+  }
   // Fixed Hours: deduct from contracted hours
   if(r.ci>=0&&r.ci<cards.length){
     var c=cards[r.ci];
