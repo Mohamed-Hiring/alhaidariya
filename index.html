@@ -507,7 +507,9 @@ body.is-admin .admin-only{display:revert!important;}
   <button class="nb" onclick="showPg('est',this)">&#x1F4CA; Estimated</button>
   <button class="nb" onclick="showPg('sales',this)">&#x2705; Sales Report</button>
   <button class="nb" onclick="showPg('fleet',this)">&#x1F69C; Fleet &amp; Ops</button>
-  <button class="nb" onclick="showPg('equip',this)">&#x1F6A7; Equipment</button>
+  <button class="nb" onclick="showPg('customers',this)">&#x1F3E2; Customers</button>
+  <button class="nb" onclick="showPg('invoices',this)">&#x1F4CB; Invoices</button>
+  <button class="nb" onclick="showPg('equip',this)">&#x1F6A7; Machine Types</button>
   <button class="nb" onclick="showPg('recs',this)">&#x1F5C2; Saved Records</button>
   <button class="nb" onclick="showPg('data',this)">&#x1F4BE; Data / Import</button>
   <button class="nb admin-only" id="usersNavBtn" onclick="showPg('users',this)">&#x1F465; Users</button>
@@ -660,14 +662,125 @@ body.is-admin .admin-only{display:revert!important;}
   </div>
 </div>
 
-<!-- EQUIPMENT -->
+<!-- CUSTOMERS -->
+<div class="pg" id="pg-customers">
+  <div id="custView-list">
+    <div class="card">
+      <div class="ct">&#x1F3E2; Customers
+        <div class="ct-toolbar">
+          <input type="text" id="custSearch" placeholder="Search..." oninput="renderCustList()"
+            style="padding:6px 12px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px">
+          <button class="btn bp bsm" onclick="openAddCust()">+ New Customer</button>
+        </div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Customer Name</th><th>Phone</th><th>VAT #</th><th>CR #</th><th>Running Cards</th><th>Unpaid Balance (BD)</th><th>Actions</th></tr></thead>
+        <tbody id="custBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+  <!-- Customer Profile (hidden until customer selected) -->
+  <div id="custView-profile" style="display:none">
+    <div style="margin-bottom:14px">
+      <button class="btn bo2 bsm" onclick="closeCustProfile()">&#x2190; Back to Customers</button>
+    </div>
+    <!-- Profile header -->
+    <div class="card" style="margin-bottom:14px">
+      <div id="custProfileHeader"></div>
+    </div>
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;margin-bottom:14px;background:white;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--g100)">
+      <button class="fleet-tab fleet-tab-a" id="cptab-cards" onclick="switchCustTab('cards')">&#x1F4CB; Cards</button>
+      <button class="fleet-tab" id="cptab-worklog" onclick="switchCustTab('worklog')">&#x1F4C5; Daily Work Log</button>
+      <button class="fleet-tab" id="cptab-invoices" onclick="switchCustTab('invoices')">&#x1F4CB; Invoices</button>
+      <button class="fleet-tab" id="cptab-statement" onclick="switchCustTab('statement')">&#x1F4CA; Statement</button>
+    </div>
+    <div id="cpSub-cards"><div class="card"><div class="tw"><table>
+      <thead><tr><th>Card #</th><th>Date</th><th>Machinery</th><th>Location</th><th>Status</th><th>Hours/Day</th><th>Total Hrs Confirmed</th><th></th></tr></thead>
+      <tbody id="cpCardsBody"></tbody>
+    </table></div></div></div>
+    <div id="cpSub-worklog" style="display:none"><div class="card">
+      <div id="cpWorkLogFilter" style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:bold;color:var(--g600)">Card:</span>
+        <select id="cpWLCardSel" onchange="renderCustWorkLog()" style="padding:6px 10px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px">
+          <option value="">All Cards</option>
+        </select>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Date</th><th>Card #</th><th>Machinery</th><th>Location</th><th>Shift Start</th><th>Shift End</th><th>Normal Hrs</th><th>OT Hrs</th><th>Total Hrs</th><th>Confirmed by</th></tr></thead>
+        <tbody id="cpWorkBody"></tbody>
+      </table></div>
+      <div class="tb" id="cpWorkTotals" style="display:none">
+        <div>Total Hours</div>
+        <div id="cpWorkTotalsVal"></div>
+      </div>
+    </div></div>
+    <div id="cpSub-invoices" style="display:none"><div class="card">
+      <div class="ct">Invoices <div class="ct-toolbar"><button class="btn bp bsm" onclick="openCreateInvoiceForCust()">+ Create Invoice</button></div></div>
+      <div class="tw"><table>
+        <thead><tr><th>Invoice #</th><th>Date</th><th>Amount (BD)</th><th>Paid (BD)</th><th>Balance (BD)</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="cpInvBody"></tbody>
+      </table></div>
+    </div></div>
+    <div id="cpSub-statement" style="display:none"><div class="card">
+      <div class="ct">Customer Statement
+        <div class="ct-toolbar">
+          <button class="btn bs bsm" onclick="pdfStatement()">&#x1F4C4; PDF Statement</button>
+        </div>
+      </div>
+      <div id="cpStatBody"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- INVOICES -->
+<div class="pg" id="pg-invoices">
+  <div id="invView-list">
+    <div class="card">
+      <div class="ct">&#x1F4CB; Invoices
+        <div class="ct-toolbar">
+          <select id="invStatusFilt" onchange="renderInvList()" style="padding:6px 10px;border:1.5px solid var(--g200);border-radius:8px;font-family:Tahoma;font-size:13px">
+            <option value="">All</option><option value="unpaid">Unpaid</option>
+            <option value="partial">Partial</option><option value="paid">Paid</option>
+          </select>
+          <button class="btn bp bsm" onclick="openCreateInvoice(null)">+ New Invoice</button>
+        </div>
+      </div>
+      <!-- Aging summary -->
+      <div id="agingBar" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:14px 18px;background:var(--g50);border-radius:var(--rm);border:1px solid var(--g100)"></div>
+      <div class="tw"><table>
+        <thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Amount (BD)</th><th>Paid (BD)</th><th>Balance (BD)</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+  <!-- Invoice detail view -->
+  <div id="invView-detail" style="display:none">
+    <div style="margin-bottom:14px;display:flex;gap:8px">
+      <button class="btn bo2 bsm" onclick="closeInvDetail()">&#x2190; Back</button>
+      <button class="btn bs bsm" onclick="pdfInvoice()">&#x1F4C4; PDF</button>
+      <button class="btn bp bsm" onclick="openAddPayment()">+ Add Payment</button>
+    </div>
+    <div id="invDetailContent"></div>
+  </div>
+</div>
+
+<!-- EQUIPMENT / MACHINE TYPES -->
 <div class="pg" id="pg-equip">
-  <div class="card">
-    <div class="ct">&#x1F6A7; Equipment — Supervisor Assignment
-      <div style="margin-left:auto">
-        <button class="btn bp bsm" onclick="applySupToCards()">&#x1F4CC; Apply to Running Cards</button>
+  <div class="card" style="margin-bottom:14px">
+    <div class="ct">&#x1F6A7; Machine Types Catalog
+      <div class="ct-toolbar">
+        <button class="btn bp bsm" onclick="openAddMachineType()">+ Add Machine Type</button>
+        <button class="btn bo2 bsm" onclick="applySupToCards()" title="Auto-assign supervisors to Running cards">&#x1F4CC; Apply to Cards</button>
       </div>
     </div>
+    <div class="tw"><table>
+      <thead><tr><th>Machine Type</th><th>Supervisor</th><th>Description</th><th>Actions</th></tr></thead>
+      <tbody id="mtBody"></tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="ct">Legacy Supervisor Assignment</div>
     <p style="color:var(--g400);font-size:12px;margin-bottom:16px">Assign each machinery type to a supervisor. Future orders with the same machinery will be auto-assigned.</p>
     <div id="equipList"></div>
   </div>
@@ -748,9 +861,15 @@ body.is-admin .admin-only{display:revert!important;}
     <div class="fg">
       <div class="fgo"><label>Card # (auto)</label><input type="text" id="fCode" readonly style="background:#f5f5f5"></div>
       <div class="fgo"><label>Date</label><input type="date" id="fDate"></div>
-      <div class="fgo full"><label>Customer</label><input type="text" id="fCust" placeholder="Customer name"></div>
+      <div class="fgo full"><label>Customer</label>
+        <select id="fCustSel" onchange="pickCust(this.value)" style="margin-bottom:4px;padding:8px 10px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-family:Tahoma;font-size:13px;width:100%"><option value="">— Select Customer —</option></select>
+        <input type="text" id="fCust" placeholder="Or type customer name manually">
+      </div>
       <div class="fgo"><label>Tel</label><input type="text" id="fTel"></div>
-      <div class="fgo"><label>Machinery</label><input type="text" id="fMach" placeholder="e.g. CRANE 50 TON"></div>
+      <div class="fgo"><label>Machinery</label>
+        <select id="fMachSel" onchange="pickMach(this.value)" style="margin-bottom:4px;padding:8px 10px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-family:Tahoma;font-size:13px;width:100%"><option value="">— Select from Catalog —</option></select>
+        <input type="text" id="fMach" placeholder="Or type machinery manually">
+      </div>
       <div class="fgo"><label>Location</label><input type="text" id="fLoc" placeholder="e.g. HIDD"></div>
       <div class="fgo"><label>LPO</label><input type="text" id="fLPO"></div>
       <div class="fgo"><label>Rate/Hr (BD excl. VAT)</label><input type="number" id="fRate" step="0.001" placeholder="0.000" oninput="prevRate()"></div>
@@ -848,6 +967,128 @@ body.is-admin .admin-only{display:revert!important;}
     <div class="fa">
       <button class="btn bo2" onclick="closeConfirm()">Cancel</button>
       <button class="btn bp" onclick="submitConfirm()">&#x2713; Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT CUSTOMER MODAL -->
+<div class="mo" id="custModal">
+  <div class="md" style="max-width:560px">
+    <div class="mt" id="custModalTitle">New Customer</div>
+    <div class="fg">
+      <div class="fgo full"><label>Company / Customer Name</label>
+        <input type="text" id="cName" placeholder="e.g. MOHAMED KHALID CONSTRUCTION">
+      </div>
+      <div class="fgo"><label>Phone</label>
+        <input type="text" id="cPhone" placeholder="+973 XXXX XXXX">
+      </div>
+      <div class="fgo"><label>Email</label>
+        <input type="email" id="cEmail" placeholder="info@company.com">
+      </div>
+      <div class="fgo"><label>VAT Number</label>
+        <input type="text" id="cVat" placeholder="2100XXXXXXXXX">
+      </div>
+      <div class="fgo"><label>CR Number</label>
+        <input type="text" id="cCr" placeholder="Commercial Registration #">
+      </div>
+      <div class="fgo full"><label>Address</label>
+        <input type="text" id="cAddr" placeholder="Building, Road, Block, Bahrain">
+      </div>
+    </div>
+    <div id="cErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeCustModal()">Cancel</button>
+      <button class="btn bp" id="cSaveBtn" onclick="saveCustomer()">&#x2713; Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE INVOICE MODAL -->
+<div class="mo" id="createInvModal">
+  <div class="md" style="max-width:640px">
+    <div class="mt">Create Invoice</div>
+    <div class="fg">
+      <div class="fgo"><label>Customer</label>
+        <select id="invCustSel" onchange="populateInvCards()">
+          <option value="">— Select Customer —</option>
+        </select>
+      </div>
+      <div class="fgo"><label>Invoice Date</label>
+        <input type="date" id="invDate">
+      </div>
+      <div class="fgo full"><label>Cards to include (multiple select)</label>
+        <select id="invCardSel" multiple style="height:110px;padding:6px;font-size:12px" onchange="updateInvPreview()">
+        </select>
+        <span style="font-size:11px;color:var(--g400)">Hold Ctrl/Cmd to select multiple</span>
+      </div>
+      <div class="fgo full"><label>Extra Notes / Terms</label>
+        <input type="text" id="invNotes" placeholder="e.g. Payment due within 30 days">
+      </div>
+    </div>
+    <div id="invPreview" style="margin-top:12px;font-size:12px;color:var(--g600);display:none;background:var(--g50);padding:10px;border-radius:8px"></div>
+    <div id="invErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closeCreateInv()">Cancel</button>
+      <button class="btn bp" onclick="saveInvoice()">&#x2713; Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PAYMENT MODAL -->
+<div class="mo" id="payModal">
+  <div class="md" style="max-width:420px">
+    <div class="mt">Add Payment</div>
+    <div id="payInvInfo" style="background:var(--g50);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--g600)"></div>
+    <div class="fg">
+      <div class="fgo"><label>Amount (BD)</label>
+        <input type="number" id="payAmt" step="0.001" min="0" placeholder="0.000">
+      </div>
+      <div class="fgo"><label>Date</label>
+        <input type="date" id="payDate">
+      </div>
+      <div class="fgo"><label>Method</label>
+        <select id="payMethod">
+          <option value="bank">Bank Transfer</option>
+          <option value="cash">Cash</option>
+          <option value="cheque">Cheque</option>
+        </select>
+      </div>
+      <div class="fgo"><label>Reference</label>
+        <input type="text" id="payRef" placeholder="Cheque # or Transfer ref">
+      </div>
+    </div>
+    <div id="payErr" style="color:var(--rd);font-size:13px;margin-top:10px;display:none"></div>
+    <div class="fa">
+      <button class="btn bo2" onclick="closePayModal()">Cancel</button>
+      <button class="btn bp" onclick="savePayment()">&#x2713; Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MACHINE TYPE MODAL -->
+<div class="mo" id="addMtModal">
+  <div class="md" style="max-width:440px">
+    <div class="mt">Add Machine Type</div>
+    <div class="fg">
+      <div class="fgo full"><label>Machine Type Name</label>
+        <input type="text" id="mtName" placeholder="e.g. JCB 3CX">
+      </div>
+      <div class="fgo full"><label>Assign to Supervisor</label>
+        <select id="mtSup">
+          <option value="">— None —</option>
+          <option value="Mohamed Al Ajmi">Mohamed Al Ajmi</option>
+          <option value="Mohamed Saeed">Mohamed Saeed</option>
+          <option value="Al Aqib">Al Aqib</option>
+          <option value="Haroun">Haroun</option>
+        </select>
+      </div>
+      <div class="fgo full"><label>Description <span style="color:var(--g400);font-weight:normal">(optional)</span></label>
+        <input type="text" id="mtDesc" placeholder="e.g. Backhoe loader, 3CX series">
+      </div>
+    </div>
+    <div class="fa">
+      <button class="btn bo2" onclick="document.getElementById('addMtModal').classList.remove('open')">Cancel</button>
+      <button class="btn bp" onclick="saveMachineType()">&#x2713; Save</button>
     </div>
   </div>
 </div>
@@ -979,6 +1220,19 @@ var confirmIdx   = -1;  // index into estData being confirmed
 var notifications = []; // [{id,supervisor,cardCode,...}]
 var fleet         = []; // [{id,supervisor,name,plateNumber,doorNumber,createdAt}]
 var operators     = []; // [{id,supervisor,name,fileNumber,createdAt}]
+var customers     = []; // [{id,name,phone,email,vatNumber,crNumber,address,createdAt}]
+var machineTypes  = []; // [{id,name,supervisor,description,createdAt}]
+var invoices      = []; // [{id,invoiceNo,customerId,...,payments[],status}]
+var _invoiceSeq   = 1;  // auto-increment counter for invoice numbers
+
+/* ── COMPANY INFO ── */
+var COMPANY = {
+  name:    'Al Haidariya Heavy Equipment Hiring',
+  legal:   'Registered branch of Sayed Kadhem Aldurazi and Sons BSC (c)',
+  address: 'Building 1389, Road 4629, Town Nuwaidrat, Block 646, Bahrain',
+  vat:     '210000220000002',
+  disclaimer: 'This Invoice is void if it is altered or mutilated'
+};
 
 /* ═══════════════════════════════════════════
    SUPABASE — CONFIG & STATE
@@ -1085,6 +1339,16 @@ async function loadAllData(){
       if(row.key==='notifications') notifications=row.value||[];
       if(row.key==='fleet') fleet=row.value||[];
       if(row.key==='operators') operators=row.value||[];
+      if(row.key==='customers') customers=row.value||[];
+      if(row.key==='machine_types') machineTypes=row.value||[];
+      if(row.key==='invoices'){
+        invoices=row.value||[];
+        // Re-compute invoice sequence counter
+        invoices.forEach(function(inv){
+          var n=parseInt((inv.invoiceNo||'').replace(/\D/g,'').slice(-3))||0;
+          if(n>=_invoiceSeq)_invoiceSeq=n+1;
+        });
+      }
     });
   }
 }
@@ -1129,7 +1393,24 @@ async function syncOperators(){
   if(!supa)return;
   await supa.from('app_data').upsert({key:'operators',value:operators,updated_at:new Date().toISOString()},{onConflict:'key'});
 }
-
+async function syncCustomers(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'customers',value:customers,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+async function syncMachineTypes(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'machine_types',value:machineTypes,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+async function syncInvoices(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'invoices',value:invoices,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+function nextInvoiceNo(){
+  var yr=new Date().getFullYear();
+  var n=String(_invoiceSeq).padStart(3,'0');
+  _invoiceSeq++;
+  return 'INV-'+yr+'-'+n;
+}
 async function syncNotifications(){
   if(!supa)return;
   await supa.from('app_data').upsert(
@@ -1368,7 +1649,8 @@ function initDate(){
 }
 
 function ct(r,h,ot){return r*(h+ot);}
-function vat(n){return n*(1+VAT);}
+function vat(n){return n*(1+VAT);}   // total including VAT (used in display)
+function vatAmt(n){return n*VAT;}    // VAT portion only (used in invoices)
 
 function nxtCode(){
   var m=0;
@@ -1431,6 +1713,8 @@ function showPg(n,btn){
   if(n==='recs')renderRecs();
   if(n==='equip')renderEquip();
   if(n==='fleet')renderFleetPage();
+  if(n==='customers')renderCustList();
+  if(n==='invoices'){renderInvList();renderAgingBar();}
   if(n==='users')renderUsers();
 }
 
@@ -1551,6 +1835,635 @@ function latestAssignment(c){
   if(!c.assignments || !c.assignments.length) return null;
   // Return the last one added
   return c.assignments[c.assignments.length - 1];
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOMERS
+═══════════════════════════════════════════ */
+
+var _activeCustId=null;
+var _activeCustTab='cards';
+var _activeInvId=null;
+var _payInvId=null;
+
+function renderCustList(){
+  var q=(document.getElementById('custSearch')||{}).value||'';
+  q=q.toLowerCase();
+  var tb=document.getElementById('custBody');
+  var list=customers.filter(function(c){return!q||c.name.toLowerCase().includes(q)||(c.phone||'').includes(q);});
+  if(!list.length){tb.innerHTML='<tr><td colspan="7" class="emp">No customers yet. Click + New Customer.</td></tr>';return;}
+  var html='';
+  list.forEach(function(c){
+    var myCards=cards.filter(function(k){return k.Customer===c.name;});
+    var running=myCards.filter(function(k){return k.Status==='Running';}).length;
+    var myInvs=invoices.filter(function(i){return i.customerId===c.id;});
+    var totalOwed=myInvs.reduce(function(s,i){return s+(i.grandTotal||0)-(i.paidAmount||0);},0);
+    var debtClass=totalOwed>500?' style="color:var(--rd);font-weight:bold"':'';
+    html+='<tr>'+
+      '<td><b>'+esc(c.name)+'</b></td>'+
+      '<td>'+esc(c.phone||'—')+'</td>'+
+      '<td style="font-size:11px">'+esc(c.vatNumber||'—')+'</td>'+
+      '<td style="font-size:11px">'+esc(c.crNumber||'—')+'</td>'+
+      '<td>'+(running?'<span class="badge bc">'+running+' Running</span>':'<span style="color:var(--g400)">0</span>')+'</td>'+
+      '<td'+debtClass+'>'+(totalOwed>0?'BD '+totalOwed.toFixed(3):'—')+'</td>'+
+      '<td><div style="display:flex;gap:4px"><button class="btn bo2 bsm" onclick="openCustProfile(\'+c.id+'\')">View</button><button class="btn bo2 bsm" onclick="openEditCust(\'+c.id+'\')">Edit</button><button class="btn bsm bd" onclick="deleteCust(\'+c.id+'\')">Del</button></div></td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function openAddCust(){
+  _activeCustId=null;
+  document.getElementById('custModalTitle').textContent='New Customer';
+  ['cName','cPhone','cEmail','cVat','cCr','cAddr'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('cErr').style.display='none';
+  document.getElementById('custModal').classList.add('open');
+}
+function openEditCust(id){
+  var c=customers.find(function(x){return x.id===id;});
+  if(!c)return;
+  _activeCustId=id;
+  document.getElementById('custModalTitle').textContent='Edit Customer';
+  document.getElementById('cName').value=c.name;
+  document.getElementById('cPhone').value=c.phone||'';
+  document.getElementById('cEmail').value=c.email||'';
+  document.getElementById('cVat').value=c.vatNumber||'';
+  document.getElementById('cCr').value=c.crNumber||'';
+  document.getElementById('cAddr').value=c.address||'';
+  document.getElementById('cErr').style.display='none';
+  document.getElementById('custModal').classList.add('open');
+}
+function closeCustModal(){document.getElementById('custModal').classList.remove('open');}
+async function saveCustomer(){
+  var name=document.getElementById('cName').value.trim().toUpperCase();
+  var errEl=document.getElementById('cErr');
+  if(!name){errEl.textContent='Customer name is required.';errEl.style.display='block';return;}
+  if(_activeCustId){
+    var c=customers.find(function(x){return x.id===_activeCustId;});
+    if(c){c.name=name;c.phone=document.getElementById('cPhone').value.trim();c.email=document.getElementById('cEmail').value.trim();c.vatNumber=document.getElementById('cVat').value.trim();c.crNumber=document.getElementById('cCr').value.trim();c.address=document.getElementById('cAddr').value.trim();}
+  } else {
+    customers.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,6),name:name,phone:document.getElementById('cPhone').value.trim(),email:document.getElementById('cEmail').value.trim(),vatNumber:document.getElementById('cVat').value.trim(),crNumber:document.getElementById('cCr').value.trim(),address:document.getElementById('cAddr').value.trim(),createdAt:new Date().toISOString()});
+  }
+  await syncCustomers();
+  closeCustModal();
+  renderCustList();
+}
+async function deleteCust(id){
+  if(!confirm('Delete this customer?'))return;
+  customers=customers.filter(function(c){return c.id!==id;});
+  await syncCustomers();
+  renderCustList();
+}
+
+
+/* ═══════════════════════════════════════════
+   CUSTOMER PROFILE
+═══════════════════════════════════════════ */
+
+function openCustProfile(id){
+  _activeCustId=id;
+  _activeCustTab='cards';
+  document.getElementById('custView-list').style.display='none';
+  document.getElementById('custView-profile').style.display='block';
+  var c=customers.find(function(x){return x.id===id;})||{};
+  var myCards=cards.filter(function(k){return k.Customer===c.name;});
+  var running=myCards.filter(function(k){return k.Status==='Running';});
+  var estBD=running.reduce(function(s,k){
+    var h=k.DailyHours||8,r=k.Rate||0,ot=k.ExpectedOT||0;
+    return s+ct(r,h,ot)+vat(ct(r,h,ot));
+  },0);
+  var myInvs=invoices.filter(function(i){return i.customerId===id;});
+  var totalOwed=myInvs.reduce(function(s,i){return s+(i.grandTotal||0)-(i.paidAmount||0);},0);
+  document.getElementById('custProfileHeader').innerHTML=
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">'+
+    '<div style="flex:1;min-width:200px">'+
+      '<div style="font-size:20px;font-weight:bold;color:var(--p);margin-bottom:6px">'+esc(c.name)+'</div>'+
+      '<div style="font-size:13px;color:var(--g600);display:flex;flex-direction:column;gap:3px">'+
+        (c.phone?'<span>&#x1F4DE; '+esc(c.phone)+'</span>':'')+
+        (c.email?'<span>&#x2709; '+esc(c.email)+'</span>':'')+
+        (c.vatNumber?'<span>VAT: '+esc(c.vatNumber)+'</span>':'')+
+        (c.crNumber?'<span>CR: '+esc(c.crNumber)+'</span>':'')+
+        (c.address?'<span>'+esc(c.address)+'</span>':'')+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
+      '<div style="background:var(--pb);border-radius:10px;padding:12px 16px;text-align:center;min-width:90px"><div style="font-size:22px;font-weight:bold;color:var(--p)">'+myCards.length+'</div><div style="font-size:11px;color:var(--g600)">Total Cards</div></div>'+
+      '<div style="background:#fff0f0;border-radius:10px;padding:12px 16px;text-align:center;min-width:90px"><div style="font-size:22px;font-weight:bold;color:var(--rd)">'+running.length+'</div><div style="font-size:11px;color:var(--g600)">Running</div></div>'+
+      (estBD>0?'<div style="background:var(--gnb);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px"><div style="font-size:16px;font-weight:bold;color:var(--gnd)">BD '+estBD.toFixed(3)+'</div><div style="font-size:11px;color:var(--g600)">Est. (incl. VAT)</div></div>':'')+
+      (totalOwed>0?'<div style="background:var(--rdb);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px"><div style="font-size:16px;font-weight:bold;color:var(--rdd)">BD '+totalOwed.toFixed(3)+'</div><div style="font-size:11px;color:var(--g600)">Outstanding</div></div>':'')+
+    '</div>'+
+    '</div>';
+  switchCustTab('cards');
+  document.getElementById('custView-profile').scrollIntoView({behavior:'smooth'});
+}
+
+function closeCustProfile(){
+  _activeCustId=null;
+  document.getElementById('custView-list').style.display='';
+  document.getElementById('custView-profile').style.display='none';
+  renderCustList();
+}
+
+function switchCustTab(tab){
+  _activeCustTab=tab;
+  ['cards','worklog','invoices','statement'].forEach(function(t){
+    var el=document.getElementById('cpSub-'+t);
+    if(el)el.style.display=(t===tab)?'':'none';
+    var btn=document.getElementById('cptab-'+t);
+    if(btn)btn.classList.toggle('fleet-tab-a',t===tab);
+  });
+  if(tab==='cards')renderCustCards();
+  if(tab==='worklog')renderCustWorkLog();
+  if(tab==='invoices')renderCustInvoices();
+  if(tab==='statement')renderCustStatement();
+}
+
+function renderCustCards(){
+  var c=customers.find(function(x){return x.id===_activeCustId;})||{};
+  var myCards=cards.filter(function(k){return k.Customer===c.name;});
+  var tb=document.getElementById('cpCardsBody');
+  if(!myCards.length){tb.innerHTML='<tr><td colspan="8" class="emp">No cards for this customer.</td></tr>';return;}
+  var html='';
+  myCards.forEach(function(k){
+    var totalHrs=(k.workLog||[]).reduce(function(s,w){return s+(w.hours||0)+(w.ot||0);},0);
+    html+='<tr>'+
+      '<td><b style="color:var(--p)">'+esc(k.Code)+'</b></td>'+
+      '<td>'+esc(k.Date||'—')+'</td>'+
+      '<td>'+esc(k.Machinery||'—')+'</td>'+
+      '<td>'+esc(k.Location||'—')+'</td>'+
+      '<td>'+badge(k.Status)+'</td>'+
+      '<td>'+(k.DailyHours||8)+' h/day</td>'+
+      '<td>'+(totalHrs?'<b>'+totalHrs.toFixed(1)+' h</b>':'—')+'</td>'+
+      '<td><button class="btn bo2 bsm" onclick="openAssignments('+cards.indexOf(k)+')">Assignments</button></td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function renderCustWorkLog(){
+  var c=customers.find(function(x){return x.id===_activeCustId;})||{};
+  var myCards=cards.filter(function(k){return k.Customer===c.name;});
+  var cardSel=document.getElementById('cpWLCardSel');
+  var curVal=cardSel.value;
+  cardSel.innerHTML='<option value="">All Cards</option>';
+  myCards.forEach(function(k){cardSel.innerHTML+='<option value="'+esc(k.Code)+'">'+esc(k.Code)+' — '+esc(k.Machinery||'')+'</option>';});
+  if(curVal)cardSel.value=curVal;
+  var filterCode=cardSel.value;
+  var rows=[];
+  myCards.forEach(function(k){
+    if(filterCode&&k.Code!==filterCode)return;
+    (k.workLog||[]).forEach(function(w){
+      rows.push({date:w.date,code:k.Code,machinery:k.Machinery||'',location:k.Location||'',
+        shiftStart:w.shiftStart||'—',shiftEnd:w.shiftEnd||'—',
+        hours:w.hours||0,ot:w.ot||0,confirmedBy:w.confirmedBy||'—'});
+    });
+  });
+  rows.sort(function(a,b){return a.date<b.date?1:-1;});
+  var tb=document.getElementById('cpWorkBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="10" class="emp">No confirmed work log yet.</td></tr>';document.getElementById('cpWorkTotals').style.display='none';return;}
+  var totalH=0,totalOT=0;
+  var html='';
+  rows.forEach(function(r){
+    var tot=(r.hours)+(r.ot);
+    totalH+=r.hours;totalOT+=r.ot;
+    html+='<tr>'+
+      '<td>'+esc(r.date)+'</td>'+
+      '<td><b style="color:var(--p)">'+esc(r.code)+'</b></td>'+
+      '<td>'+esc(r.machinery)+'</td>'+
+      '<td>'+esc(r.location)+'</td>'+
+      '<td>'+esc(r.shiftStart)+'</td>'+
+      '<td>'+esc(r.shiftEnd)+'</td>'+
+      '<td>'+r.hours+'</td>'+
+      '<td>'+r.ot+'</td>'+
+      '<td><b>'+tot.toFixed(1)+'</b></td>'+
+      '<td style="font-size:11px;color:var(--g400)">'+esc(r.confirmedBy)+'</td>'+
+      '</tr>';
+  });
+  tb.innerHTML=html;
+  var tot2=document.getElementById('cpWorkTotals');
+  tot2.style.display='flex';
+  document.getElementById('cpWorkTotalsVal').innerHTML='Normal: <b>'+(totalH.toFixed(1))+'h</b> &nbsp;|&nbsp; OT: <b>'+(totalOT.toFixed(1))+'h</b> &nbsp;|&nbsp; Total: <b>'+((totalH+totalOT).toFixed(1))+'h</b>';
+}
+
+function renderCustInvoices(){
+  var myInvs=invoices.filter(function(i){return i.customerId===_activeCustId;});
+  var tb=document.getElementById('cpInvBody');
+  if(!myInvs.length){tb.innerHTML='<tr><td colspan="7" class="emp">No invoices yet.</td></tr>';return;}
+  tb.innerHTML=myInvs.map(function(inv){
+    var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+    return '<tr>'+
+      '<td><b style="color:var(--p)">'+esc(inv.invoiceNo)+'</b></td>'+
+      '<td>'+esc(inv.date)+'</td>'+
+      '<td>BD '+inv.grandTotal.toFixed(3)+'</td>'+
+      '<td style="color:var(--gn)">BD '+(inv.paidAmount||0).toFixed(3)+'</td>'+
+      '<td style="color:'+(bal>0?'var(--rd)':'var(--gn)')+'"><b>BD '+bal.toFixed(3)+'</b></td>'+
+      '<td>'+invStatusBadge(inv.status)+'</td>'+
+      '<td><button class="btn bo2 bsm" onclick="openInvDetail(\''+inv.id+'\')">View</button></td>'+
+      '</tr>';
+  }).join('');
+}
+
+function renderCustStatement(){
+  var c=customers.find(function(x){return x.id===_activeCustId;})||{};
+  var myInvs=invoices.filter(function(i){return i.customerId===_activeCustId;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var el=document.getElementById('cpStatBody');
+  if(!myInvs.length){el.innerHTML='<div class="emp" style="padding:20px">No invoices to show.</div>';return;}
+  var running=0;
+  var rows=[];
+  myInvs.forEach(function(inv){
+    running+=inv.grandTotal||0;
+    rows.push({date:inv.date,ref:inv.invoiceNo,desc:'Invoice',debit:inv.grandTotal||0,credit:0,balance:running});
+    (inv.payments||[]).forEach(function(p){
+      running-=p.amount||0;
+      rows.push({date:p.date,ref:p.reference||'Payment',desc:'Payment ('+p.method+')',debit:0,credit:p.amount||0,balance:running});
+    });
+  });
+  var html='<div class="tw"><table>'+
+    '<thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Debit (BD)</th><th>Credit (BD)</th><th>Balance (BD)</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr>'+
+      '<td>'+esc(r.date)+'</td>'+
+      '<td><b>'+esc(r.ref)+'</b></td>'+
+      '<td>'+esc(r.desc)+'</td>'+
+      '<td>'+(r.debit?'BD '+r.debit.toFixed(3):'—')+'</td>'+
+      '<td style="color:var(--gn)">'+(r.credit?'BD '+r.credit.toFixed(3):'—')+'</td>'+
+      '<td style="color:'+(r.balance>0?'var(--rd)':'var(--gn)')+'"><b>BD '+r.balance.toFixed(3)+'</b></td>'+
+      '</tr>';
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function openCreateInvoiceForCust(){
+  openCreateInvoice(_activeCustId);
+}
+
+/* ═══════════════════════════════════════════
+   INVOICES
+═══════════════════════════════════════════ */
+
+function invStatusBadge(s){
+  if(s==='paid')return'<span class="badge br">Paid</span>';
+  if(s==='partial')return'<span class="badge bo">Partial</span>';
+  return'<span class="badge bc">Unpaid</span>';
+}
+
+function renderInvList(){
+  var filt=(document.getElementById('invStatusFilt')||{}).value||'';
+  var list=filt?invoices.filter(function(i){return i.status===filt;}):invoices;
+  list=list.slice().sort(function(a,b){return a.date<b.date?1:-1;});
+  var tb=document.getElementById('invBody');
+  if(!list.length){tb.innerHTML='<tr><td colspan="8" class="emp">No invoices yet.</td></tr>';return;}
+  tb.innerHTML=list.map(function(inv){
+    var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+    return'<tr>'+
+      '<td><b style="color:var(--p)">'+esc(inv.invoiceNo)+'</b></td>'+
+      '<td>'+esc(inv.date)+'</td>'+
+      '<td>'+esc(inv.customerName)+'</td>'+
+      '<td>BD '+inv.grandTotal.toFixed(3)+'</td>'+
+      '<td style="color:var(--gn)">BD '+(inv.paidAmount||0).toFixed(3)+'</td>'+
+      '<td style="color:'+(bal>0?'var(--rd)':'var(--gn)')+'"><b>BD '+bal.toFixed(3)+'</b></td>'+
+      '<td>'+invStatusBadge(inv.status)+'</td>'+
+      '<td><button class="btn bo2 bsm" onclick="openInvDetail(\''+inv.id+'\')">View</button></td>'+
+      '</tr>';
+  }).join('');
+}
+
+function renderAgingBar(){
+  var now=new Date();
+  var buckets={b30:0,b60:0,b90:0,b90p:0};
+  invoices.forEach(function(inv){
+    if(inv.status==='paid')return;
+    var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+    if(bal<=0)return;
+    var days=Math.floor((now-new Date(inv.date))/(86400000));
+    if(days<=30)buckets.b30+=bal;
+    else if(days<=60)buckets.b60+=bal;
+    else if(days<=90)buckets.b90+=bal;
+    else buckets.b90p+=bal;
+  });
+  var total=buckets.b30+buckets.b60+buckets.b90+buckets.b90p;
+  var el=document.getElementById('agingBar');
+  if(!el)return;
+  if(!total){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=
+    '<span style="font-size:12px;font-weight:bold;color:var(--g600);margin-right:4px">Aging:</span>'+
+    '<span style="font-size:12px;color:var(--gn)">0-30d: <b>BD '+buckets.b30.toFixed(3)+'</b></span>'+
+    '<span style="font-size:12px;color:var(--am)">31-60d: <b>BD '+buckets.b60.toFixed(3)+'</b></span>'+
+    '<span style="font-size:12px;color:var(--rd)">61-90d: <b>BD '+buckets.b90.toFixed(3)+'</b></span>'+
+    '<span style="font-size:12px;color:var(--rdd)">90d+: <b>BD '+buckets.b90p.toFixed(3)+'</b></span>'+
+    '<span style="margin-left:auto;font-size:12px;font-weight:bold;color:var(--rd)">Total Owed: BD '+total.toFixed(3)+'</span>';
+}
+
+function openCreateInvoice(custId){
+  // Populate customer dropdown
+  var sel=document.getElementById('invCustSel');
+  sel.innerHTML='<option value="">— Select Customer —</option>';
+  customers.forEach(function(c){
+    sel.innerHTML+='<option value="'+c.id+'">'+esc(c.name)+'</option>';
+  });
+  if(custId)sel.value=custId;
+  document.getElementById('invDate').value=fmtD(new Date());
+  document.getElementById('invNotes').value='';
+  document.getElementById('invPreview').style.display='none';
+  document.getElementById('invErr').style.display='none';
+  populateInvCards();
+  document.getElementById('createInvModal').classList.add('open');
+}
+function closeCreateInv(){document.getElementById('createInvModal').classList.remove('open');}
+
+function populateInvCards(){
+  var custId=document.getElementById('invCustSel').value;
+  var c=customers.find(function(x){return x.id===custId;})||null;
+  var sel=document.getElementById('invCardSel');
+  sel.innerHTML='';
+  if(!c){return;}
+  var myCards=cards.filter(function(k){return k.Customer===c.name&&(k.Status==='Running'||k.Status==='Recieved'||k.Status==='Off Hire');});
+  myCards.forEach(function(k){
+    var opt=document.createElement('option');
+    opt.value=k.Code;
+    opt.textContent=k.Code+' — '+k.Machinery+' — '+(k.Location||'')+(k.Status==='Running'?' [Running]':'');
+    sel.appendChild(opt);
+  });
+  updateInvPreview();
+}
+
+function updateInvPreview(){
+  var sel=document.getElementById('invCardSel');
+  var selected=Array.from(sel.selectedOptions).map(function(o){return o.value;});
+  if(!selected.length){document.getElementById('invPreview').style.display='none';return;}
+  var subtotal=0;
+  selected.forEach(function(code){
+    var k=cards.find(function(x){return x.Code===code;});
+    if(!k)return;
+    var hrs=(k.workLog||[]).reduce(function(s,w){return s+(w.hours||0)+(w.ot||0);},0);
+    if(!hrs)hrs=(k.DailyHours||8);
+    subtotal+=ct(k.Rate||0,hrs,0);
+  });
+  var invVat=vatAmt(subtotal);
+  var el=document.getElementById('invPreview');
+  el.style.display='block';
+  el.textContent=selected.length+' card(s) selected — Subtotal: BD '+subtotal.toFixed(3)+' + VAT BD '+invVat.toFixed(3)+' = BD '+(subtotal+invVat).toFixed(3);
+}
+
+async function saveInvoice(){
+  var custId=document.getElementById('invCustSel').value;
+  var c=customers.find(function(x){return x.id===custId;})||null;
+  var errEl=document.getElementById('invErr');
+  if(!c){errEl.textContent='Select a customer.';errEl.style.display='block';return;}
+  var sel=document.getElementById('invCardSel');
+  var selected=Array.from(sel.selectedOptions).map(function(o){return o.value;});
+  if(!selected.length){errEl.textContent='Select at least one card.';errEl.style.display='block';return;}
+  var dt=document.getElementById('invDate').value;
+  var notes=document.getElementById('invNotes').value.trim();
+  var lineItems=[];
+  var subtotal=0;
+  selected.forEach(function(code){
+    var k=cards.find(function(x){return x.Code===code;});
+    if(!k)return;
+    var hrs=(k.workLog||[]).reduce(function(s,w){return s+(w.hours||0)+(w.ot||0);},0);
+    if(!hrs)hrs=(k.DailyHours||8);
+    var rate=k.Rate||0;
+    var total=ct(rate,hrs,0);
+    subtotal+=total;
+    lineItems.push({
+      description:'Card #'+k.Code+' — '+k.Machinery+' — '+(k.Location||'')+(k.Date?' ('+k.Date+')':''),
+      qty:hrs,unit:'hours',unitPrice:rate,total:total
+    });
+  });
+  var invVat=vatAmt(subtotal);
+  var grand=subtotal+invVat;
+  var inv={
+    id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    invoiceNo:nextInvoiceNo(),
+    customerId:custId,customerName:c.name,
+    customerVat:c.vatNumber||'',customerCr:c.crNumber||'',customerAddress:c.address||'',
+    cardCodes:selected,date:dt,notes:notes,
+    lineItems:lineItems,subtotal:subtotal,vatAmount:invVat,grandTotal:grand,
+    payments:[],paidAmount:0,status:'unpaid',
+    createdAt:new Date().toISOString(),createdBy:currentProfile?currentProfile.full_name:''
+  };
+  invoices.unshift(inv);
+  await syncInvoices();
+  closeCreateInv();
+  renderInvList();
+  renderAgingBar();
+}
+
+function openInvDetail(id){
+  _activeInvId=id;
+  var inv=invoices.find(function(i){return i.id===id;});
+  if(!inv)return;
+  document.getElementById('invView-list').style.display='none';
+  document.getElementById('invView-detail').style.display='block';
+  renderInvDetail(inv);
+}
+
+function closeInvDetail(){
+  _activeInvId=null;
+  document.getElementById('invView-list').style.display='';
+  document.getElementById('invView-detail').style.display='none';
+  renderInvList();renderAgingBar();
+}
+
+function renderInvDetail(inv){
+  var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+  var html='<div class="card">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:20px">'+
+      '<div>'+
+        '<div style="font-size:22px;font-weight:bold;color:var(--p)">'+esc(inv.invoiceNo)+'</div>'+
+        '<div style="font-size:13px;color:var(--g600)">Date: '+esc(inv.date)+'</div>'+
+        '<div style="margin-top:8px">'+invStatusBadge(inv.status)+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;font-size:13px;color:var(--g600)">'+
+        '<div style="font-size:15px;font-weight:bold;color:var(--g800)">'+esc(COMPANY.name)+'</div>'+
+        '<div style="font-size:11px">'+esc(COMPANY.legal)+'</div>'+
+        '<div>VAT: '+esc(COMPANY.vat)+'</div>'+
+        '<div>'+esc(COMPANY.address)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--g50);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px">'+
+      '<b>Bill To:</b><br>'+esc(inv.customerName)+
+      (inv.customerVat?'<br>VAT: '+esc(inv.customerVat):'')+
+      (inv.customerCr?'<br>CR: '+esc(inv.customerCr):'')+
+      (inv.customerAddress?'<br>'+esc(inv.customerAddress):'')+
+    '</div>'+
+    '<div class="tw" style="margin-bottom:16px"><table>'+
+    '<thead><tr><th>Description</th><th>Qty (hrs)</th><th>Rate/hr (BD)</th><th>Total (BD)</th></tr></thead><tbody>';
+  inv.lineItems.forEach(function(li){
+    html+='<tr><td>'+esc(li.description)+'</td><td>'+li.qty+'</td><td>'+li.unitPrice.toFixed(3)+'</td><td><b>'+li.total.toFixed(3)+'</b></td></tr>';
+  });
+  html+='</tbody></table></div>'+
+    '<div style="text-align:right;font-size:13px;padding-right:8px">'+
+      '<div>Subtotal: <b>BD '+inv.subtotal.toFixed(3)+'</b></div>'+
+      '<div>VAT (10%): <b>BD '+inv.vatAmount.toFixed(3)+'</b></div>'+
+      '<div style="font-size:18px;font-weight:bold;color:var(--p);margin-top:6px">Grand Total: BD '+inv.grandTotal.toFixed(3)+'</div>'+
+      '<div style="color:var(--gn)">Paid: BD '+(inv.paidAmount||0).toFixed(3)+'</div>'+
+      '<div style="color:'+(bal>0?'var(--rd)':'var(--gn)')+'"><b>Balance: BD '+bal.toFixed(3)+'</b></div>'+
+    '</div>';
+  if(inv.payments&&inv.payments.length){
+    html+='<div style="margin-top:16px;border-top:1px solid var(--g100);padding-top:14px"><b style="font-size:13px">Payments:</b><div class="tw" style="margin-top:8px"><table>'+
+      '<thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Amount (BD)</th><th></th></tr></thead><tbody>';
+    inv.payments.forEach(function(p,pi){
+      html+='<tr><td>'+esc(p.date)+'</td><td>'+esc(p.method)+'</td><td>'+esc(p.reference||'—')+'</td><td><b>BD '+p.amount.toFixed(3)+'</b></td>'+
+        '<td><button class="btn bsm bd" onclick="deletePayment(\''+inv.id+'\','+pi+')">X</button></td></tr>';
+    });
+    html+='</tbody></table></div></div>';
+  }
+  if(inv.notes)html+='<div style="margin-top:12px;font-size:12px;color:var(--g600)"><i>'+esc(inv.notes)+'</i></div>';
+  html+='<div style="margin-top:16px;font-size:10px;color:var(--g400);border-top:1px solid var(--g100);padding-top:8px">'+esc(COMPANY.disclaimer)+'</div>';
+  html+='</div>';
+  document.getElementById('invDetailContent').innerHTML=html;
+}
+
+var _payInvId=null;
+function openAddPayment(){
+  if(!_activeInvId)return;
+  _payInvId=_activeInvId;
+  var inv=invoices.find(function(i){return i.id===_payInvId;});
+  var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+  document.getElementById('payInvInfo').innerHTML='Invoice: <b>'+esc(inv.invoiceNo)+'</b><br>Balance: <b style="color:var(--rd)">BD '+bal.toFixed(3)+'</b>';
+  document.getElementById('payAmt').value=bal.toFixed(3);
+  document.getElementById('payDate').value=fmtD(new Date());
+  document.getElementById('payRef').value='';
+  document.getElementById('payErr').style.display='none';
+  document.getElementById('payModal').classList.add('open');
+}
+function closePayModal(){document.getElementById('payModal').classList.remove('open');}
+
+async function savePayment(){
+  var inv=invoices.find(function(i){return i.id===_payInvId;});
+  var errEl=document.getElementById('payErr');
+  if(!inv){errEl.textContent='Invoice not found.';errEl.style.display='block';return;}
+  var amt=parseFloat(document.getElementById('payAmt').value)||0;
+  if(amt<=0){errEl.textContent='Enter a valid amount.';errEl.style.display='block';return;}
+  var dt=document.getElementById('payDate').value;
+  var method=document.getElementById('payMethod').value;
+  var ref=document.getElementById('payRef').value.trim();
+  if(!inv.payments)inv.payments=[];
+  inv.payments.push({amount:amt,date:dt,method:method,reference:ref});
+  inv.paidAmount=(inv.paidAmount||0)+amt;
+  var bal=(inv.grandTotal||0)-inv.paidAmount;
+  inv.status=bal<=0.001?'paid':(inv.paidAmount>0?'partial':'unpaid');
+  await syncInvoices();
+  closePayModal();
+  renderInvDetail(inv);
+}
+
+async function deletePayment(invId,pi){
+  if(!confirm('Remove this payment?'))return;
+  var inv=invoices.find(function(i){return i.id===invId;});
+  if(!inv||!inv.payments)return;
+  var p=inv.payments[pi];
+  inv.paidAmount=(inv.paidAmount||0)-(p.amount||0);
+  if(inv.paidAmount<0)inv.paidAmount=0;
+  inv.payments.splice(pi,1);
+  var bal=(inv.grandTotal||0)-inv.paidAmount;
+  inv.status=bal<=0.001?'paid':(inv.paidAmount>0?'partial':'unpaid');
+  await syncInvoices();
+  renderInvDetail(inv);
+}
+
+/* ═══════════════════════════════════════════
+   PDF GENERATION
+═══════════════════════════════════════════ */
+
+function pdfInvoice(){
+  var inv=invoices.find(function(i){return i.id===_activeInvId;});
+  if(!inv){alert('No invoice selected.');return;}
+  var doc=new jspdf.jsPDF('p','mm','a4');
+  var W=210,M=14,y=18;
+  // Header bar
+  doc.setFillColor(74,58,107);doc.rect(0,0,W,26,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('TAX INVOICE',M,11);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(COMPANY.name,M,17);
+  doc.text(COMPANY.legal,M,22);
+  doc.setFontSize(9);doc.text('VAT: '+COMPANY.vat,W-M,11,{align:'right'});
+  doc.text(COMPANY.address,W-M,17,{align:'right'});
+  y=32;
+  // Invoice info
+  doc.setTextColor(50,40,70);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text(inv.invoiceNo,M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Date: '+inv.date,M,y+5);
+  // Bill to
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Bill To:',W/2,y);
+  doc.setFont('helvetica','normal');
+  var billLines=[inv.customerName];
+  if(inv.customerVat)billLines.push('VAT: '+inv.customerVat);
+  if(inv.customerCr)billLines.push('CR: '+inv.customerCr);
+  if(inv.customerAddress)billLines.push(inv.customerAddress);
+  billLines.forEach(function(l,i){doc.text(l,W/2,y+5+(i*4.5));});
+  y+=28;
+  // Line items table
+  var tHead=[['Description','Qty (hrs)','Rate/hr (BD)','Total (BD)']];
+  var tBody=inv.lineItems.map(function(li){
+    return[li.description,String(li.qty),li.unitPrice.toFixed(3),li.total.toFixed(3)];
+  });
+  doc.autoTable({head:tHead,body:tBody,startY:y,theme:'grid',
+    headStyles:{fillColor:[74,58,107],textColor:255,fontSize:8,fontStyle:'bold'},
+    bodyStyles:{fontSize:8},columnStyles:{0:{cellWidth:100},1:{cellWidth:22,halign:'center'},2:{cellWidth:28,halign:'right'},3:{cellWidth:28,halign:'right'}},
+    margin:{left:M,right:M}});
+  y=doc.lastAutoTable.finalY+6;
+  // Totals
+  var totX=W-M-60;
+  doc.setDrawColor(200,195,220);doc.setLineWidth(0.3);
+  var totals=[['Subtotal','BD '+inv.subtotal.toFixed(3)],['VAT (10%)','BD '+inv.vatAmount.toFixed(3)],['Grand Total','BD '+inv.grandTotal.toFixed(3)]];
+  var bal=(inv.grandTotal||0)-(inv.paidAmount||0);
+  if(inv.paidAmount>0)totals.push(['Paid','BD '+inv.paidAmount.toFixed(3)],['Balance Due','BD '+bal.toFixed(3)]);
+  totals.forEach(function(r,i){
+    var isGrand=r[0]==='Grand Total';
+    if(isGrand){doc.setFont('helvetica','bold');doc.setFontSize(10);}
+    else{doc.setFont('helvetica','normal');doc.setFontSize(8.5);}
+    doc.text(r[0]+':',totX,y+i*5);
+    doc.text(r[1],W-M,y+i*5,{align:'right'});
+  });
+  y+=totals.length*5+8;
+  if(inv.notes){doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(120,110,140);doc.text(inv.notes,M,y);y+=6;}
+  // Disclaimer
+  doc.setTextColor(160,155,180);doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+  doc.text(COMPANY.disclaimer,M,y);
+  doc.save(inv.invoiceNo+'.pdf');
+}
+
+function pdfStatement(){
+  var c=customers.find(function(x){return x.id===_activeCustId;});
+  if(!c){alert('No customer selected.');return;}
+  var myInvs=invoices.filter(function(i){return i.customerId===_activeCustId;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var doc=new jspdf.jsPDF('p','mm','a4');
+  var W=210,M=14,y=18;
+  doc.setFillColor(74,58,107);doc.rect(0,0,W,26,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('CUSTOMER STATEMENT',M,11);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(COMPANY.name+' — VAT: '+COMPANY.vat,M,22);
+  doc.text('Date: '+fmtD(new Date()),W-M,11,{align:'right'});
+  y=32;
+  doc.setTextColor(50,40,70);doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text(c.name,M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  if(c.vatNumber)doc.text('VAT: '+c.vatNumber,M,y+5);
+  y+=14;
+  var rows=[];var running=0;
+  myInvs.forEach(function(inv){
+    running+=inv.grandTotal||0;
+    rows.push([inv.date,inv.invoiceNo,'Invoice','BD '+inv.grandTotal.toFixed(3),'—','BD '+running.toFixed(3)]);
+    (inv.payments||[]).forEach(function(p){
+      running-=p.amount||0;
+      rows.push([p.date,p.reference||'Payment','Payment ('+p.method+')','—','BD '+p.amount.toFixed(3),'BD '+running.toFixed(3)]);
+    });
+  });
+  doc.autoTable({head:[['Date','Reference','Description','Debit (BD)','Credit (BD)','Balance (BD)']],body:rows,startY:y,theme:'striped',
+    headStyles:{fillColor:[74,58,107],textColor:255,fontSize:8,fontStyle:'bold'},
+    bodyStyles:{fontSize:8},margin:{left:M,right:M}});
+  var totalOwed=myInvs.reduce(function(s,i){return s+(i.grandTotal||0)-(i.paidAmount||0);},0);
+  y=doc.lastAutoTable.finalY+6;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(50,40,70);
+  doc.text('Total Outstanding: BD '+totalOwed.toFixed(3),W-M,y,{align:'right'});
+  doc.save('Statement_'+c.name.replace(/\s+/g,'_')+'.pdf');
 }
 
 var _fleetTab='machines';
@@ -1828,8 +2741,56 @@ function renderHoursReport(){
     '</div>';
 }
 
-/* ── EQUIPMENT TAB ── */
+/* ── MACHINE TYPES CATALOG ── */
 function renderEquip(){
+  renderMachineTypes();
+  renderEquipLegacy();
+}
+function renderMachineTypes(){
+  var tb=document.getElementById('mtBody');
+  if(!machineTypes.length){tb.innerHTML='<tr><td colspan="4" class="emp">No machine types yet.</td></tr>';return;}
+  var opts='<option value="">— None —</option>';
+  SUPERVISORS.forEach(function(s){opts+='<option value="'+esc(s)+'">'+esc(s)+'</option>';});
+  tb.innerHTML=machineTypes.map(function(m){
+    return'<tr>'+
+      '<td><b>'+esc(m.name)+'</b></td>'+
+      '<td><select onchange="updateMtSup(\''+m.id+'\',this.value)" style="padding:5px 8px;border:1.5px solid var(--g200);border-radius:6px;font-family:Tahoma;font-size:12px">'+
+        opts.replace('value="'+esc(m.supervisor||'')+'"','value="'+esc(m.supervisor||'')+'" selected')+'</select></td>'+
+      '<td style="color:var(--g400);font-size:12px">'+esc(m.description||'—')+'</td>'+
+      '<td><button class="btn bsm bd" onclick="deleteMachineType(\''+m.id+'\')">Delete</button></td>'+
+      '</tr>';
+  }).join('');
+}
+function openAddMachineType(){
+  document.getElementById('mtName').value='';
+  document.getElementById('mtSup').value='';
+  document.getElementById('mtDesc').value='';
+  document.getElementById('addMtModal').classList.add('open');
+}
+async function saveMachineType(){
+  var name=document.getElementById('mtName').value.trim().toUpperCase();
+  if(!name){alert('Name required');return;}
+  var sup=document.getElementById('mtSup').value;
+  var desc=document.getElementById('mtDesc').value.trim();
+  machineTypes.push({id:Date.now()+'_'+Math.random().toString(36).slice(2,5),name:name,supervisor:sup,description:desc,createdAt:new Date().toISOString()});
+  // Also update machineSup for auto-assignment
+  if(sup)machineSup[name]=sup;
+  await syncMachineTypes();await syncMachineSupDB();
+  document.getElementById('addMtModal').classList.remove('open');
+  renderMachineTypes();
+}
+async function updateMtSup(id,sup){
+  var m=machineTypes.find(function(x){return x.id===id;});
+  if(m){m.supervisor=sup;if(sup)machineSup[m.name]=sup;else delete machineSup[m.name];}
+  await syncMachineTypes();await syncMachineSupDB();
+}
+async function deleteMachineType(id){
+  if(!confirm('Delete this machine type?'))return;
+  machineTypes=machineTypes.filter(function(m){return m.id!==id;});
+  await syncMachineTypes();renderMachineTypes();
+}
+/* ── EQUIPMENT TAB (LEGACY) ── */
+function renderEquipLegacy(){
   var types={};
   for(var i=0;i<cards.length;i++){
     var m=cards[i].Machinery;
@@ -2004,6 +2965,37 @@ function buildSupOpts(sel){
   }
 }
 
+function pickCust(id){
+  var c=customers.find(function(x){return x.id===id;});
+  if(!c)return;
+  document.getElementById('fCust').value=c.name;
+  document.getElementById('fTel').value=c.phone||'';
+  // Debt warning
+  var myInvs=invoices.filter(function(i){return i.customerId===id;});
+  var owed=myInvs.reduce(function(s,i){return s+(i.grandTotal||0)-(i.paidAmount||0);},0);
+  if(owed>200){
+    var rprev=document.getElementById('rprev');
+    rprev.innerHTML='<span style="color:var(--rd);font-weight:bold">&#x26A0; This customer has BD '+owed.toFixed(3)+' outstanding balance.</span>';
+  }
+}
+function pickMach(id){
+  var m=machineTypes.find(function(x){return x.id===id;});
+  if(!m)return;
+  document.getElementById('fMach').value=m.name;
+  if(m.supervisor)buildSupOpts(m.supervisor);
+}
+function buildCustOpts(){
+  var sel=document.getElementById('fCustSel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Select Customer —</option>';
+  customers.forEach(function(c){sel.innerHTML+='<option value="'+c.id+'">'+esc(c.name)+'</option>';});
+}
+function buildMachOpts(){
+  var sel=document.getElementById('fMachSel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Select from Catalog —</option>';
+  machineTypes.forEach(function(m){sel.innerHTML+='<option value="'+m.id+'">'+esc(m.name)+(m.supervisor?' ('+esc(m.supervisor)+')':'')+'</option>';});
+}
 function openAdd(){
   editIdx=null;
   document.getElementById('mtitle').textContent='New Hiring Card';
@@ -2011,6 +3003,9 @@ function openAdd(){
   document.getElementById('fDate').value=fmtD(new Date());
   document.getElementById('fCust').value='';
   document.getElementById('fTel').value='';
+  buildCustOpts();buildMachOpts();
+  document.getElementById('fCustSel').value='';
+  document.getElementById('fMachSel').value='';
   document.getElementById('fMach').value='';
   document.getElementById('fLoc').value='';
   document.getElementById('fLPO').value='';
@@ -2331,6 +3326,20 @@ function submitConfirm(){
       }
       syncCards();
     }
+  }
+  // Record daily work log entry on the card
+  if(r.ci>=0&&r.ci<cards.length){
+    var wc=cards[r.ci];
+    if(!wc.workLog)wc.workLog=[];
+    wc.workLog.push({
+      date:document.getElementById('edate').value,
+      shiftStart:wc.ShiftStart||'07:00',
+      shiftEnd:wc.ShiftEnd||'19:00',
+      hours:h,ot:ot,
+      confirmedBy:currentProfile?currentProfile.full_name:'',
+      note:reason
+    });
+    syncCards();
   }
   closeConfirm();
   renderSupFilterBar();
