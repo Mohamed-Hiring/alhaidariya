@@ -320,8 +320,8 @@ tr.gr td{
 .login-logo-sub{font-size:12px;color:var(--g400);margin-top:4px;letter-spacing:.2px;}
 .login-err{
   background:var(--rdb);color:var(--rdd);border:1px solid rgba(217,64,64,.2);
-  border-radius:var(--rsm);padding:10px 14px;font-size:13px;
-  margin-top:10px;display:none;border-left:3px solid var(--rd);
+  border-radius:var(--rsm);padding:10px 14px;font-size:13px;line-height:1.6;
+  margin-top:10px;display:none;border-left:3px solid var(--rd);word-break:break-word;
 }
 
 /* ── HEADER USER INFO ── */
@@ -1274,7 +1274,33 @@ async function signIn(){
   btn.textContent='Signing in…';btn.disabled=true;
   var res = await supa.auth.signInWithPassword({email:email,password:pass});
   if(res.error){
-    errEl.textContent=res.error.message;
+    var msg = res.error.message||'';
+    // Auto-fix: if email not confirmed, confirm it via admin and retry
+    if(msg.toLowerCase().includes('email not confirmed')||msg.toLowerCase().includes('email_not_confirmed')){
+      try{
+        // Find user by email and confirm via admin client
+        var listRes = await supaAdmin.auth.admin.listUsers({perPage:200});
+        if(listRes.data&&listRes.data.users){
+          var u=listRes.data.users.find(function(x){return x.email===email;});
+          if(u){
+            await supaAdmin.auth.admin.updateUserById(u.id,{email_confirm:true});
+            // Retry login
+            var res2 = await supa.auth.signInWithPassword({email:email,password:pass});
+            if(!res2.error){await afterLogin(res2.data.user);return;}
+            msg=res2.error.message;
+          }
+        }
+      }catch(e){msg=msg+' (auto-confirm failed)';}
+    }
+    // Friendly error messages
+    if(msg.toLowerCase().includes('invalid login')||msg.toLowerCase().includes('invalid credentials')){
+      msg='Incorrect email or password. Please try again.';
+    } else if(msg.toLowerCase().includes('network')||msg.toLowerCase().includes('fetch')){
+      msg='Cannot reach server. The database may be paused — go to supabase.com, open your project and click Resume.';
+    } else if(msg.toLowerCase().includes('too many')){
+      msg='Too many login attempts. Please wait a few minutes and try again.';
+    }
+    errEl.innerHTML=msg;
     errEl.style.display='block';
     btn.textContent='Sign In';btn.disabled=false;
     return;
