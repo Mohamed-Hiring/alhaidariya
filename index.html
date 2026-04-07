@@ -1946,7 +1946,11 @@ function renderCustList(){
       '<td style="font-size:11px">'+esc(c.crNumber||'—')+'</td>'+
       '<td>'+(running?'<span class="badge bc">'+running+' Running</span>':'<span style="color:var(--g400)">0</span>')+'</td>'+
       '<td'+debtClass+'>'+(totalOwed>0?'BD '+totalOwed.toFixed(3):'—')+'</td>'+
-      '<td><div style="display:flex;gap:4px"><button class="btn bo2 bsm" onclick="openCustProfile(\'+c.id+'\')">View</button><button class="btn bo2 bsm" onclick="openEditCust(\'+c.id+'\')">Edit</button><button class="btn bsm bd" onclick="deleteCust(\'+c.id+'\')">Del</button></div></td>'+
+      '<td><div style="display:flex;gap:4px">'+
+      '<button class="btn bo2 bsm" onclick="openCustProfile(\''+c.id+'\')">View</button>'+
+      '<button class="btn bo2 bsm" onclick="openEditCust(\''+c.id+'\')">Edit</button>'+
+      '<button class="btn bsm bd" onclick="deleteCust(\''+c.id+'\')">Del</button>'+
+      '</div></td>'+
       '</tr>';
   });
   tb.innerHTML=html;
