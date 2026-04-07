@@ -417,16 +417,40 @@ body.is-admin .admin-only{display:revert!important;}
 .notif-label{color:var(--g400);min-width:80px;flex-shrink:0;}
 .notif-ack-btn{align-self:center;flex-shrink:0;}
 
+/* ── CONTENT WRAPPER (comfortable reading width on large screens) ── */
+.pg > .card, .pg > .sr, .pg > .pag {max-width:1400px;margin-left:auto;margin-right:auto;}
+.pg > .sr{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;width:100%;max-width:1400px;}
+
+/* ── CARD TITLE SEPARATOR ── */
+.ct{border-bottom:1px solid var(--g100);padding-bottom:14px;margin-bottom:16px;}
+
+/* ── IMPROVED BADGE READABILITY ── */
+.badge{padding:4px 10px;font-size:11.5px;}
+.br{background:var(--gnb);color:var(--gnd);border:1px solid rgba(26,158,112,.18);}
+.brc{background:var(--blb);color:var(--bld);border:1px solid rgba(21,96,168,.18);}
+.bo{background:var(--amb);color:var(--amd);border:1px solid rgba(184,112,16,.18);}
+.bc{background:var(--rdb);color:var(--rdd);border:1px solid rgba(217,64,64,.18);}
+
+/* ── TABLE IMPROVEMENTS ── */
+td{padding:12px 14px;}
+tr:hover td{background:var(--pb)!important;transition:background .12s;}
+
+/* ── FOCUS VISIBLE ── */
+button:focus-visible,input:focus-visible,select:focus-visible{
+  outline:3px solid rgba(106,82,136,.4);outline-offset:2px;
+}
+
 /* ── MOBILE ≤768px ── */
 @media(max-width:768px){
-  .hdr{padding:0 16px;height:56px;position:relative;}
-  .hdr-logo{font-size:15px;}
+  /* Keep header sticky on mobile */
+  .hdr{padding:0 16px;height:56px;}
   .nav{top:56px;padding:0 8px;}
+  .hdr-logo{font-size:15px;}
   .nb{padding:13px 12px;font-size:12px;}
   .pg{padding:12px;}
   .card{padding:16px;border-radius:12px;}
   .ct{font-size:14px;}
-  .sr{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .sr{grid-template-columns:repeat(2,1fr)!important;gap:10px;}
   .sb{padding:16px 12px 14px;}
   .sn{font-size:26px;}
   .sl{font-size:10px;}
@@ -435,11 +459,11 @@ body.is-admin .admin-only{display:revert!important;}
   .fil input[type=text]{min-width:0;}
   .fg{grid-template-columns:1fr;}
   .btn{min-height:44px;}
-  .bsm{min-height:40px;padding:8px 12px;}
+  .bsm{min-height:40px;padding:8px 12px;font-size:12px;}
   .tb{padding:12px 16px;font-size:13px;flex-direction:column;gap:4px;text-align:center;}
   .ri{flex-direction:column;align-items:flex-start;}
   .ri>div:last-child{width:100%;}
-  .md{padding:22px 18px;border-radius:16px;}
+  .md{padding:22px 18px;border-radius:16px;max-height:95vh;}
   .fa{flex-wrap:wrap;}
   .fa .btn{flex:1;min-width:120px;}
   .pag{justify-content:center;}
@@ -447,14 +471,19 @@ body.is-admin .admin-only{display:revert!important;}
   .tw{border-radius:var(--rm);}
   td,th{padding:9px 11px;font-size:12px;}
   .login-box{padding:30px 22px;border-radius:18px;}
+  .ct{flex-direction:column;align-items:flex-start;gap:10px;}
+  .ct>div[style*="margin-left:auto"]{width:100%;justify-content:flex-start;}
 }
 
 /* ── SMALL PHONES ≤480px ── */
 @media(max-width:480px){
-  .sr{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .sr{grid-template-columns:repeat(2,1fr)!important;gap:8px;}
   .hdr-sub,.hdr-user-name{display:none;}
   .nb{padding:12px 9px;font-size:11px;}
   .pg{padding:10px;}
+  .hdr{height:52px;}
+  .nav{top:52px;}
+  .badge{font-size:10.5px;padding:3px 8px;}
 }
 </style>
 </head>
@@ -1249,19 +1278,34 @@ var _syncTimer     = null;
 
 /* ── AUTH ── */
 async function initApp(){
-  supa      = supabase.createClient(SUPA_URL, SUPA_ANON);
-  supaAdmin = supabase.createClient(SUPA_URL, SUPA_SVC);
-  var res = await supa.auth.getSession();
-  if(res.data && res.data.session){
-    await afterLogin(res.data.session.user);
+  // Guard: if Supabase CDN failed to load, show error immediately
+  if(typeof supabase === 'undefined'){
+    var errEl = document.getElementById('loginErr');
+    errEl.innerHTML = 'Cannot load the app — network or CDN error.<br>Please check your internet connection and refresh the page.';
+    errEl.style.display = 'block';
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginBtn').textContent = 'Offline';
+    return;
   }
-  supa.auth.onAuthStateChange(function(event,session){
-    if(event==='SIGNED_OUT'){
-      currentUser=null;currentProfile=null;
-      document.getElementById('appWrapper').style.display='none';
-      document.getElementById('loginScreen').style.display='flex';
+  try{
+    supa      = supabase.createClient(SUPA_URL, SUPA_ANON);
+    supaAdmin = supabase.createClient(SUPA_URL, SUPA_SVC);
+    var res = await supa.auth.getSession();
+    if(res.data && res.data.session){
+      await afterLogin(res.data.session.user);
     }
-  });
+    supa.auth.onAuthStateChange(function(event,session){
+      if(event==='SIGNED_OUT'){
+        currentUser=null;currentProfile=null;
+        document.getElementById('appWrapper').style.display='none';
+        document.getElementById('loginScreen').style.display='flex';
+      }
+    });
+  }catch(e){
+    var errEl2 = document.getElementById('loginErr');
+    errEl2.innerHTML = 'Startup error: ' + (e.message||e) + '<br>Please refresh the page.';
+    errEl2.style.display = 'block';
+  }
 }
 
 async function signIn(){
@@ -1270,6 +1314,12 @@ async function signIn(){
   var errEl = document.getElementById('loginErr');
   var btn   = document.getElementById('loginBtn');
   errEl.style.display='none';
+  // Guard: if Supabase never loaded
+  if(!supa){
+    errEl.innerHTML = 'Cannot connect to server.<br>Check your internet connection and refresh the page.';
+    errEl.style.display='block';
+    return;
+  }
   if(!email||!pass){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
   btn.textContent='Signing in…';btn.disabled=true;
   var res = await supa.auth.signInWithPassword({email:email,password:pass});
@@ -1727,7 +1777,11 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('edate').value=t;
   document.getElementById('sdate').value=t;
   // Boot Supabase — shows login screen
-  initApp();
+  try{ initApp(); }catch(e){
+    var errEl=document.getElementById('loginErr');
+    errEl.innerHTML='Startup error: '+(e.message||e)+'<br>Please refresh the page.';
+    errEl.style.display='block';
+  }
 });
 
 function showPg(n,btn){
