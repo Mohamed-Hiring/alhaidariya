@@ -1324,6 +1324,8 @@ async function afterLogin(user){
   }
   currentProfile=res.data;
   await loadAllData();
+  // Auto-seed customers + machine types from cards (runs once if DB is empty)
+  await seedFromCards();
   applyRole(); // Apply role BEFORE showing app (no flash)
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appWrapper').style.display='block';
@@ -1333,6 +1335,81 @@ async function afterLogin(user){
   setupRealtime();
   updateNotifBadge();
   initDate();
+}
+
+/* ── SEED FROM CARDS (runs once if DB is empty) ── */
+async function seedFromCards(){
+  var src = (typeof window!=='undefined' && window.SEED_CARDS) || cards;
+  if(!src || src.length===0) return;
+
+  var didSeed = false;
+
+  /* ── CUSTOMERS ── */
+  if(customers.length===0){
+    var seen = {};
+    var skip = ['MISSING',''];
+    src.forEach(function(c){
+      var name = (c.Customer||'').trim();
+      if(!name || seen[name] || skip.indexOf(name)>=0) return;
+      seen[name] = true;
+      customers.push({
+        id: Date.now().toString(36)+Math.random().toString(36).slice(2,7)+'_'+Object.keys(seen).length,
+        name: name,
+        phone: '',
+        email: '',
+        vatNumber: '',
+        crNumber: '',
+        address: '',
+        createdAt: new Date().toISOString()
+      });
+    });
+    if(customers.length>0){
+      await syncCustomers();
+      didSeed = true;
+      console.log('Seeded', customers.length, 'customers from cards');
+    }
+  }
+
+  /* ── MACHINE TYPES ── */
+  if(machineTypes.length===0){
+    /* Supervisor assignment rules */
+    function assignSup(name){
+      var n = name.toUpperCase();
+      /* Al Aqib — digging & earthmoving */
+      if(/JCB|EXCAVATOR|TELEHANDLER|ROLLER|WHEEL LOAD|WHEEL LAOD|SKID LOAD|BOBCAT|GRADER|ROCK BREAKER|PULVERIZ/.test(n)) return 'Al Aqib';
+      /* Mohamed Al Ajmi — lifting & rigging */
+      if(/CRANE|FORKLIFT|FROKLIFT|FOKRLIFT|SCISSOR LIFT|MANLIFT|COUNTER.?WEIGHT|HAIB|RIGG|CABLE WINCH|LOWBED|FLATBED|FALTBED/.test(n)) return 'Mohamed Al Ajmi';
+      /* Haroun — dump trucks & transport */
+      if(/DUMP TRUCK|DUMP SIX|DUMP SIX.?WHEEL|RECOVERY/.test(n)) return 'Haroun';
+      /* Mohamed Saeed — utilities & water */
+      if(/GENERATOR|VACUUM|VACCUM|WATER TANKER|WATER PUMP|SWEET WATER|PUMP|SUPPLY.?DESEL|AIR COMPRESS|TOWER.?LIGHT|DIGITAL ARROW/.test(n)) return 'Mohamed Saeed';
+      return '';
+    }
+
+    var seenM = {};
+    /* Skip non-equipment entries */
+    var skipM = ['HELPER','RIGGER','MANLIFT OPERATOR','RIGGING TODS','RIGGING TOOLS'];
+    src.forEach(function(c){
+      var name = (c.Machinery||'').trim();
+      if(!name || seenM[name]) return;
+      if(skipM.indexOf(name.toUpperCase())>=0) return;
+      seenM[name] = true;
+      machineTypes.push({
+        id: Date.now().toString(36)+Math.random().toString(36).slice(2,7)+'_'+Object.keys(seenM).length,
+        name: name,
+        supervisor: assignSup(name),
+        description: '',
+        createdAt: new Date().toISOString()
+      });
+    });
+    if(machineTypes.length>0){
+      await syncMachineTypes();
+      didSeed = true;
+      console.log('Seeded', machineTypes.length, 'machine types from cards');
+    }
+  }
+
+  if(didSeed) console.log('Auto-seed complete. Will not run again (data now in Supabase).');
 }
 
 function applyRole(){
