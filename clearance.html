@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Haidariya — Vehicle Clearance System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+<style>
+/* ════════════════════════════════════════
+   AL HAIDARIYA — VEHICLE CLEARANCE SYSTEM
+════════════════════════════════════════ */
+:root{
+  --p:#6A5288;--pd:#4E3A6B;--pl:#8B6FAD;--pb:#F2EDF9;--pb2:#E4DAF2;
+  --g50:#F9F8FB;--g100:#EFECF5;--g200:#DAD5EA;--g300:#BFB8D6;
+  --g400:#9B92B5;--g600:#5C5472;--g800:#27233A;
+  --gn:#1A9E70;--gnb:#E2F6EF;--gnd:#0F7A53;
+  --rd:#D94040;--rdb:#FDEAEA;--rdd:#B32F2F;
+  --am:#B87010;--amb:#FDF0D8;--amd:#8F5700;
+  --bl:#1560A8;--blb:#E4EFFE;--bld:#0E4A86;
+  --tl:#0E8A6E;--tlb:#E0F5F0;--tld:#0A6B55;
+  --sh:0 1px 3px rgba(78,58,107,.06),0 4px 16px rgba(78,58,107,.08);
+  --shm:0 2px 8px rgba(78,58,107,.08),0 8px 28px rgba(78,58,107,.12);
+  --shl:0 4px 16px rgba(78,58,107,.10),0 16px 48px rgba(78,58,107,.18);
+  --shi:0 0 0 3px rgba(106,82,136,.18);
+  --r:14px;--rm:10px;--rsm:8px;--rxs:6px;
+  --t:.18s ease;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Tahoma,sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ── LOGIN ── */
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--pd),var(--p),var(--pl));padding:20px;}
+.login-box{background:white;border-radius:24px;padding:40px 32px;width:100%;max-width:400px;box-shadow:var(--shl);}
+.login-box h1{font-size:20px;color:var(--p);margin-bottom:4px;text-align:center;}
+.login-box .sub{font-size:12px;color:var(--g400);text-align:center;margin-bottom:24px;}
+.login-box input{width:100%;padding:12px 14px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-family:Tahoma;font-size:13px;margin-bottom:12px;outline:none;transition:border-color var(--t);}
+.login-box input:focus{border-color:var(--p);box-shadow:var(--shi);}
+.login-err{display:none;background:var(--rdb);color:var(--rd);padding:10px 14px;border-radius:var(--rsm);font-size:12px;margin-bottom:12px;}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(118deg,var(--pd) 0%,#5D4480 40%,var(--p) 70%,#7A5FA0 100%);color:white;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:50;box-shadow:0 2px 0 rgba(255,255,255,.08),0 4px 24px rgba(30,18,56,.35);}
+.hdr::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 100%);pointer-events:none;}
+.hdr-logo{font-size:18px;font-weight:bold;letter-spacing:.4px;z-index:1;}
+.hdr-sub{font-size:10.5px;opacity:.65;margin-top:2px;letter-spacing:.3px;}
+.hdr-right{display:flex;align-items:center;gap:12px;z-index:1;}
+.lang-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:Tahoma;font-size:12px;font-weight:bold;transition:all var(--t);}
+.lang-btn:hover{background:rgba(255,255,255,.25);}
+.notif-btn{position:relative;background:none;border:none;color:white;cursor:pointer;font-size:20px;padding:4px 8px;}
+.notif-badge{position:absolute;top:-2px;right:-2px;background:var(--rd);color:white;font-size:9px;font-weight:bold;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+.user-info{font-size:12px;opacity:.85;display:flex;align-items:center;gap:8px;}
+.logout-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;padding:6px 14px;border-radius:var(--rxs);cursor:pointer;font-family:Tahoma;font-size:11px;font-weight:bold;}
+.logout-btn:hover{background:rgba(255,255,255,.22);}
+
+/* ── NAV ── */
+.nav{background:white;display:flex;padding:0 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;box-shadow:0 1px 0 var(--g100),0 2px 12px rgba(78,58,107,.06);position:sticky;top:64px;z-index:40;}
+.nav::-webkit-scrollbar{display:none;}
+.nb{padding:15px 16px;font-family:Tahoma;font-size:13px;font-weight:bold;border:none;background:none;cursor:pointer;color:var(--g400);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color var(--t),background var(--t),border-color var(--t);display:flex;align-items:center;gap:5px;letter-spacing:.1px;}
+.nb.active{color:var(--p);border-bottom-color:var(--p);}
+.nb:hover:not(.active){color:var(--p);background:var(--g50);}
+
+/* ── PAGES ── */
+.pg{display:none;padding:20px 16px;max-width:1200px;margin:0 auto;}
+.pg.active{display:block;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--rsm);font-family:Tahoma;font-size:13px;font-weight:bold;cursor:pointer;transition:all var(--t);letter-spacing:.1px;}
+.btn-p{background:var(--p);color:white;}
+.btn-p:hover{background:var(--pd);}
+.btn-s{background:var(--pb);color:var(--p);border:1.5px solid var(--pb2);}
+.btn-s:hover{background:var(--pb2);}
+.btn-d{background:var(--rdb);color:var(--rd);}
+.btn-d:hover{background:#f9d4d4;}
+.btn-g{background:var(--gnb);color:var(--gn);}
+.btn-g:hover{background:#c8ede0;}
+.btn-b{background:var(--blb);color:var(--bl);}
+.btn-b:hover{background:#cfe0fa;}
+.btn-am{background:var(--amb);color:var(--am);}
+.btn-am:hover{background:#f5e2b8;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-sm{padding:7px 14px;font-size:12px;}
+
+/* ── CARDS / PANELS ── */
+.card{background:white;border-radius:var(--r);box-shadow:var(--sh);padding:20px;margin-bottom:16px;border:1px solid var(--g100);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:bold;color:var(--g800);}
+
+/* ── STATUS BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:bold;letter-spacing:.2px;}
+.badge-due{background:var(--amb);color:var(--amd);}
+.badge-pending{background:var(--blb);color:var(--bld);}
+.badge-passed{background:var(--tlb);color:var(--tld);}
+.badge-failed{background:var(--rdb);color:var(--rdd);}
+.badge-paid{background:var(--pb);color:var(--pd);}
+.badge-completed{background:var(--gnb);color:var(--gnd);}
+
+/* ── DASHBOARD STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+.stat-card{background:white;border-radius:var(--rm);padding:18px;box-shadow:var(--sh);border:1px solid var(--g100);cursor:pointer;transition:all var(--t);text-align:center;}
+.stat-card:hover{box-shadow:var(--shm);transform:translateY(-2px);}
+.stat-card .stat-num{font-size:32px;font-weight:bold;margin-bottom:4px;}
+.stat-card .stat-label{font-size:11px;font-weight:bold;letter-spacing:.3px;text-transform:uppercase;}
+.stat-due .stat-num{color:var(--am);}
+.stat-due{border-inline-start:4px solid var(--am);}
+.stat-pending .stat-num{color:var(--bl);}
+.stat-pending{border-inline-start:4px solid var(--bl);}
+.stat-passed .stat-num{color:var(--tl);}
+.stat-passed{border-inline-start:4px solid var(--tl);}
+.stat-failed .stat-num{color:var(--rd);}
+.stat-failed{border-inline-start:4px solid var(--rd);}
+.stat-paid .stat-num{color:var(--p);}
+.stat-paid{border-inline-start:4px solid var(--p);}
+.stat-completed .stat-num{color:var(--gn);}
+.stat-completed{border-inline-start:4px solid var(--gn);}
+
+/* ── ALERTS ── */
+.alert-list{display:flex;flex-direction:column;gap:10px;}
+.alert-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--amb);border-radius:var(--rsm);border-inline-start:4px solid var(--am);}
+.alert-item .alert-icon{font-size:20px;}
+.alert-item .alert-text{flex:1;font-size:13px;}
+.alert-item .alert-plate{font-weight:bold;color:var(--amd);}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:11px;font-weight:bold;color:var(--g600);text-transform:uppercase;letter-spacing:.3px;}
+.fg input,.fg select,.fg textarea{padding:10px 12px;border:1.5px solid var(--g200);border-radius:var(--rxs);font-family:Tahoma;font-size:13px;outline:none;transition:border-color var(--t);background:white;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--p);box-shadow:var(--shi);}
+.fg textarea{resize:vertical;min-height:60px;}
+.fg-full{grid-column:1/-1;}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(20,15,35,.55);z-index:100;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal{background:white;border-radius:20px;padding:28px 24px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:var(--shl);animation:modalIn .2s ease;}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.modal h2{font-size:17px;color:var(--p);margin-bottom:16px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;margin-top:12px;}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{background:var(--pb);color:var(--pd);padding:12px 14px;text-align:start;font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:bold;white-space:nowrap;}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--g100);}
+.tbl tr:hover td{background:var(--g50);}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
+.filter-bar input[type=text],.filter-bar input[type=search]{padding:9px 14px;border:1.5px solid var(--g200);border-radius:var(--rxs);font-family:Tahoma;font-size:13px;min-width:200px;outline:none;}
+.filter-bar input:focus{border-color:var(--p);box-shadow:var(--shi);}
+.fbtn{padding:7px 14px;border:1.5px solid var(--g200);border-radius:20px;font-family:Tahoma;font-size:11px;font-weight:bold;background:white;cursor:pointer;transition:all var(--t);}
+.fbtn:hover{border-color:var(--p);color:var(--p);}
+.fbtn.active{background:var(--p);color:white;border-color:var(--p);}
+
+/* ── VEHICLE CARDS ── */
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.v-card{background:white;border-radius:var(--rm);box-shadow:var(--sh);padding:16px;border:1px solid var(--g100);cursor:pointer;transition:all var(--t);}
+.v-card:hover{box-shadow:var(--shm);transform:translateY(-1px);}
+.v-card-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;}
+.v-card-name{font-size:14px;font-weight:bold;color:var(--g800);}
+.v-card-plate{font-size:12px;color:var(--g600);margin-top:2px;}
+.v-card-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:var(--g600);}
+.v-card-info span{display:flex;align-items:center;gap:4px;}
+
+/* ── CLEARANCE RECORD CARDS ── */
+.cr-card{background:white;border-radius:var(--rm);box-shadow:var(--sh);padding:18px;border:1px solid var(--g100);margin-bottom:12px;}
+.cr-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.cr-card-vehicle{font-size:14px;font-weight:bold;}
+.cr-cost-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0;}
+.cr-cost-item{background:var(--g50);border-radius:var(--rxs);padding:10px;text-align:center;font-size:12px;}
+.cr-cost-item .cost-label{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--g400);margin-bottom:4px;}
+.cr-cost-item .cost-amount{font-size:15px;font-weight:bold;color:var(--g800);}
+.cr-cost-item .cost-status{margin-top:4px;font-size:10px;font-weight:bold;}
+.cost-paid{color:var(--gn);}
+.cost-unpaid{color:var(--rd);}
+.cr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+/* ── TIMELINE ── */
+.timeline{position:relative;padding-inline-start:24px;}
+.timeline::before{content:'';position:absolute;inset-inline-start:8px;top:0;bottom:0;width:2px;background:var(--g200);}
+.tl-item{position:relative;padding-bottom:16px;}
+.tl-item::before{content:'';position:absolute;inset-inline-start:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--g300);border:2px solid white;}
+.tl-item.tl-passed::before{background:var(--tl);}
+.tl-item.tl-failed::before{background:var(--rd);}
+.tl-item.tl-completed::before{background:var(--gn);}
+.tl-item .tl-date{font-size:11px;color:var(--g400);}
+.tl-item .tl-text{font-size:13px;margin-top:2px;}
+
+/* ── NOTIFICATION PANEL ── */
+.notif-panel{display:none;position:fixed;inset:0;background:rgba(20,15,35,.55);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.notif-panel.open{display:flex;}
+.notif-box{background:white;border-radius:20px;padding:24px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:var(--shl);}
+.notif-box h2{font-size:17px;color:var(--p);margin-bottom:16px;}
+.notif-item{padding:14px;border-radius:var(--rsm);margin-bottom:8px;background:var(--g50);border:1px solid var(--g100);}
+.notif-item.notif-unread{background:var(--amb);border-color:var(--am);}
+
+/* ── RTL ── */
+body.rtl{direction:rtl;text-align:right;}
+body.rtl .hdr{flex-direction:row-reverse;}
+body.rtl .hdr-right{flex-direction:row-reverse;}
+body.rtl .nav{flex-direction:row-reverse;}
+body.rtl .modal-actions{flex-direction:row-reverse;}
+body.rtl .filter-bar{flex-direction:row-reverse;}
+body.rtl .tbl th{text-align:right;}
+
+/* ── VIEWER ROLE ── */
+.viewer-hide{display:inline-flex;}
+body.is-viewer .viewer-hide{display:none !important;}
+
+/* ── ADMIN ONLY ── */
+.admin-only{display:none;}
+body.is-admin .admin-only{display:inline-flex;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .hdr{padding:0 14px;height:56px;}
+  .hdr-logo{font-size:15px;}
+  .pg{padding:14px 10px;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .v-grid{grid-template-columns:1fr;}
+  .cr-cost-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .user-info span:first-child{display:none;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .hdr-sub{display:none;}
+}
+
+/* ── PRINT ── */
+@media print{
+  .hdr,.nav,.modal-bg,.notif-panel,.filter-bar,.btn,.no-print{display:none!important;}
+  .pg{display:block!important;padding:0;}
+  body{background:white;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h1>Vehicle Clearance System</h1>
+    <p class="sub">Al Haidariya Heavy Equipment</p>
+    <div id="loginErr" class="login-err"></div>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')signIn()">
+    <button class="btn btn-p" style="width:100%;margin-top:4px" id="loginBtn" onclick="signIn()">Sign In</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP WRAPPER
+══════════════════════════════════════ -->
+<div id="appWrapper" style="display:none">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="hdr-logo" data-i18n="appTitle">Vehicle Clearance</div>
+    <div class="hdr-sub" data-i18n="appSub">Al Haidariya Heavy Equipment</div>
+  </div>
+  <div class="hdr-right">
+    <button class="lang-btn" onclick="switchLang()" id="langBtn">عربي</button>
+    <button class="notif-btn" onclick="openNotifs()" title="Notifications">
+      &#x1F514;
+      <span class="notif-badge" id="notifBadge">0</span>
+    </button>
+    <div class="user-info">
+      <span id="userInfoName"></span>
+      <button class="logout-btn" onclick="signOut()" data-i18n="signOut">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nb active" onclick="showPg(1,this)" data-i18n="dashboard">Dashboard</button>
+  <button class="nb" onclick="showPg(2,this)" data-i18n="vehicles">Vehicles</button>
+  <button class="nb" onclick="showPg(3,this)" data-i18n="clearanceRecords">Clearance Records</button>
+  <button class="nb" onclick="showPg(4,this)" data-i18n="reports">Reports</button>
+  <button class="nb admin-only" onclick="showPg(5,this)" data-i18n="settings">Settings</button>
+</div>
+
+<!-- ═══ PAGE 1: DASHBOARD ═══ -->
+<div class="pg active" id="pg-1">
+  <div class="stats-grid" id="dashStats"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" data-i18n="upcomingAlerts">Upcoming Alerts</div>
+    </div>
+    <div class="alert-list" id="dashAlerts">
+      <div style="text-align:center;color:var(--g400);padding:20px;font-size:13px" data-i18n="noAlerts">No upcoming alerts</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" data-i18n="recentActivity">Recent Activity</div>
+    </div>
+    <div id="dashActivity" style="font-size:13px;color:var(--g600)">
+      <div style="text-align:center;color:var(--g400);padding:20px" data-i18n="noActivity">No recent activity</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2: VEHICLES ═══ -->
+<div class="pg" id="pg-2">
+  <div class="card-header" style="margin-bottom:16px">
+    <div class="card-title" data-i18n="vehicleManagement">Vehicle Management</div>
+    <button class="btn btn-p viewer-hide" onclick="openVehicleModal()" data-i18n="addVehicle">+ Add Vehicle</button>
+  </div>
+  <div class="filter-bar">
+    <input type="search" id="vSearch" placeholder="Search..." oninput="renderVehicles()" data-i18n-placeholder="searchPlaceholder">
+    <button class="fbtn active" onclick="filterVehicles('all',this)" data-i18n="all">All</button>
+    <button class="fbtn" onclick="filterVehicles('due',this)" data-i18n="status_due">Due</button>
+    <button class="fbtn" onclick="filterVehicles('pending_inspection',this)" data-i18n="status_pending">Pending</button>
+    <button class="fbtn" onclick="filterVehicles('passed',this)" data-i18n="status_passed">Passed</button>
+    <button class="fbtn" onclick="filterVehicles('failed',this)" data-i18n="status_failed">Failed</button>
+    <button class="fbtn" onclick="filterVehicles('paid',this)" data-i18n="status_paid">Paid</button>
+    <button class="fbtn" onclick="filterVehicles('completed',this)" data-i18n="status_completed">Completed</button>
+    <select id="vTypeFilter" onchange="renderVehicles()" style="padding:7px 12px;border:1.5px solid var(--g200);border-radius:20px;font-family:Tahoma;font-size:11px;font-weight:bold;">
+      <option value="all" data-i18n="allTypes">All Types</option>
+      <option value="small" data-i18n="small">Small</option>
+      <option value="large" data-i18n="large">Large</option>
+    </select>
+  </div>
+  <div class="v-grid" id="vehicleGrid"></div>
+</div>
+
+<!-- ═══ PAGE 3: CLEARANCE RECORDS ═══ -->
+<div class="pg" id="pg-3">
+  <div class="card-header" style="margin-bottom:16px">
+    <div class="card-title" data-i18n="clearanceRecords">Clearance Records</div>
+    <button class="btn btn-p viewer-hide" onclick="openNewClearanceModal()" data-i18n="newClearance">+ New Clearance</button>
+  </div>
+  <div class="filter-bar">
+    <input type="search" id="crSearch" placeholder="Search..." oninput="renderRecords()" data-i18n-placeholder="searchPlaceholder">
+    <button class="fbtn active" onclick="filterRecords('all',this)" data-i18n="all">All</button>
+    <button class="fbtn" onclick="filterRecords('pending_inspection',this)" data-i18n="status_pending">Pending</button>
+    <button class="fbtn" onclick="filterRecords('passed',this)" data-i18n="status_passed">Passed</button>
+    <button class="fbtn" onclick="filterRecords('failed',this)" data-i18n="status_failed">Failed</button>
+    <button class="fbtn" onclick="filterRecords('paid',this)" data-i18n="status_paid">Paid</button>
+    <button class="fbtn" onclick="filterRecords('completed',this)" data-i18n="status_completed">Completed</button>
+  </div>
+  <div id="recordsList"></div>
+</div>
+
+<!-- ═══ PAGE 4: REPORTS ═══ -->
+<div class="pg" id="pg-4">
+  <div class="card-header" style="margin-bottom:16px">
+    <div class="card-title" data-i18n="reports">Reports</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-s" onclick="exportExcel()" data-i18n="exportExcel">Export Excel</button>
+      <button class="btn btn-s" onclick="exportPDF()" data-i18n="exportPDF">Export PDF</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" data-i18n="summaryReport">Summary Report</div>
+    <div id="reportSummary" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" data-i18n="costReport">Cost Report</div>
+    <div class="tbl-wrap" id="reportCost" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 5: SETTINGS ═══ -->
+<div class="pg" id="pg-5">
+  <div class="card">
+    <div class="card-title" data-i18n="userManagement">User Management</div>
+    <p style="font-size:12px;color:var(--g400);margin:8px 0 16px" data-i18n="userMgmtDesc">Manage system users and their roles.</p>
+    <div id="userList"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-title" data-i18n="systemInfo">System Info</div>
+    <div style="font-size:12px;color:var(--g600);margin-top:8px" id="sysInfo"></div>
+  </div>
+</div>
+
+</div><!-- end appWrapper -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Vehicle Add/Edit Modal -->
+<div class="modal-bg" id="vehicleModal">
+  <div class="modal">
+    <h2 id="vehicleModalTitle" data-i18n="addVehicle">Add Vehicle</h2>
+    <div class="form-grid">
+      <div class="fg"><label data-i18n="vehicleName">Vehicle Name</label><input id="vName" type="text"></div>
+      <div class="fg"><label data-i18n="plateNumber">Plate Number</label><input id="vPlate" type="text"></div>
+      <div class="fg"><label data-i18n="doorNumber">Door Number</label><input id="vDoor" type="text"></div>
+      <div class="fg"><label data-i18n="vehicleType">Type</label>
+        <select id="vType"><option value="small" data-i18n="small">Small</option><option value="large" data-i18n="large">Large</option></select>
+      </div>
+      <div class="fg"><label data-i18n="registrationMonth">Registration Month</label>
+        <select id="vRegMonth">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div class="fg"><label data-i18n="location">Location</label><input id="vLocation" type="text" placeholder="Alhaidariya"></div>
+      <div class="fg"><label data-i18n="chassisNumber">Chassis Number</label><input id="vChassis" type="text"></div>
+      <div class="fg"><label data-i18n="yearOfManufacture">Year of Manufacture</label><input id="vYear" type="number" min="1990" max="2030"></div>
+      <div class="fg"><label data-i18n="color">Color</label><input id="vColor" type="text"></div>
+      <div class="fg"><label data-i18n="driverName">Driver / Operator</label><input id="vDriver" type="text"></div>
+      <div class="fg"><label data-i18n="insurancePolicyNo">Insurance Policy No.</label><input id="vInsPolicy" type="text"></div>
+      <div class="fg"><label data-i18n="insuranceExpiry">Insurance Expiry</label><input id="vInsExpiry" type="date"></div>
+      <div class="fg fg-full"><label data-i18n="notes">Notes</label><textarea id="vNotes" rows="2"></textarea></div>
+    </div>
+    <input type="hidden" id="vEditId">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('vehicleModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-p" onclick="saveVehicle()" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle Detail Modal -->
+<div class="modal-bg" id="vehicleDetailModal">
+  <div class="modal" style="max-width:700px">
+    <h2 id="vDetailTitle">Vehicle Details</h2>
+    <div id="vDetailContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('vehicleDetailModal')" data-i18n="close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Clearance Modal -->
+<div class="modal-bg" id="newClearanceModal">
+  <div class="modal">
+    <h2 data-i18n="newClearance">New Clearance Cycle</h2>
+    <div class="fg" style="margin-bottom:14px">
+      <label data-i18n="selectVehicle">Select Vehicle</label>
+      <select id="crVehicleSelect"></select>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label data-i18n="inspectionDate">Inspection Date</label>
+      <input id="crInspDate" type="date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('newClearanceModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-p" onclick="createClearanceRecord()" data-i18n="create">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fail Reason Modal -->
+<div class="modal-bg" id="failModal">
+  <div class="modal" style="max-width:480px">
+    <h2 data-i18n="failureReason">Failure Reason</h2>
+    <div class="fg">
+      <label data-i18n="reason">Reason</label>
+      <textarea id="failReason" rows="3" placeholder="e.g. Needs to pay fines, accident damage..."></textarea>
+    </div>
+    <input type="hidden" id="failRecordId">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('failModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-d" onclick="confirmFail()" data-i18n="markFailed">Mark as Failed</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-bg" id="paymentModal">
+  <div class="modal" style="max-width:500px">
+    <h2 data-i18n="recordPayments">Record Payments</h2>
+    <div id="paymentContent"></div>
+    <input type="hidden" id="payRecordId">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('paymentModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-p" onclick="savePayments()" data-i18n="savePayments">Save Payments</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 data-i18n="notifications">Notifications</h2>
+      <button class="btn btn-s btn-sm" onclick="closeNotifs()" data-i18n="close">Close</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   TRANSLATIONS (i18n)
+═══════════════════════════════════════════ */
+var LANG = {
+  en: {
+    appTitle:'Vehicle Clearance',
+    appSub:'Al Haidariya Heavy Equipment',
+    signIn:'Sign In',
+    signOut:'Sign Out',
+    signingIn:'Signing in\u2026',
+    emailPlaceholder:'Email',
+    passwordPlaceholder:'Password',
+    enterCredentials:'Please enter email and password.',
+    incorrectLogin:'Incorrect email or password.',
+    networkError:'Cannot reach server. Check your internet or resume the Supabase project.',
+    tooManyAttempts:'Too many login attempts. Wait a few minutes.',
+    accountNotSetup:'Account not set up. Contact admin.',
+    dashboard:'Dashboard',
+    vehicles:'Vehicles',
+    clearanceRecords:'Clearance Records',
+    reports:'Reports',
+    settings:'Settings',
+    addVehicle:'+ Add Vehicle',
+    editVehicle:'Edit Vehicle',
+    vehicleName:'Vehicle Name',
+    plateNumber:'Plate Number',
+    doorNumber:'Door Number',
+    vehicleType:'Type',
+    small:'Small',
+    large:'Large',
+    registrationMonth:'Registration Month',
+    location:'Location',
+    chassisNumber:'Chassis Number',
+    yearOfManufacture:'Year of Manufacture',
+    color:'Color',
+    driverName:'Driver / Operator',
+    insurancePolicyNo:'Insurance Policy No.',
+    insuranceExpiry:'Insurance Expiry',
+    notes:'Notes',
+    save:'Save',
+    cancel:'Cancel',
+    close:'Close',
+    create:'Create',
+    delete:'Delete',
+    confirmDelete:'Are you sure you want to delete this vehicle?',
+    all:'All',
+    allTypes:'All Types',
+    searchPlaceholder:'Search...',
+    status_due:'Due for Inspection',
+    status_pending:'Pending Inspection',
+    status_passed:'Passed',
+    status_failed:'Failed',
+    status_paid:'Paid',
+    status_completed:'Completed',
+    upcomingAlerts:'Upcoming Alerts',
+    noAlerts:'No upcoming alerts',
+    recentActivity:'Recent Activity',
+    noActivity:'No recent activity',
+    vehicleManagement:'Vehicle Management',
+    newClearance:'+ New Clearance',
+    selectVehicle:'Select Vehicle',
+    inspectionDate:'Inspection Date',
+    failureReason:'Failure Reason',
+    reason:'Reason',
+    markFailed:'Mark as Failed',
+    markPassed:'Mark as Passed',
+    startInspection:'Start Inspection',
+    reInspect:'Re-inspect',
+    recordPayments:'Record Payments',
+    savePayments:'Save Payments',
+    completeReg:'Complete Registration',
+    inspectionFee:'Inspection Fee',
+    registrationFee:'Registration Fee',
+    insuranceFee:'Insurance Fee',
+    amount:'Amount',
+    paid:'Paid',
+    unpaid:'Unpaid',
+    totalCost:'Total Cost',
+    notifications:'Notifications',
+    noNotifications:'No notifications',
+    gotIt:'Got it',
+    received:'Received',
+    vehicleDetails:'Vehicle Details',
+    clearanceHistory:'Clearance History',
+    summaryReport:'Summary Report',
+    costReport:'Cost Report',
+    exportExcel:'Export Excel',
+    exportPDF:'Export PDF',
+    userManagement:'User Management',
+    userMgmtDesc:'Manage system users and their roles.',
+    systemInfo:'System Info',
+    totalVehicles:'Total Vehicles',
+    completedThisYear:'Completed This Year',
+    pendingPayments:'Pending Payments',
+    failedVehicles:'Failed Vehicles',
+    month1:'January',month2:'February',month3:'March',month4:'April',
+    month5:'May',month6:'June',month7:'July',month8:'August',
+    month9:'September',month10:'October',month11:'November',month12:'December',
+    dueAlert:'is due for inspection this month',
+    dueAlertNext:'is due for inspection next month',
+    noVehicles:'No vehicles found.',
+    noRecords:'No clearance records found.',
+    vehicleAdded:'Vehicle added successfully.',
+    vehicleUpdated:'Vehicle updated successfully.',
+    vehicleDeleted:'Vehicle deleted.',
+    clearanceCreated:'Clearance record created.',
+    statusUpdated:'Status updated.',
+    paymentsSaved:'Payments saved.',
+    failureHistory:'Failure History',
+    date:'Date',
+    resolvedDate:'Resolved',
+    assignedTo:'Assigned To',
+    createdAt:'Created',
+    year:'Year',
+    actions:'Actions'
+  },
+  ar: {
+    appTitle:'\u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
+    appSub:'\u0627\u0644\u062D\u064A\u062F\u0631\u064A\u0629 \u0644\u0644\u0645\u0639\u062F\u0627\u062A \u0627\u0644\u062B\u0642\u064A\u0644\u0629',
+    signIn:'\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644',
+    signOut:'\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C',
+    signingIn:'\u062C\u0627\u0631\u064A \u0627\u0644\u062F\u062E\u0648\u0644\u2026',
+    emailPlaceholder:'\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A',
+    passwordPlaceholder:'\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631',
+    enterCredentials:'\u0627\u062F\u062E\u0644 \u0627\u0644\u0628\u0631\u064A\u062F \u0648\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631.',
+    incorrectLogin:'\u0628\u0631\u064A\u062F \u0623\u0648 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629.',
+    networkError:'\u0644\u0627 \u064A\u0645\u0643\u0646 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u0627\u0644\u0633\u064A\u0631\u0641\u0631.',
+    tooManyAttempts:'\u0645\u062D\u0627\u0648\u0644\u0627\u062A \u0643\u062B\u064A\u0631\u0629. \u0627\u0646\u062A\u0638\u0631 \u0642\u0644\u064A\u0644\u0627\u064B.',
+    accountNotSetup:'\u0627\u0644\u062D\u0633\u0627\u0628 \u063A\u064A\u0631 \u0645\u0639\u062F. \u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u0645\u062F\u064A\u0631.',
+    dashboard:'\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645',
+    vehicles:'\u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A',
+    clearanceRecords:'\u0633\u062C\u0644\u0627\u062A \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
+    reports:'\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631',
+    settings:'\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A',
+    addVehicle:'+ \u0625\u0636\u0627\u0641\u0629 \u0645\u0631\u0643\u0628\u0629',
+    editVehicle:'\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0631\u0643\u0628\u0629',
+    vehicleName:'\u0627\u0633\u0645 \u0627\u0644\u0645\u0631\u0643\u0628\u0629',
+    plateNumber:'\u0631\u0642\u0645 \u0627\u0644\u0644\u0648\u062D\u0629',
+    doorNumber:'\u0631\u0642\u0645 \u0627\u0644\u0628\u0627\u0628',
+    vehicleType:'\u0627\u0644\u0646\u0648\u0639',
+    small:'\u0635\u063A\u064A\u0631\u0629',
+    large:'\u0643\u0628\u064A\u0631\u0629',
+    registrationMonth:'\u0634\u0647\u0631 \u0627\u0644\u062A\u0633\u062C\u064A\u0644',
+    location:'\u0627\u0644\u0645\u0648\u0642\u0639',
+    chassisNumber:'\u0631\u0642\u0645 \u0627\u0644\u0634\u0627\u0635\u064A',
+    yearOfManufacture:'\u0633\u0646\u0629 \u0627\u0644\u0635\u0646\u0639',
+    color:'\u0627\u0644\u0644\u0648\u0646',
+    driverName:'\u0627\u0644\u0633\u0627\u0626\u0642 / \u0627\u0644\u0645\u0634\u063A\u0644',
+    insurancePolicyNo:'\u0631\u0642\u0645 \u0648\u062B\u064A\u0642\u0629 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
+    insuranceExpiry:'\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
+    notes:'\u0645\u0644\u0627\u062D\u0638\u0627\u062A',
+    save:'\u062D\u0641\u0638',
+    cancel:'\u0625\u0644\u063A\u0627\u0621',
+    close:'\u0625\u063A\u0644\u0627\u0642',
+    create:'\u0625\u0646\u0634\u0627\u0621',
+    delete:'\u062D\u0630\u0641',
+    confirmDelete:'\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u062D\u0630\u0641 \u0647\u0630\u0647 \u0627\u0644\u0645\u0631\u0643\u0628\u0629\u061F',
+    all:'\u0627\u0644\u0643\u0644',
+    allTypes:'\u062C\u0645\u064A\u0639 \u0627\u0644\u0623\u0646\u0648\u0627\u0639',
+    searchPlaceholder:'\u0628\u062D\u062B...',
+    status_due:'\u0645\u0642\u0628\u0644 \u0639\u0644\u0649 \u0627\u0644\u0641\u062D\u0635',
+    status_pending:'\u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0641\u062D\u0635',
+    status_passed:'\u0646\u062C\u062D',
+    status_failed:'\u0631\u0633\u0628',
+    status_paid:'\u062A\u0645 \u0627\u0644\u062F\u0641\u0639',
+    status_completed:'\u0645\u0643\u062A\u0645\u0644',
+    upcomingAlerts:'\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0627\u0644\u0642\u0627\u062F\u0645\u0629',
+    noAlerts:'\u0644\u0627 \u062A\u0648\u062C\u062F \u062A\u0646\u0628\u064A\u0647\u0627\u062A',
+    recentActivity:'\u0627\u0644\u0646\u0634\u0627\u0637 \u0627\u0644\u0623\u062E\u064A\u0631',
+    noActivity:'\u0644\u0627 \u064A\u0648\u062C\u062F \u0646\u0634\u0627\u0637',
+    vehicleManagement:'\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A',
+    newClearance:'+ \u062A\u062E\u0644\u064A\u0635 \u062C\u062F\u064A\u062F',
+    selectVehicle:'\u0627\u062E\u062A\u0631 \u0627\u0644\u0645\u0631\u0643\u0628\u0629',
+    inspectionDate:'\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0641\u062D\u0635',
+    failureReason:'\u0633\u0628\u0628 \u0627\u0644\u0631\u0633\u0648\u0628',
+    reason:'\u0627\u0644\u0633\u0628\u0628',
+    markFailed:'\u062A\u0633\u062C\u064A\u0644 \u0631\u0633\u0648\u0628',
+    markPassed:'\u062A\u0633\u062C\u064A\u0644 \u0646\u062C\u0627\u062D',
+    startInspection:'\u0628\u062F\u0621 \u0627\u0644\u0641\u062D\u0635',
+    reInspect:'\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0641\u062D\u0635',
+    recordPayments:'\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u062F\u0641\u0648\u0639\u0627\u062A',
+    savePayments:'\u062D\u0641\u0638 \u0627\u0644\u0645\u062F\u0641\u0648\u0639\u0627\u062A',
+    completeReg:'\u0625\u062A\u0645\u0627\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644',
+    inspectionFee:'\u0631\u0633\u0648\u0645 \u0627\u0644\u0641\u062D\u0635',
+    registrationFee:'\u0631\u0633\u0648\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644',
+    insuranceFee:'\u0631\u0633\u0648\u0645 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
+    amount:'\u0627\u0644\u0645\u0628\u0644\u063A',
+    paid:'\u0645\u062F\u0641\u0648\u0639',
+    unpaid:'\u063A\u064A\u0631 \u0645\u062F\u0641\u0648\u0639',
+    totalCost:'\u0627\u0644\u062A\u0643\u0644\u0641\u0629 \u0627\u0644\u0625\u062C\u0645\u0627\u0644\u064A\u0629',
+    notifications:'\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062A',
+    noNotifications:'\u0644\u0627 \u062A\u0648\u062C\u062F \u0625\u0634\u0639\u0627\u0631\u0627\u062A',
+    gotIt:'\u062A\u0645',
+    received:'\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u0644\u0627\u0645',
+    vehicleDetails:'\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0645\u0631\u0643\u0628\u0629',
+    clearanceHistory:'\u0633\u062C\u0644 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
+    summaryReport:'\u062A\u0642\u0631\u064A\u0631 \u0645\u0644\u062E\u0635',
+    costReport:'\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u062A\u0643\u0627\u0644\u064A\u0641',
+    exportExcel:'\u062A\u0635\u062F\u064A\u0631 Excel',
+    exportPDF:'\u062A\u0635\u062F\u064A\u0631 PDF',
+    userManagement:'\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646',
+    userMgmtDesc:'\u0625\u062F\u0627\u0631\u0629 \u0645\u0633\u062A\u062E\u062F\u0645\u064A \u0627\u0644\u0646\u0638\u0627\u0645 \u0648\u0623\u062F\u0648\u0627\u0631\u0647\u0645.',
+    systemInfo:'\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0646\u0638\u0627\u0645',
+    totalVehicles:'\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A',
+    completedThisYear:'\u0645\u0643\u062A\u0645\u0644 \u0647\u0630\u0627 \u0627\u0644\u0639\u0627\u0645',
+    pendingPayments:'\u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u062F\u0641\u0639',
+    failedVehicles:'\u0645\u0631\u0643\u0628\u0627\u062A \u0631\u0627\u0633\u0628\u0629',
+    month1:'\u064A\u0646\u0627\u064A\u0631',month2:'\u0641\u0628\u0631\u0627\u064A\u0631',month3:'\u0645\u0627\u0631\u0633',month4:'\u0623\u0628\u0631\u064A\u0644',
+    month5:'\u0645\u0627\u064A\u0648',month6:'\u064A\u0648\u0646\u064A\u0648',month7:'\u064A\u0648\u0644\u064A\u0648',month8:'\u0623\u063A\u0633\u0637\u0633',
+    month9:'\u0633\u0628\u062A\u0645\u0628\u0631',month10:'\u0623\u0643\u062A\u0648\u0628\u0631',month11:'\u0646\u0648\u0641\u0645\u0628\u0631',month12:'\u062F\u064A\u0633\u0645\u0628\u0631',
+    dueAlert:'\u0645\u0648\u0639\u062F \u0641\u062D\u0635\u0647 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+    dueAlertNext:'\u0645\u0648\u0639\u062F \u0641\u062D\u0635\u0647 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0642\u0627\u062F\u0645',
+    noVehicles:'\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0631\u0643\u0628\u0627\u062A.',
+    noRecords:'\u0644\u0627 \u062A\u0648\u062C\u062F \u0633\u062C\u0644\u0627\u062A.',
+    vehicleAdded:'\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u0631\u0643\u0628\u0629.',
+    vehicleUpdated:'\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0631\u0643\u0628\u0629.',
+    vehicleDeleted:'\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0631\u0643\u0628\u0629.',
+    clearanceCreated:'\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0633\u062C\u0644 \u0627\u0644\u062A\u062E\u0644\u064A\u0635.',
+    statusUpdated:'\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062D\u0627\u0644\u0629.',
+    paymentsSaved:'\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u062F\u0641\u0648\u0639\u0627\u062A.',
+    failureHistory:'\u0633\u062C\u0644 \u0627\u0644\u0631\u0633\u0648\u0628',
+    date:'\u0627\u0644\u062A\u0627\u0631\u064A\u062E',
+    resolvedDate:'\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062D\u0644',
+    assignedTo:'\u0645\u0639\u064A\u0646 \u0625\u0644\u0649',
+    createdAt:'\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0625\u0646\u0634\u0627\u0621',
+    year:'\u0627\u0644\u0633\u0646\u0629',
+    actions:'\u0627\u0644\u0625\u062C\u0631\u0627\u0621\u0627\u062A'
+  }
+};
+
+/* ═══════════════════════════════════════════
+   LANGUAGE & i18n
+═══════════════════════════════════════════ */
+var currentLang = localStorage.getItem('clr_lang') || 'en';
+
+function t(key){ return (LANG[currentLang] && LANG[currentLang][key]) || (LANG.en[key]) || key; }
+
+function monthName(n){ return t('month'+n); }
+
+function switchLang(){
+  currentLang = currentLang === 'en' ? 'ar' : 'en';
+  localStorage.setItem('clr_lang', currentLang);
+  applyLang();
+}
+
+function applyLang(){
+  var isAr = currentLang === 'ar';
+  document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+  document.documentElement.lang = currentLang;
+  document.body.classList.toggle('rtl', isAr);
+  document.getElementById('langBtn').textContent = isAr ? 'EN' : '\u0639\u0631\u0628\u064A';
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+  // Update month select options
+  var regSel = document.getElementById('vRegMonth');
+  if(regSel){
+    for(var i=0;i<regSel.options.length;i++){
+      regSel.options[i].textContent = monthName(i+1);
+    }
+  }
+  reRenderAll();
+}
+
+function reRenderAll(){
+  if(!currentUser) return;
+  var activePg = document.querySelector('.pg.active');
+  if(!activePg) return;
+  var id = activePg.id;
+  if(id==='pg-1') renderDashboard();
+  else if(id==='pg-2') renderVehicles();
+  else if(id==='pg-3') renderRecords();
+  else if(id==='pg-4') renderReports();
+  else if(id==='pg-5') renderSettings();
+}
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+var vehicles = [];
+var records = [];
+var notifications = [];
+var vStatusFilter = 'all';
+var crStatusFilter = 'all';
+var activePgNum = 1;
+
+/* ═══════════════════════════════════════════
+   SUPABASE CONFIG
+═══════════════════════════════════════════ */
+var SUPA_URL  = '';
+var SUPA_ANON = '';
+var SUPA_SVC  = '';
+var supa = null;
+var supaAdmin = null;
+var currentUser = null;
+var currentProfile = null;
+var _syncTimer = null;
+
+// Try to load config from localStorage (set by setup page)
+(function(){
+  var cfg = localStorage.getItem('clr_supabase_config');
+  if(cfg){
+    try{
+      var c = JSON.parse(cfg);
+      SUPA_URL = c.url || '';
+      SUPA_ANON = c.anon || '';
+      SUPA_SVC = c.svc || '';
+    }catch(e){}
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════ */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function genId(){return Date.now()+'_'+Math.random().toString(36).slice(2,8);}
+function fmtD(d){if(!d)return'';try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}}
+function fmtN(n){return typeof n==='number'?n.toFixed(3):'-';}
+function statusBadge(s){
+  var cls='badge badge-'+s.replace('pending_inspection','pending');
+  var key='status_'+s.replace('pending_inspection','pending');
+  if(s==='pending_inspection') key='status_pending';
+  if(s==='due') key='status_due';
+  return '<span class="'+cls+'">'+t(key)+'</span>';
+}
+function statusColor(s){
+  var map={due:'var(--am)',pending_inspection:'var(--bl)',passed:'var(--tl)',failed:'var(--rd)',paid:'var(--p)',completed:'var(--gn)'};
+  return map[s]||'var(--g400)';
+}
+
+/* ═══════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════ */
+async function initApp(){
+  applyLang();
+  if(!SUPA_URL || !SUPA_ANON){
+    var errEl = document.getElementById('loginErr');
+    errEl.innerHTML = 'Supabase not configured. Please open <a href="clearance_setup.html" style="color:var(--p)">clearance_setup.html</a> first.';
+    errEl.style.display = 'block';
+    document.getElementById('loginBtn').disabled = true;
+    return;
+  }
+  if(typeof supabase === 'undefined'){
+    document.getElementById('loginErr').innerHTML = 'Cannot load the app \u2014 network error.<br>Please refresh.';
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('loginBtn').disabled = true;
+    return;
+  }
+  try{
+    supa = supabase.createClient(SUPA_URL, SUPA_ANON);
+    if(SUPA_SVC) supaAdmin = supabase.createClient(SUPA_URL, SUPA_SVC);
+    var res = await supa.auth.getSession();
+    if(res.data && res.data.session) await afterLogin(res.data.session.user);
+    supa.auth.onAuthStateChange(function(ev,session){
+      if(ev==='SIGNED_OUT'){
+        currentUser=null;currentProfile=null;
+        document.getElementById('appWrapper').style.display='none';
+        document.getElementById('loginScreen').style.display='flex';
+      }
+    });
+  }catch(e){
+    document.getElementById('loginErr').innerHTML='Startup error: '+(e.message||e);
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+
+async function signIn(){
+  var email=document.getElementById('loginEmail').value.trim();
+  var pass=document.getElementById('loginPassword').value;
+  var errEl=document.getElementById('loginErr');
+  var btn=document.getElementById('loginBtn');
+  errEl.style.display='none';
+  if(!supa){errEl.innerHTML=t('networkError');errEl.style.display='block';return;}
+  if(!email||!pass){errEl.textContent=t('enterCredentials');errEl.style.display='block';return;}
+  btn.textContent=t('signingIn');btn.disabled=true;
+  var res=await supa.auth.signInWithPassword({email:email,password:pass});
+  if(res.error){
+    var msg=res.error.message||'';
+    if(msg.toLowerCase().includes('email not confirmed')&&supaAdmin){
+      try{
+        var list=await supaAdmin.auth.admin.listUsers({perPage:200});
+        if(list.data&&list.data.users){
+          var u=list.data.users.find(function(x){return x.email===email;});
+          if(u){
+            await supaAdmin.auth.admin.updateUserById(u.id,{email_confirm:true});
+            var r2=await supa.auth.signInWithPassword({email:email,password:pass});
+            if(!r2.error){await afterLogin(r2.data.user);return;}
+            msg=r2.error.message;
+          }
+        }
+      }catch(e){msg+=' (auto-confirm failed)';}
+    }
+    if(msg.toLowerCase().includes('invalid login')||msg.toLowerCase().includes('invalid credentials')) msg=t('incorrectLogin');
+    else if(msg.toLowerCase().includes('network')||msg.toLowerCase().includes('fetch')) msg=t('networkError');
+    else if(msg.toLowerCase().includes('too many')) msg=t('tooManyAttempts');
+    errEl.innerHTML=msg;errEl.style.display='block';
+    btn.textContent=t('signIn');btn.disabled=false;
+    return;
+  }
+  await afterLogin(res.data.user);
+}
+
+async function signOut(){await supa.auth.signOut();}
+
+async function afterLogin(user){
+  currentUser=user;
+  var res=await supa.from('user_profiles').select('*').eq('id',user.id).single();
+  if(res.error||!res.data){
+    document.getElementById('loginErr').textContent=t('accountNotSetup');
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('loginBtn').textContent=t('signIn');
+    document.getElementById('loginBtn').disabled=false;
+    await supa.auth.signOut();return;
+  }
+  currentProfile=res.data;
+  await loadAllData();
+  applyRole();
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appWrapper').style.display='block';
+  document.getElementById('loginBtn').textContent=t('signIn');
+  document.getElementById('loginBtn').disabled=false;
+  checkDueVehicles();
+  renderDashboard();
+  updateNotifBadge();
+  setupRealtime();
+}
+
+function applyRole(){
+  if(!currentProfile)return;
+  document.body.classList.remove('is-admin','is-viewer');
+  if(currentProfile.role==='admin') document.body.classList.add('is-admin');
+  if(currentProfile.role==='viewer') document.body.classList.add('is-viewer');
+  document.getElementById('userInfoName').textContent=currentProfile.full_name+' ('+currentProfile.role+')';
+}
+
+/* ═══════════════════════════════════════════
+   DATA LOAD / SYNC
+═══════════════════════════════════════════ */
+async function loadAllData(){
+  var res=await supa.from('app_data').select('key,value');
+  if(res.data){
+    res.data.forEach(function(row){
+      if(row.key==='clearance_vehicles') vehicles=row.value||[];
+      if(row.key==='clearance_records') records=row.value||[];
+      if(row.key==='clearance_notifications') notifications=row.value||[];
+    });
+  }
+}
+
+async function syncVehicles(){
+  if(!supa)return;
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(async function(){
+    await supa.from('app_data').upsert({key:'clearance_vehicles',value:vehicles,updated_at:new Date().toISOString()},{onConflict:'key'});
+  },400);
+}
+
+async function syncRecords(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'clearance_records',value:records,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+
+async function syncNotifications(){
+  if(!supa)return;
+  await supa.from('app_data').upsert({key:'clearance_notifications',value:notifications,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
+
+function setupRealtime(){
+  supa.channel('clr_rt')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'app_data'},function(payload){
+      if(!payload.new)return;
+      var k=payload.new.key;
+      if(k==='clearance_vehicles'){vehicles=payload.new.value||[];reRenderAll();}
+      if(k==='clearance_records'){records=payload.new.value||[];reRenderAll();}
+      if(k==='clearance_notifications'){notifications=payload.new.value||[];updateNotifBadge();}
+    })
+    .subscribe();
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+function showPg(n,btn){
+  activePgNum=n;
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('pg-'+n).classList.add('active');
+  if(n===1) renderDashboard();
+  else if(n===2) renderVehicles();
+  else if(n===3) renderRecords();
+  else if(n===4) renderReports();
+  else if(n===5) renderSettings();
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+function renderDashboard(){
+  var counts={due:0,pending_inspection:0,passed:0,failed:0,paid:0,completed:0};
+  records.forEach(function(r){
+    if(counts.hasOwnProperty(r.status)) counts[r.status]++;
+  });
+  // Also count vehicles that are "due" but have no active record
+  checkDueVehiclesCount(counts);
+
+  var html='';
+  var statuses=[
+    {key:'due',cls:'stat-due',label:'status_due'},
+    {key:'pending_inspection',cls:'stat-pending',label:'status_pending'},
+    {key:'passed',cls:'stat-passed',label:'status_passed'},
+    {key:'failed',cls:'stat-failed',label:'status_failed'},
+    {key:'paid',cls:'stat-paid',label:'status_paid'},
+    {key:'completed',cls:'stat-completed',label:'status_completed'}
+  ];
+  statuses.forEach(function(s){
+    html+='<div class="stat-card '+s.cls+'" onclick="goToFilteredRecords(\''+s.key+'\')">';
+    html+='<div class="stat-num">'+counts[s.key]+'</div>';
+    html+='<div class="stat-label">'+t(s.label)+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('dashStats').innerHTML=html;
+
+  // Alerts
+  renderDashAlerts();
+  renderDashActivity();
+}
+
+function checkDueVehiclesCount(counts){
+  var now=new Date();
+  var curMonth=now.getMonth()+1;
+  var curYear=now.getFullYear();
+  var nextMonth=curMonth===12?1:curMonth+1;
+  vehicles.forEach(function(v){
+    var regM=parseInt(v.registrationMonth);
+    if(regM===curMonth||regM===nextMonth){
+      var hasActive=records.some(function(r){
+        return r.vehicleId===v.id && r.year===curYear && r.status!=='completed';
+      });
+      if(!hasActive){
+        var hasCompleted=records.some(function(r){
+          return r.vehicleId===v.id && r.year===curYear && r.status==='completed';
+        });
+        if(!hasCompleted) counts.due++;
+      }
+    }
+  });
+}
+
+function goToFilteredRecords(status){
+  crStatusFilter=status;
+  var btns=document.querySelectorAll('#pg-3 .fbtn');
+  btns.forEach(function(b){b.classList.remove('active');});
+  showPg(3,document.querySelectorAll('.nb')[2]);
+}
+
+function renderDashAlerts(){
+  var now=new Date();
+  var curMonth=now.getMonth()+1;
+  var nextMonth=curMonth===12?1:curMonth+1;
+  var alerts=[];
+  vehicles.forEach(function(v){
+    var regM=parseInt(v.registrationMonth);
+    var curYear=now.getFullYear();
+    if(regM===curMonth||regM===nextMonth){
+      var hasActive=records.some(function(r){
+        return r.vehicleId===v.id && r.year===curYear && r.status!=='completed';
+      });
+      var hasCompleted=records.some(function(r){
+        return r.vehicleId===v.id && r.year===curYear && r.status==='completed';
+      });
+      if(!hasActive&&!hasCompleted){
+        alerts.push({vehicle:v,isCurrent:regM===curMonth});
+      }
+    }
+  });
+  // Also show failed vehicles
+  records.forEach(function(r){
+    if(r.status==='failed'){
+      var v=vehicles.find(function(x){return x.id===r.vehicleId;});
+      if(v) alerts.push({vehicle:v,isFailed:true,record:r});
+    }
+  });
+
+  var el=document.getElementById('dashAlerts');
+  if(!alerts.length){
+    el.innerHTML='<div style="text-align:center;color:var(--g400);padding:20px;font-size:13px">'+t('noAlerts')+'</div>';
+    return;
+  }
+  var html='';
+  alerts.forEach(function(a){
+    if(a.isFailed){
+      html+='<div class="alert-item" style="background:var(--rdb);border-color:var(--rd)">';
+      html+='<div class="alert-icon">\u26A0\uFE0F</div>';
+      html+='<div class="alert-text"><span class="alert-plate">'+esc(a.vehicle.plateNumber)+'</span> - '+esc(a.vehicle.name)+' <br><small style="color:var(--rd)">'+t('status_failed')+': '+esc(a.record.failureReason)+'</small></div>';
+      html+='</div>';
+    } else {
+      html+='<div class="alert-item">';
+      html+='<div class="alert-icon">\uD83D\uDD14</div>';
+      html+='<div class="alert-text"><span class="alert-plate">'+esc(a.vehicle.plateNumber)+'</span> - '+esc(a.vehicle.name)+' <br><small>'+(a.isCurrent?t('dueAlert'):t('dueAlertNext'))+'</small></div>';
+      html+='<button class="btn btn-am btn-sm viewer-hide" onclick="quickStartClearance(\''+a.vehicle.id+'\')">'+t('startInspection')+'</button>';
+      html+='</div>';
+    }
+  });
+  el.innerHTML=html;
+}
+
+function renderDashActivity(){
+  // Show last 10 records sorted by updatedAt
+  var sorted=records.slice().sort(function(a,b){return(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'');});
+  var recent=sorted.slice(0,10);
+  var el=document.getElementById('dashActivity');
+  if(!recent.length){
+    el.innerHTML='<div style="text-align:center;color:var(--g400);padding:20px">'+t('noActivity')+'</div>';
+    return;
+  }
+  var html='<div style="display:flex;flex-direction:column;gap:8px">';
+  recent.forEach(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;});
+    var vName=v?v.name+' ('+v.plateNumber+')':'Unknown';
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--g50);border-radius:var(--rxs)">';
+    html+=statusBadge(r.status);
+    html+='<span style="flex:1">'+esc(vName)+'</span>';
+    html+='<span style="font-size:11px;color:var(--g400)">'+fmtD(r.updatedAt||r.createdAt)+'</span>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════ */
+function checkDueVehicles(){
+  var now=new Date();
+  var curMonth=now.getMonth()+1;
+  var nextMonth=curMonth===12?1:curMonth+1;
+  var curYear=now.getFullYear();
+  var changed=false;
+  vehicles.forEach(function(v){
+    var regM=parseInt(v.registrationMonth);
+    if(regM===curMonth||regM===nextMonth){
+      var hasRecord=records.some(function(r){return r.vehicleId===v.id&&r.year===curYear;});
+      var hasNotif=notifications.some(function(n){return n.vehicleId===v.id&&n.type==='due_for_inspection'&&new Date(n.createdAt).getFullYear()===curYear;});
+      if(!hasRecord&&!hasNotif){
+        notifications.unshift({
+          id:genId(),vehicleId:v.id,vehicleName:v.name,plateNumber:v.plateNumber,
+          type:'due_for_inspection',
+          message:v.name+' ('+v.plateNumber+') - '+(regM===curMonth?t('dueAlert'):t('dueAlertNext')),
+          acknowledged:false,createdAt:new Date().toISOString()
+        });
+        changed=true;
+      }
+    }
+  });
+  if(changed) syncNotifications();
+}
+
+function updateNotifBadge(){
+  var badge=document.getElementById('notifBadge');
+  var pending=notifications.filter(function(n){return!n.acknowledged;});
+  if(pending.length>0){
+    badge.textContent=pending.length>9?'9+':pending.length;
+    badge.style.display='flex';
+  } else {
+    badge.style.display='none';
+  }
+}
+
+function openNotifs(){
+  renderNotifList();
+  document.getElementById('notifPanel').classList.add('open');
+}
+function closeNotifs(){document.getElementById('notifPanel').classList.remove('open');}
+
+function renderNotifList(){
+  var list=document.getElementById('notifList');
+  var toShow=notifications.slice(0,50);
+  if(!toShow.length){
+    list.innerHTML='<div style="text-align:center;color:var(--g400);padding:30px;font-size:13px">'+t('noNotifications')+'</div>';
+    return;
+  }
+  var html='';
+  toShow.forEach(function(n){
+    html+='<div class="notif-item'+(n.acknowledged?'':' notif-unread')+'">';
+    html+='<div style="font-size:13px;margin-bottom:4px"><b>'+esc(n.vehicleName)+'</b> - '+esc(n.plateNumber)+'</div>';
+    html+='<div style="font-size:12px;color:var(--g600)">'+esc(n.message)+'</div>';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">';
+    html+='<span style="font-size:10px;color:var(--g400)">'+fmtD(n.createdAt)+'</span>';
+    if(!n.acknowledged){
+      html+='<button class="btn btn-g btn-sm" onclick="ackNotif(\''+n.id+'\')">'+t('gotIt')+'</button>';
+    } else {
+      html+='<span class="badge badge-completed" style="font-size:10px">'+t('received')+'</span>';
+    }
+    html+='</div></div>';
+  });
+  list.innerHTML=html;
+}
+
+async function ackNotif(id){
+  for(var i=0;i<notifications.length;i++){
+    if(notifications[i].id===id){notifications[i].acknowledged=true;break;}
+  }
+  await syncNotifications();
+  updateNotifBadge();
+  renderNotifList();
+}
+
+/* ═══════════════════════════════════════════
+   VEHICLES
+═══════════════════════════════════════════ */
+function filterVehicles(status,btn){
+  vStatusFilter=status;
+  document.querySelectorAll('#pg-2 .fbtn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderVehicles();
+}
+
+function renderVehicles(){
+  var search=(document.getElementById('vSearch').value||'').toLowerCase();
+  var typeFilter=document.getElementById('vTypeFilter').value;
+  var grid=document.getElementById('vehicleGrid');
+
+  var filtered=vehicles.filter(function(v){
+    // Status filter
+    if(vStatusFilter!=='all'){
+      var vStatus=getVehicleStatus(v);
+      if(vStatus!==vStatusFilter) return false;
+    }
+    // Type filter
+    if(typeFilter!=='all'&&v.type!==typeFilter) return false;
+    // Search
+    if(search){
+      var haystack=(v.name+' '+v.plateNumber+' '+v.driverName+' '+v.doorNumber+' '+v.chassisNumber).toLowerCase();
+      if(haystack.indexOf(search)===-1) return false;
+    }
+    // Role-based: officer sees only assigned
+    if(currentProfile&&currentProfile.role==='officer'&&v.assignedTo&&v.assignedTo!==currentProfile.full_name) return false;
+    return true;
+  });
+
+  if(!filtered.length){
+    grid.innerHTML='<div style="text-align:center;color:var(--g400);padding:40px;font-size:14px;grid-column:1/-1">'+t('noVehicles')+'</div>';
+    return;
+  }
+
+  var html='';
+  filtered.forEach(function(v){
+    var status=getVehicleStatus(v);
+    html+='<div class="v-card" onclick="viewVehicle(\''+v.id+'\')">';
+    html+='<div class="v-card-head">';
+    html+='<div><div class="v-card-name">'+esc(v.name)+'</div><div class="v-card-plate">'+esc(v.plateNumber)+'</div></div>';
+    html+=statusBadge(status);
+    html+='</div>';
+    html+='<div class="v-card-info">';
+    html+='<span>'+t('vehicleType')+': '+t(v.type)+'</span>';
+    html+='<span>'+t('registrationMonth')+': '+monthName(v.registrationMonth)+'</span>';
+    html+='<span>'+t('location')+': '+esc(v.location||'-')+'</span>';
+    html+='<span>'+t('driverName')+': '+esc(v.driverName||'-')+'</span>';
+    html+='</div>';
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+}
+
+function getVehicleStatus(v){
+  var curYear=new Date().getFullYear();
+  // Find active record for this year
+  var rec=records.find(function(r){return r.vehicleId===v.id&&r.year===curYear&&r.status!=='completed';});
+  if(rec) return rec.status;
+  // Check if completed this year
+  var completed=records.find(function(r){return r.vehicleId===v.id&&r.year===curYear&&r.status==='completed';});
+  if(completed) return 'completed';
+  // Check if due
+  var now=new Date();
+  var curMonth=now.getMonth()+1;
+  var nextMonth=curMonth===12?1:curMonth+1;
+  var regM=parseInt(v.registrationMonth);
+  if(regM===curMonth||regM===nextMonth) return 'due';
+  return 'completed'; // Not in season
+}
+
+/* ── Vehicle Modal ── */
+function openVehicleModal(id){
+  document.getElementById('vEditId').value=id||'';
+  var title=document.getElementById('vehicleModalTitle');
+  if(id){
+    title.textContent=t('editVehicle');
+    var v=vehicles.find(function(x){return x.id===id;});
+    if(v){
+      document.getElementById('vName').value=v.name||'';
+      document.getElementById('vPlate').value=v.plateNumber||'';
+      document.getElementById('vDoor').value=v.doorNumber||'';
+      document.getElementById('vType').value=v.type||'small';
+      document.getElementById('vRegMonth').value=v.registrationMonth||1;
+      document.getElementById('vLocation').value=v.location||'';
+      document.getElementById('vChassis').value=v.chassisNumber||'';
+      document.getElementById('vYear').value=v.yearOfManufacture||'';
+      document.getElementById('vColor').value=v.color||'';
+      document.getElementById('vDriver').value=v.driverName||'';
+      document.getElementById('vInsPolicy').value=v.insurancePolicyNumber||'';
+      document.getElementById('vInsExpiry').value=v.insuranceExpiryDate||'';
+      document.getElementById('vNotes').value=v.notes||'';
+    }
+  } else {
+    title.textContent=t('addVehicle');
+    document.getElementById('vName').value='';
+    document.getElementById('vPlate').value='';
+    document.getElementById('vDoor').value='';
+    document.getElementById('vType').value='small';
+    document.getElementById('vRegMonth').value='1';
+    document.getElementById('vLocation').value='';
+    document.getElementById('vChassis').value='';
+    document.getElementById('vYear').value='';
+    document.getElementById('vColor').value='';
+    document.getElementById('vDriver').value='';
+    document.getElementById('vInsPolicy').value='';
+    document.getElementById('vInsExpiry').value='';
+    document.getElementById('vNotes').value='';
+  }
+  document.getElementById('vehicleModal').classList.add('open');
+}
+
+function saveVehicle(){
+  var name=document.getElementById('vName').value.trim();
+  var plate=document.getElementById('vPlate').value.trim();
+  if(!name||!plate){alert(t('vehicleName')+' & '+t('plateNumber')+' required');return;}
+  var editId=document.getElementById('vEditId').value;
+  var now=new Date().toISOString();
+  if(editId){
+    var v=vehicles.find(function(x){return x.id===editId;});
+    if(v){
+      v.name=name;v.plateNumber=plate;
+      v.doorNumber=document.getElementById('vDoor').value.trim();
+      v.type=document.getElementById('vType').value;
+      v.registrationMonth=parseInt(document.getElementById('vRegMonth').value);
+      v.location=document.getElementById('vLocation').value.trim();
+      v.chassisNumber=document.getElementById('vChassis').value.trim();
+      v.yearOfManufacture=parseInt(document.getElementById('vYear').value)||0;
+      v.color=document.getElementById('vColor').value.trim();
+      v.driverName=document.getElementById('vDriver').value.trim();
+      v.insurancePolicyNumber=document.getElementById('vInsPolicy').value.trim();
+      v.insuranceExpiryDate=document.getElementById('vInsExpiry').value;
+      v.notes=document.getElementById('vNotes').value.trim();
+      v.updatedAt=now;
+    }
+  } else {
+    vehicles.push({
+      id:genId(),name:name,plateNumber:plate,
+      doorNumber:document.getElementById('vDoor').value.trim(),
+      type:document.getElementById('vType').value,
+      registrationMonth:parseInt(document.getElementById('vRegMonth').value),
+      location:document.getElementById('vLocation').value.trim()||'Alhaidariya',
+      chassisNumber:document.getElementById('vChassis').value.trim(),
+      yearOfManufacture:parseInt(document.getElementById('vYear').value)||0,
+      color:document.getElementById('vColor').value.trim(),
+      driverName:document.getElementById('vDriver').value.trim(),
+      insurancePolicyNumber:document.getElementById('vInsPolicy').value.trim(),
+      insuranceExpiryDate:document.getElementById('vInsExpiry').value,
+      currentStatus:'',
+      assignedTo:currentProfile?currentProfile.full_name:'',
+      notes:document.getElementById('vNotes').value.trim(),
+      createdAt:now,updatedAt:now
+    });
+  }
+  syncVehicles();
+  closeModal('vehicleModal');
+  renderVehicles();
+  if(activePgNum===1) renderDashboard();
+}
+
+function deleteVehicle(id){
+  if(!confirm(t('confirmDelete'))) return;
+  vehicles=vehicles.filter(function(v){return v.id!==id;});
+  records=records.filter(function(r){return r.vehicleId!==id;});
+  syncVehicles();syncRecords();
+  closeModal('vehicleDetailModal');
+  renderVehicles();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ── Vehicle Detail ── */
+function viewVehicle(id){
+  var v=vehicles.find(function(x){return x.id===id;});
+  if(!v) return;
+  var title=document.getElementById('vDetailTitle');
+  title.textContent=v.name+' - '+v.plateNumber;
+
+  var html='<div class="form-grid" style="font-size:13px;gap:10px">';
+  var fields=[
+    ['vehicleName',v.name],['plateNumber',v.plateNumber],['doorNumber',v.doorNumber],
+    ['vehicleType',t(v.type)],['registrationMonth',monthName(v.registrationMonth)],['location',v.location],
+    ['chassisNumber',v.chassisNumber],['yearOfManufacture',v.yearOfManufacture],['color',v.color],
+    ['driverName',v.driverName],['insurancePolicyNo',v.insurancePolicyNumber],['insuranceExpiry',fmtD(v.insuranceExpiryDate)]
+  ];
+  fields.forEach(function(f){
+    html+='<div><span style="font-size:10px;text-transform:uppercase;color:var(--g400);letter-spacing:.3px">'+t(f[0])+'</span><div style="margin-top:2px;font-weight:bold">'+esc(f[1]||'-')+'</div></div>';
+  });
+  if(v.notes){
+    html+='<div class="fg-full"><span style="font-size:10px;text-transform:uppercase;color:var(--g400)">'+t('notes')+'</span><div style="margin-top:2px">'+esc(v.notes)+'</div></div>';
+  }
+  html+='</div>';
+
+  // Clearance history
+  var vRecords=records.filter(function(r){return r.vehicleId===id;}).sort(function(a,b){return b.year-a.year;});
+  if(vRecords.length){
+    html+='<div style="margin-top:20px"><div class="card-title" style="margin-bottom:12px">'+t('clearanceHistory')+'</div>';
+    html+='<div class="timeline">';
+    vRecords.forEach(function(r){
+      var cls='tl-item';
+      if(r.status==='completed') cls+=' tl-completed';
+      else if(r.status==='failed') cls+=' tl-failed';
+      else if(r.status==='passed') cls+=' tl-passed';
+      html+='<div class="'+cls+'">';
+      html+='<div class="tl-date">'+r.year+' - '+fmtD(r.updatedAt||r.createdAt)+'</div>';
+      html+='<div class="tl-text">'+statusBadge(r.status);
+      if(r.failureReason) html+=' <span style="color:var(--rd);font-size:12px">'+esc(r.failureReason)+'</span>';
+      var total=(r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0);
+      if(total>0) html+=' <span style="font-size:12px;color:var(--g600)">| '+t('totalCost')+': '+fmtN(total)+' BD</span>';
+      html+='</div>';
+      // Failure history
+      if(r.failureHistory&&r.failureHistory.length){
+        html+='<div style="margin-top:6px;padding:8px;background:var(--rdb);border-radius:6px;font-size:11px">';
+        html+='<b>'+t('failureHistory')+':</b>';
+        r.failureHistory.forEach(function(fh){
+          html+='<div style="margin-top:4px">\u2022 '+fmtD(fh.date)+' - '+esc(fh.reason);
+          if(fh.resolvedDate) html+=' ('+t('resolvedDate')+': '+fmtD(fh.resolvedDate)+')';
+          html+='</div>';
+        });
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    html+='</div></div>';
+  }
+
+  // Action buttons
+  html+='<div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap" class="viewer-hide">';
+  html+='<button class="btn btn-s" onclick="openVehicleModal(\''+id+'\');closeModal(\'vehicleDetailModal\')">'+t('editVehicle')+'</button>';
+  html+='<button class="btn btn-d" onclick="deleteVehicle(\''+id+'\')">'+t('delete')+'</button>';
+  html+='</div>';
+
+  document.getElementById('vDetailContent').innerHTML=html;
+  document.getElementById('vehicleDetailModal').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════
+   CLEARANCE RECORDS
+═══════════════════════════════════════════ */
+function filterRecords(status,btn){
+  crStatusFilter=status;
+  document.querySelectorAll('#pg-3 .fbtn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderRecords();
+}
+
+function renderRecords(){
+  var search=(document.getElementById('crSearch').value||'').toLowerCase();
+  var el=document.getElementById('recordsList');
+
+  var filtered=records.filter(function(r){
+    if(crStatusFilter!=='all'&&r.status!==crStatusFilter) return false;
+    if(search){
+      var v=vehicles.find(function(x){return x.id===r.vehicleId;});
+      var hay=((v?v.name+' '+v.plateNumber:'')+' '+r.status).toLowerCase();
+      if(hay.indexOf(search)===-1) return false;
+    }
+    return true;
+  });
+
+  // Sort: active first, then by date
+  filtered.sort(function(a,b){
+    var order={pending_inspection:0,failed:1,passed:2,paid:3,due:4,completed:5};
+    var diff=(order[a.status]||9)-(order[b.status]||9);
+    if(diff!==0) return diff;
+    return(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'');
+  });
+
+  if(!filtered.length){
+    el.innerHTML='<div style="text-align:center;color:var(--g400);padding:40px;font-size:14px">'+t('noRecords')+'</div>';
+    return;
+  }
+
+  var html='';
+  filtered.forEach(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;});
+    var vName=v?(v.name+' ('+v.plateNumber+')'):'Unknown';
+    var vType=v?t(v.type):'';
+
+    html+='<div class="cr-card">';
+    html+='<div class="cr-card-head">';
+    html+='<div><div class="cr-card-vehicle">'+esc(vName)+'</div><div style="font-size:12px;color:var(--g400)">'+t('year')+': '+r.year+' | '+vType+'</div></div>';
+    html+=statusBadge(r.status);
+    html+='</div>';
+
+    // Failure reason if failed
+    if(r.status==='failed'&&r.failureReason){
+      html+='<div style="background:var(--rdb);padding:10px 14px;border-radius:var(--rxs);margin-bottom:12px;font-size:12px;color:var(--rd)">';
+      html+='<b>'+t('reason')+':</b> '+esc(r.failureReason);
+      html+='</div>';
+    }
+
+    // Cost grid
+    html+='<div class="cr-cost-grid">';
+    var fees=[
+      {key:'inspectionFee',label:'inspectionFee',data:r.inspectionFee},
+      {key:'registrationFee',label:'registrationFee',data:r.registrationFee},
+      {key:'insuranceFee',label:'insuranceFee',data:r.insuranceFee}
+    ];
+    fees.forEach(function(f){
+      var d=f.data||{amount:0,paid:false};
+      html+='<div class="cr-cost-item">';
+      html+='<div class="cost-label">'+t(f.label)+'</div>';
+      html+='<div class="cost-amount">'+fmtN(d.amount||0)+' BD</div>';
+      html+='<div class="cost-status '+(d.paid?'cost-paid':'cost-unpaid')+'">'+(d.paid?t('paid'):t('unpaid'))+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+
+    // Total
+    var total=((r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0));
+    html+='<div style="text-align:end;font-size:13px;color:var(--g600)">'+t('totalCost')+': <b>'+fmtN(total)+' BD</b></div>';
+
+    // Action buttons
+    html+='<div class="cr-actions viewer-hide">';
+    if(r.status==='pending_inspection'){
+      html+='<button class="btn btn-g btn-sm" onclick="markPassed(\''+r.id+'\')">'+t('markPassed')+'</button>';
+      html+='<button class="btn btn-d btn-sm" onclick="openFailModal(\''+r.id+'\')">'+t('markFailed')+'</button>';
+    }
+    if(r.status==='failed'){
+      html+='<button class="btn btn-b btn-sm" onclick="reInspect(\''+r.id+'\')">'+t('reInspect')+'</button>';
+    }
+    if(r.status==='passed'){
+      html+='<button class="btn btn-p btn-sm" onclick="openPaymentModal(\''+r.id+'\')">'+t('recordPayments')+'</button>';
+    }
+    if(r.status==='paid'){
+      html+='<button class="btn btn-g btn-sm" onclick="completeRegistration(\''+r.id+'\')">'+t('completeReg')+'</button>';
+    }
+    html+='</div>';
+
+    // Failure history
+    if(r.failureHistory&&r.failureHistory.length>0){
+      html+='<details style="margin-top:10px;font-size:12px"><summary style="cursor:pointer;color:var(--g400)">'+t('failureHistory')+' ('+r.failureHistory.length+')</summary>';
+      html+='<div style="margin-top:6px;padding:8px;background:var(--rdb);border-radius:6px">';
+      r.failureHistory.forEach(function(fh){
+        html+='<div style="margin-bottom:4px">\u2022 '+fmtD(fh.date)+' - '+esc(fh.reason);
+        if(fh.resolvedDate) html+=' ('+t('resolvedDate')+': '+fmtD(fh.resolvedDate)+')';
+        html+='</div>';
+      });
+      html+='</div></details>';
+    }
+
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+/* ── New Clearance ── */
+function openNewClearanceModal(){
+  var sel=document.getElementById('crVehicleSelect');
+  sel.innerHTML='';
+  vehicles.forEach(function(v){
+    var opt=document.createElement('option');
+    opt.value=v.id;
+    opt.textContent=v.name+' ('+v.plateNumber+')';
+    sel.appendChild(opt);
+  });
+  document.getElementById('crInspDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('newClearanceModal').classList.add('open');
+}
+
+function quickStartClearance(vehicleId){
+  var curYear=new Date().getFullYear();
+  var exists=records.some(function(r){return r.vehicleId===vehicleId&&r.year===curYear&&r.status!=='completed';});
+  if(exists){alert('Active clearance record already exists for this vehicle.');return;}
+  var now=new Date().toISOString();
+  records.push({
+    id:genId(),vehicleId:vehicleId,year:curYear,status:'pending_inspection',
+    inspectionDate:now.slice(0,10),inspectionResult:'pending',failureReason:'',failureHistory:[],
+    inspectionFee:{amount:0,paid:false,paidDate:''},
+    registrationFee:{amount:0,paid:false,paidDate:''},
+    insuranceFee:{amount:0,paid:false,paidDate:''},
+    totalCost:0,registrationCompletedDate:'',insuranceCompletedDate:'',completedDate:'',
+    createdBy:currentProfile?currentProfile.full_name:'',createdAt:now,updatedAt:now
+  });
+  syncRecords();
+  renderDashboard();
+}
+
+function createClearanceRecord(){
+  var vehicleId=document.getElementById('crVehicleSelect').value;
+  var inspDate=document.getElementById('crInspDate').value;
+  if(!vehicleId) return;
+  var curYear=new Date().getFullYear();
+  var exists=records.some(function(r){return r.vehicleId===vehicleId&&r.year===curYear&&r.status!=='completed';});
+  if(exists){alert('Active clearance record already exists.');return;}
+  var now=new Date().toISOString();
+  records.push({
+    id:genId(),vehicleId:vehicleId,year:curYear,status:'pending_inspection',
+    inspectionDate:inspDate||now.slice(0,10),inspectionResult:'pending',failureReason:'',failureHistory:[],
+    inspectionFee:{amount:0,paid:false,paidDate:''},
+    registrationFee:{amount:0,paid:false,paidDate:''},
+    insuranceFee:{amount:0,paid:false,paidDate:''},
+    totalCost:0,registrationCompletedDate:'',insuranceCompletedDate:'',completedDate:'',
+    createdBy:currentProfile?currentProfile.full_name:'',createdAt:now,updatedAt:now
+  });
+  syncRecords();
+  closeModal('newClearanceModal');
+  renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ── Status Actions ── */
+function markPassed(recordId){
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  r.status='passed';
+  r.inspectionResult='passed';
+  r.updatedAt=new Date().toISOString();
+  syncRecords();renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+function openFailModal(recordId){
+  document.getElementById('failRecordId').value=recordId;
+  document.getElementById('failReason').value='';
+  document.getElementById('failModal').classList.add('open');
+}
+
+function confirmFail(){
+  var recordId=document.getElementById('failRecordId').value;
+  var reason=document.getElementById('failReason').value.trim();
+  if(!reason){alert(t('reason')+' required');return;}
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  r.status='failed';
+  r.inspectionResult='failed';
+  r.failureReason=reason;
+  r.updatedAt=new Date().toISOString();
+  syncRecords();
+  closeModal('failModal');
+  renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+function reInspect(recordId){
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  // Preserve failure in history
+  if(!r.failureHistory) r.failureHistory=[];
+  r.failureHistory.push({
+    date:r.updatedAt||new Date().toISOString(),
+    reason:r.failureReason||'Unknown',
+    resolvedDate:new Date().toISOString()
+  });
+  r.status='pending_inspection';
+  r.inspectionResult='pending';
+  r.failureReason='';
+  r.updatedAt=new Date().toISOString();
+  syncRecords();renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ── Payment ── */
+function openPaymentModal(recordId){
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  document.getElementById('payRecordId').value=recordId;
+  var html='<div style="display:flex;flex-direction:column;gap:14px">';
+  var fees=[
+    {key:'inspectionFee',label:'inspectionFee'},
+    {key:'registrationFee',label:'registrationFee'},
+    {key:'insuranceFee',label:'insuranceFee'}
+  ];
+  fees.forEach(function(f){
+    var d=r[f.key]||{amount:0,paid:false};
+    html+='<div style="background:var(--g50);padding:14px;border-radius:var(--rsm)">';
+    html+='<div style="font-weight:bold;font-size:13px;margin-bottom:8px">'+t(f.label)+'</div>';
+    html+='<div style="display:flex;gap:10px;align-items:center">';
+    html+='<div class="fg" style="flex:1"><label>'+t('amount')+' (BD)</label><input type="number" step="0.001" id="pay_'+f.key+'_amt" value="'+(d.amount||0)+'"></div>';
+    html+='<div class="fg"><label>'+t('paid')+'</label><select id="pay_'+f.key+'_paid"><option value="0"'+(d.paid?'':' selected')+'>'+t('unpaid')+'</option><option value="1"'+(d.paid?' selected':'')+'>'+t('paid')+'</option></select></div>';
+    html+='</div></div>';
+  });
+  html+='</div>';
+  document.getElementById('paymentContent').innerHTML=html;
+  document.getElementById('paymentModal').classList.add('open');
+}
+
+function savePayments(){
+  var recordId=document.getElementById('payRecordId').value;
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  var now=new Date().toISOString();
+  var fees=['inspectionFee','registrationFee','insuranceFee'];
+  var allPaid=true;
+  fees.forEach(function(key){
+    var amt=parseFloat(document.getElementById('pay_'+key+'_amt').value)||0;
+    var paid=document.getElementById('pay_'+key+'_paid').value==='1';
+    r[key]={amount:amt,paid:paid,paidDate:paid?now:''};
+    if(!paid) allPaid=false;
+  });
+  r.totalCost=(r.inspectionFee.amount||0)+(r.registrationFee.amount||0)+(r.insuranceFee.amount||0);
+  if(allPaid){
+    r.status='paid';
+  }
+  r.updatedAt=now;
+  syncRecords();
+  closeModal('paymentModal');
+  renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+function completeRegistration(recordId){
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  var now=new Date().toISOString();
+  r.status='completed';
+  r.registrationCompletedDate=now;
+  r.insuranceCompletedDate=now;
+  r.completedDate=now;
+  r.updatedAt=now;
+  syncRecords();renderRecords();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ═══════════════════════════════════════════
+   REPORTS
+═══════════════════════════════════════════ */
+function renderReports(){
+  // Summary
+  var total=vehicles.length;
+  var curYear=new Date().getFullYear();
+  var completedThisYear=records.filter(function(r){return r.year===curYear&&r.status==='completed';}).length;
+  var pendingPay=records.filter(function(r){return r.status==='passed';}).length;
+  var failedCount=records.filter(function(r){return r.status==='failed';}).length;
+
+  var summaryHtml='<div class="stats-grid">';
+  summaryHtml+='<div class="stat-card"><div class="stat-num" style="color:var(--p)">'+total+'</div><div class="stat-label">'+t('totalVehicles')+'</div></div>';
+  summaryHtml+='<div class="stat-card stat-completed"><div class="stat-num">'+completedThisYear+'</div><div class="stat-label">'+t('completedThisYear')+'</div></div>';
+  summaryHtml+='<div class="stat-card stat-passed"><div class="stat-num">'+pendingPay+'</div><div class="stat-label">'+t('pendingPayments')+'</div></div>';
+  summaryHtml+='<div class="stat-card stat-failed"><div class="stat-num">'+failedCount+'</div><div class="stat-label">'+t('failedVehicles')+'</div></div>';
+  summaryHtml+='</div>';
+  document.getElementById('reportSummary').innerHTML=summaryHtml;
+
+  // Cost report table
+  var costRecords=records.filter(function(r){return r.year===curYear;});
+  var costHtml='<table class="tbl"><thead><tr>';
+  costHtml+='<th>'+t('vehicleName')+'</th><th>'+t('plateNumber')+'</th>';
+  costHtml+='<th>'+t('inspectionFee')+'</th><th>'+t('registrationFee')+'</th><th>'+t('insuranceFee')+'</th>';
+  costHtml+='<th>'+t('totalCost')+'</th><th>'+t('status_paid')+'</th>';
+  costHtml+='</tr></thead><tbody>';
+  var grandTotal=0;
+  costRecords.forEach(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;});
+    var iF=r.inspectionFee?r.inspectionFee.amount:0;
+    var rF=r.registrationFee?r.registrationFee.amount:0;
+    var inF=r.insuranceFee?r.insuranceFee.amount:0;
+    var tot=iF+rF+inF;
+    grandTotal+=tot;
+    costHtml+='<tr>';
+    costHtml+='<td>'+esc(v?v.name:'-')+'</td>';
+    costHtml+='<td>'+esc(v?v.plateNumber:'-')+'</td>';
+    costHtml+='<td>'+fmtN(iF)+'</td>';
+    costHtml+='<td>'+fmtN(rF)+'</td>';
+    costHtml+='<td>'+fmtN(inF)+'</td>';
+    costHtml+='<td><b>'+fmtN(tot)+'</b></td>';
+    costHtml+='<td>'+statusBadge(r.status)+'</td>';
+    costHtml+='</tr>';
+  });
+  costHtml+='<tr style="background:var(--pb)"><td colspan="5" style="text-align:end;font-weight:bold">'+t('totalCost')+'</td><td><b>'+fmtN(grandTotal)+' BD</b></td><td></td></tr>';
+  costHtml+='</tbody></table>';
+  document.getElementById('reportCost').innerHTML=costHtml;
+}
+
+function exportExcel(){
+  var curYear=new Date().getFullYear();
+  var data=records.filter(function(r){return r.year===curYear;}).map(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;})||{};
+    return{
+      'Vehicle':v.name||'','Plate':v.plateNumber||'','Type':v.type||'',
+      'Status':r.status,'Year':r.year,
+      'Inspection Fee':(r.inspectionFee?r.inspectionFee.amount:0),
+      'Inspection Paid':(r.inspectionFee&&r.inspectionFee.paid?'Yes':'No'),
+      'Registration Fee':(r.registrationFee?r.registrationFee.amount:0),
+      'Registration Paid':(r.registrationFee&&r.registrationFee.paid?'Yes':'No'),
+      'Insurance Fee':(r.insuranceFee?r.insuranceFee.amount:0),
+      'Insurance Paid':(r.insuranceFee&&r.insuranceFee.paid?'Yes':'No'),
+      'Total':((r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0)),
+      'Failure Reason':r.failureReason||''
+    };
+  });
+  var ws=XLSX.utils.json_to_sheet(data);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Clearance Report');
+  XLSX.writeFile(wb,'clearance_report_'+curYear+'.xlsx');
+}
+
+function exportPDF(){
+  var doc=new jspdf.jsPDF('landscape');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.text('Vehicle Clearance Report - '+new Date().getFullYear(),14,20);
+  doc.setFontSize(10);
+  doc.text('Al Haidariya Heavy Equipment',14,28);
+  doc.text('Generated: '+new Date().toLocaleDateString(),14,34);
+
+  var curYear=new Date().getFullYear();
+  var rows=records.filter(function(r){return r.year===curYear;}).map(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;})||{};
+    var iF=r.inspectionFee?r.inspectionFee.amount:0;
+    var rF=r.registrationFee?r.registrationFee.amount:0;
+    var inF=r.insuranceFee?r.insuranceFee.amount:0;
+    return[v.name||'',v.plateNumber||'',r.status,fmtN(iF),fmtN(rF),fmtN(inF),fmtN(iF+rF+inF)];
+  });
+
+  doc.autoTable({
+    startY:40,
+    head:[['Vehicle','Plate','Status','Inspection','Registration','Insurance','Total']],
+    body:rows,
+    theme:'grid',
+    headStyles:{fillColor:[106,82,136]}
+  });
+
+  doc.save('clearance_report_'+curYear+'.pdf');
+}
+
+/* ═══════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════ */
+async function renderSettings(){
+  // User list
+  var userEl=document.getElementById('userList');
+  if(!supaAdmin){
+    userEl.innerHTML='<p style="color:var(--g400);font-size:13px">Service role key not configured. User management requires admin setup.</p>';
+  } else {
+    try{
+      var res=await supa.from('user_profiles').select('*');
+      var users=res.data||[];
+      var html='<table class="tbl"><thead><tr><th>'+t('driverName')+'</th><th>Email</th><th>Role</th></tr></thead><tbody>';
+      users.forEach(function(u){
+        html+='<tr><td>'+esc(u.full_name)+'</td><td>'+esc(u.id)+'</td><td><span class="badge badge-'+(u.role==='admin'?'paid':u.role==='officer'?'pending':'completed')+'">'+esc(u.role)+'</span></td></tr>';
+      });
+      html+='</tbody></table>';
+      html+='<p style="font-size:11px;color:var(--g400);margin-top:12px">To add new users, use <a href="clearance_setup.html" style="color:var(--p)">clearance_setup.html</a></p>';
+      userEl.innerHTML=html;
+    }catch(e){
+      userEl.innerHTML='<p style="color:var(--rd)">Error loading users: '+esc(e.message)+'</p>';
+    }
+  }
+
+  // System info
+  document.getElementById('sysInfo').innerHTML=
+    '<div>Supabase URL: '+esc(SUPA_URL)+'</div>'+
+    '<div>Vehicles: '+vehicles.length+'</div>'+
+    '<div>Records: '+records.length+'</div>'+
+    '<div>Version: 1.0</div>';
+}
+
+/* ═══════════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════════ */
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modals on background click
+document.addEventListener('click',function(e){
+  if(e.target.classList.contains('modal-bg')&&e.target.classList.contains('open')){
+    e.target.classList.remove('open');
+  }
+});
+
+// Close modals on Escape
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-bg.open').forEach(function(m){m.classList.remove('open');});
+    document.querySelectorAll('.notif-panel.open').forEach(function(m){m.classList.remove('open');});
+  }
+});
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
