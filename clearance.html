@@ -866,6 +866,26 @@ function showToast(msg,type){
 /* ═══════════════════════════════════════════
    AUTH
 ═══════════════════════════════════════════ */
+var _schemaReady = false;
+
+async function warmUpDB(){
+  // Ping PostgREST to wake it up and cache schema
+  for(var i=0;i<5;i++){
+    try{
+      var r=await supa.from('app_data').select('key').limit(1);
+      if(!r.error){_schemaReady=true;return true;}
+      if(r.error.message&&r.error.message.toLowerCase().includes('schema')){
+        await new Promise(function(ok){setTimeout(ok,2000);});
+        continue;
+      }
+      _schemaReady=true;return true;
+    }catch(e){
+      await new Promise(function(ok){setTimeout(ok,2000);});
+    }
+  }
+  return false;
+}
+
 async function initApp(){
   applyLang();
   if(!SUPA_URL || !SUPA_ANON){
@@ -884,6 +904,8 @@ async function initApp(){
   try{
     supa = supabase.createClient(SUPA_URL, SUPA_ANON);
     if(SUPA_SVC) supaAdmin = supabase.createClient(SUPA_URL, SUPA_SVC);
+    // Warm up PostgREST schema cache in background
+    warmUpDB();
     var res = await supa.auth.getSession();
     if(res.data && res.data.session) await afterLogin(res.data.session.user);
     supa.auth.onAuthStateChange(function(ev,session){
@@ -908,26 +930,61 @@ async function signIn(){
   if(!supa){errEl.innerHTML=t('networkError');errEl.style.display='block';return;}
   if(!email||!pass){errEl.textContent=t('enterCredentials');errEl.style.display='block';return;}
   btn.textContent=t('signingIn');btn.disabled=true;
+
+  // If schema not ready, warm up first
+  if(!_schemaReady){
+    btn.textContent=currentLang==='ar'?'جاري الاتصال بقاعدة البيانات...':'Connecting to database...';
+    await warmUpDB();
+  }
+
   var res=await supa.auth.signInWithPassword({email:email,password:pass});
   if(res.error){
     var msg=res.error.message||'';
-    if(msg.toLowerCase().includes('email not confirmed')&&supaAdmin){
+
+    // Handle schema error with retry
+    if(msg.toLowerCase().includes('schema')){
+      btn.textContent=currentLang==='ar'?'جاري إعادة الاتصال...':'Reconnecting...';
+      var ok=await warmUpDB();
+      if(ok){
+        res=await supa.auth.signInWithPassword({email:email,password:pass});
+        if(!res.error){await afterLogin(res.data.user);return;}
+        msg=res.error.message||'';
+      }
+    }
+
+    if(msg.toLowerCase().includes('email not confirmed')){
+      // Try to auto-confirm the email
       try{
-        var list=await supaAdmin.auth.admin.listUsers({perPage:200});
-        if(list.data&&list.data.users){
-          var u=list.data.users.find(function(x){return x.email===email;});
-          if(u){
-            await supaAdmin.auth.admin.updateUserById(u.id,{email_confirm:true});
-            var r2=await supa.auth.signInWithPassword({email:email,password:pass});
-            if(!r2.error){await afterLogin(r2.data.user);return;}
-            msg=r2.error.message;
-          }
+        var confirmRes=await fetch(SUPA_URL+'/auth/v1/token?grant_type=password',{
+          method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_ANON},
+          body:JSON.stringify({email:email,password:pass})
+        });
+        var confirmData=await confirmRes.json();
+        if(confirmData.access_token){
+          // Login succeeded via direct fetch
+          var sess=await supa.auth.setSession({access_token:confirmData.access_token,refresh_token:confirmData.refresh_token});
+          if(sess.data&&sess.data.user){await afterLogin(sess.data.user);return;}
         }
-      }catch(e){msg+=' (auto-confirm failed)';}
+      }catch(e){}
+      if(supaAdmin){
+        try{
+          var list=await supaAdmin.auth.admin.listUsers({perPage:200});
+          if(list.data&&list.data.users){
+            var u=list.data.users.find(function(x){return x.email===email;});
+            if(u){
+              await supaAdmin.auth.admin.updateUserById(u.id,{email_confirm:true});
+              var r2=await supa.auth.signInWithPassword({email:email,password:pass});
+              if(!r2.error){await afterLogin(r2.data.user);return;}
+              msg=r2.error.message;
+            }
+          }
+        }catch(e){msg+=' (auto-confirm failed)';}
+      }
     }
     if(msg.toLowerCase().includes('invalid login')||msg.toLowerCase().includes('invalid credentials')) msg=t('incorrectLogin');
     else if(msg.toLowerCase().includes('network')||msg.toLowerCase().includes('fetch')) msg=t('networkError');
     else if(msg.toLowerCase().includes('too many')) msg=t('tooManyAttempts');
+    else if(msg.toLowerCase().includes('schema')) msg=currentLang==='ar'?'قاعدة البيانات تحتاج وقت للاتصال. حاول مرة ثانية.':'Database is warming up. Please try again.';
     errEl.innerHTML=msg;errEl.style.display='block';
     btn.textContent=t('signIn');btn.disabled=false;
     return;
@@ -939,7 +996,17 @@ async function signOut(){await supa.auth.signOut();}
 
 async function afterLogin(user){
   currentUser=user;
-  var res=await supa.from('user_profiles').select('*').eq('id',user.id).single();
+  // Retry profile fetch up to 3 times for schema errors
+  var res;
+  for(var _retry=0;_retry<3;_retry++){
+    res=await supa.from('user_profiles').select('*').eq('id',user.id).single();
+    if(!res.error) break;
+    if(res.error.message&&res.error.message.toLowerCase().includes('schema')){
+      await new Promise(function(ok){setTimeout(ok,2000);});
+      continue;
+    }
+    break;
+  }
   if(res.error||!res.data){
     document.getElementById('loginErr').textContent=t('accountNotSetup');
     document.getElementById('loginErr').style.display='block';
