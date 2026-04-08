@@ -25,8 +25,6 @@ input:focus,select:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,1
 .btn-p{background:#6A5288;color:white;}
 .btn-p:hover:not(:disabled){background:#4E3A6B;}
 .btn-p:disabled{opacity:.5;cursor:not-allowed;}
-.btn-g{background:#1D9E75;color:white;}
-.btn-g:hover{background:#167a5b;}
 .sql-block{background:#1e1e2e;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#cdd6f4;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6;max-height:200px;overflow-y:auto;}
 .copy-btn{background:#E4DAF2;color:#4E3A6B;border:none;border-radius:6px;padding:6px 14px;font-family:Tahoma;font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:10px;width:100%;}
 .copy-btn:hover{background:#D8D4E4;}
@@ -34,28 +32,22 @@ input:focus,select:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,1
 .section.done .done-badge{display:inline-block;}
 .note{font-size:12px;color:#5C5472;line-height:1.7;margin-top:6px;}
 .err{background:#FCEBEB;border-radius:8px;padding:10px 12px;font-size:12px;color:#E24B4A;margin-top:10px;display:none;}
-.ok{background:#E1F5EE;border-radius:8px;padding:10px 12px;font-size:12px;color:#167a5b;margin-top:10px;display:none;}
-.user-row{border:1.5px solid #D8D4E4;border-radius:10px;padding:14px;margin-bottom:10px;background:#F8F7FA;}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-@media(max-width:480px){.fields{grid-template-columns:1fr;}}
-.role-badge{font-size:10px;font-weight:bold;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:8px;}
-.rb-admin{background:#E6F1FB;color:#185FA5;}
-.rb-officer{background:#E1F5EE;color:#1D9E75;}
-.rb-viewer{background:#FDF0D8;color:#8F5700;}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px;}
+.r-ok{background:#E1F5EE;color:#167a5b;}
+.r-err{background:#FCEBEB;color:#b03030;}
+.steps-box{background:#F0EBF8;border-radius:8px;padding:14px;margin:10px 0;font-size:12px;line-height:1.8;color:#4E3A6B;}
+.steps-box b{color:#27233A;}
 .final{display:none;background:#E1F5EE;border-radius:12px;padding:24px;text-align:center;margin-top:4px;}
 .final h2{color:#1D9E75;font-size:20px;margin-bottom:12px;}
 .final p{font-size:13px;color:#5C5472;margin-bottom:8px;line-height:1.8;}
 .final a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;}
-.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px;}
-.r-ok{background:#E1F5EE;color:#167a5b;}
-.r-err{background:#FCEBEB;color:#b03030;}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="box">
   <h1>Vehicle Clearance — Setup</h1>
-  <p class="sub">Three steps to get your clearance system running. Takes ~3 minutes.</p>
+  <p class="sub">Two simple steps to get your system running.</p>
 
   <!-- STEP 1: SQL -->
   <div class="section active" id="sec1">
@@ -63,7 +55,14 @@ input:focus,select:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,1
       <span class="section-num">1</span> Create Database Tables
       <span class="done-badge" id="s1badge">Done</span>
     </div>
-    <p class="note">Go to your <b>new Supabase project</b> &rarr; SQL Editor &rarr; Paste this SQL &rarr; Click Run.</p>
+    <div class="steps-box">
+      <b>Follow these steps:</b><br>
+      1. Open <a href="https://supabase.com/dashboard/project/phyvnqcmasqzpnxabcwr/sql" target="_blank" style="color:#6A5288;font-weight:bold">Supabase SQL Editor</a> (click this link)<br>
+      2. Click the <b>"Copy SQL"</b> button below<br>
+      3. Paste it in the SQL Editor<br>
+      4. Click the <b>green "Run"</b> button<br>
+      5. Come back here and click <b>"I've run the SQL"</b>
+    </div>
     <button class="copy-btn" onclick="copySql()">Copy SQL</button>
     <div class="sql-block" id="sqlblock">CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -98,80 +97,48 @@ INSERT INTO app_data (key, value) VALUES
   ('clearance_records', '[]'::jsonb),
   ('clearance_notifications', '[]'::jsonb)
 ON CONFLICT (key) DO NOTHING;</div>
+    <div class="err" id="s1err"></div>
     <button class="btn btn-p" onclick="markStep1Done()">I've run the SQL</button>
   </div>
 
-  <!-- STEP 2: Supabase Config -->
+  <!-- STEP 2: Create Admin Account -->
   <div class="section" id="sec2">
     <div class="section-title">
-      <span class="section-num">2</span> Connect to Supabase
+      <span class="section-num">2</span> Create Admin Account
       <span class="done-badge" id="s2badge">Done</span>
     </div>
-    <p class="note">Find these in your Supabase project &rarr; Settings &rarr; API.</p>
-    <label>Supabase Project URL</label>
-    <input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co">
-    <label>Anon (Public) Key</label>
-    <input type="text" id="supaAnon" placeholder="eyJhbGciOi...">
-    <label>Service Role Key (for admin features)</label>
-    <input type="text" id="supaSvc" placeholder="eyJhbGciOi...">
-    <div class="err" id="s2err"></div>
-    <button class="btn btn-p" onclick="testConnection()">Test Connection & Save</button>
-  </div>
+    <p class="note">Enter your Service Role Key, then click Create.</p>
 
-  <!-- STEP 3: Create Users -->
-  <div class="section" id="sec3">
-    <div class="section-title">
-      <span class="section-num">3</span> Create User Accounts
-      <span class="done-badge" id="s3badge">Done</span>
-    </div>
-    <p class="note">Create at least one admin account. You can add more users later.</p>
+    <label>Service Role Key (from Supabase Settings &rarr; API)</label>
+    <input type="text" id="svcKeyInput" placeholder="sb_secret_..." style="margin-bottom:12px">
 
-    <div id="userForms">
-      <div class="user-row">
-        <span class="role-badge rb-admin">ADMIN</span>
-        <div class="fields">
-          <div><label>Full Name</label><input type="text" id="u1name" placeholder="Admin Name"></div>
-          <div><label>Email</label><input type="email" id="u1email" placeholder="admin@company.com"></div>
-          <div><label>Password</label><input type="password" id="u1pass" placeholder="Min 6 characters"></div>
-          <div><label>Role</label><select id="u1role"><option value="admin">Admin</option><option value="officer">Officer</option><option value="viewer">Viewer</option></select></div>
-        </div>
-      </div>
-      <div class="user-row">
-        <span class="role-badge rb-officer">OFFICER</span>
-        <div class="fields">
-          <div><label>Full Name</label><input type="text" id="u2name" placeholder="Officer Name"></div>
-          <div><label>Email</label><input type="email" id="u2email" placeholder="officer@company.com"></div>
-          <div><label>Password</label><input type="password" id="u2pass" placeholder="Min 6 characters"></div>
-          <div><label>Role</label><select id="u2role"><option value="officer" selected>Officer</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>
-        </div>
-      </div>
-      <div class="user-row">
-        <span class="role-badge rb-viewer">VIEWER</span>
-        <div class="fields">
-          <div><label>Full Name</label><input type="text" id="u3name" placeholder="Viewer Name (optional)"></div>
-          <div><label>Email</label><input type="email" id="u3email" placeholder="viewer@company.com"></div>
-          <div><label>Password</label><input type="password" id="u3pass" placeholder="Min 6 characters"></div>
-          <div><label>Role</label><select id="u3role"><option value="viewer" selected>Viewer</option><option value="admin">Admin</option><option value="officer">Officer</option></select></div>
-        </div>
-      </div>
+    <div style="background:#F8F7FA;border-radius:8px;padding:14px;margin:10px 0;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Name:</span><b>M. Khalid</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Email:</span><b>m.khalid@alhaidariya.com</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Password:</span><b>Clearance@2026</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#9990B0">Role:</span><b style="color:#185FA5">Admin</b></div>
     </div>
 
     <div id="createResults"></div>
-    <div class="err" id="s3err"></div>
-    <button class="btn btn-p" id="createBtn" onclick="createUsers()">Create Accounts</button>
+    <div class="err" id="s2err"></div>
+    <button class="btn btn-p" id="createBtn" onclick="createAdmin()">Create Admin Account</button>
   </div>
 
   <!-- FINAL -->
   <div class="final" id="finalBox">
     <h2>Setup Complete!</h2>
     <p>Your Vehicle Clearance System is ready to use.</p>
-    <p style="font-size:12px;color:#9990B0">Login with the admin credentials you just created.</p>
+    <p style="font-size:12px;color:#9990B0"><b>Email:</b> m.khalid@alhaidariya.com<br><b>Password:</b> Clearance@2026</p>
     <a href="clearance.html">Open Clearance System &rarr;</a>
   </div>
 </div>
 </div>
 
 <script>
+var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
+var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
+var SUPA_SVC  = localStorage.getItem('clr_svc_key') || '';
+
 function copySql(){
   var text=document.getElementById('sqlblock').textContent;
   navigator.clipboard.writeText(text).then(function(){
@@ -181,105 +148,81 @@ function copySql(){
   });
 }
 
-function markStep1Done(){
-  document.getElementById('sec1').classList.add('done');
-  document.getElementById('sec1').classList.remove('active');
-  document.getElementById('sec2').classList.add('active');
-}
-
-async function testConnection(){
-  var url=document.getElementById('supaUrl').value.trim();
-  var anon=document.getElementById('supaAnon').value.trim();
-  var svc=document.getElementById('supaSvc').value.trim();
-  var errEl=document.getElementById('s2err');
+async function markStep1Done(){
+  // Test if tables were created by trying to read from app_data
+  var errEl=document.getElementById('s1err');
   errEl.style.display='none';
-
-  if(!url||!anon){
-    errEl.textContent='URL and Anon Key are required.';
-    errEl.style.display='block';return;
-  }
-
   try{
-    var client=supabase.createClient(url,anon);
+    var client=supabase.createClient(SUPA_URL,SUPA_ANON);
+    // Try reading — if tables exist this will work (may return empty array, that's ok)
     var res=await client.from('app_data').select('key').limit(1);
     if(res.error) throw new Error(res.error.message);
-
-    // Save config to localStorage
-    localStorage.setItem('clr_supabase_config',JSON.stringify({url:url,anon:anon,svc:svc}));
-
-    document.getElementById('sec2').classList.add('done');
-    document.getElementById('sec2').classList.remove('active');
-    document.getElementById('sec3').classList.add('active');
+    document.getElementById('sec1').classList.add('done');
+    document.getElementById('sec1').classList.remove('active');
+    document.getElementById('sec2').classList.add('active');
   }catch(e){
-    errEl.textContent='Connection failed: '+(e.message||e)+'. Make sure you ran the SQL first and the URL/key are correct.';
+    errEl.textContent='Tables not found. Make sure you ran the SQL in Supabase first. Error: '+(e.message||e);
     errEl.style.display='block';
   }
 }
 
-async function createUsers(){
-  var cfg=localStorage.getItem('clr_supabase_config');
-  if(!cfg){alert('Complete Step 2 first.');return;}
-  var c=JSON.parse(cfg);
-  var errEl=document.getElementById('s3err');
+async function createAdmin(){
+  var errEl=document.getElementById('s2err');
   var btn=document.getElementById('createBtn');
   errEl.style.display='none';
 
-  if(!c.svc){
-    errEl.textContent='Service Role Key is required to create users. Go back to Step 2.';
+  var svcKey=document.getElementById('svcKeyInput').value.trim();
+  if(!svcKey){
+    errEl.textContent='Please enter the Service Role Key.';
     errEl.style.display='block';return;
   }
+  // Save to localStorage for the main app
+  localStorage.setItem('clr_svc_key',svcKey);
+  SUPA_SVC=svcKey;
 
-  var adminClient=supabase.createClient(c.url,c.svc);
   btn.textContent='Creating...';btn.disabled=true;
-  var results=[];
 
-  for(var i=1;i<=3;i++){
-    var name=document.getElementById('u'+i+'name').value.trim();
-    var email=document.getElementById('u'+i+'email').value.trim();
-    var pass=document.getElementById('u'+i+'pass').value;
-    var role=document.getElementById('u'+i+'role').value;
-    if(!name||!email||!pass) continue;
-    if(pass.length<6){
-      results.push({name:name,ok:false,msg:'Password must be at least 6 characters'});
-      continue;
-    }
-    try{
-      var res=await adminClient.auth.admin.createUser({
-        email:email,password:pass,
-        email_confirm:true,
-        user_metadata:{full_name:name}
-      });
-      if(res.error) throw new Error(res.error.message);
-      // Create profile
-      var profRes=await adminClient.from('user_profiles').upsert({
-        id:res.data.user.id,
-        full_name:name,
-        role:role
-      },{onConflict:'id'});
-      if(profRes.error) throw new Error(profRes.error.message);
-      results.push({name:name,email:email,role:role,ok:true,msg:'Created successfully'});
-    }catch(e){
-      results.push({name:name,ok:false,msg:e.message||'Failed'});
-    }
-  }
+  try{
+    var adminClient=supabase.createClient(SUPA_URL,svcKey);
 
-  var resEl=document.getElementById('createResults');
-  var html='';
-  results.forEach(function(r){
-    html+='<div class="result-row '+(r.ok?'r-ok':'r-err')+'">';
-    html+='<span>'+(r.ok?'&#x2713;':'&#x2717;')+' '+r.name+(r.email?' ('+r.email+')':'')+'</span>';
-    html+='<span>'+r.msg+'</span>';
-    html+='</div>';
-  });
-  resEl.innerHTML=html;
+    // Create auth user
+    var res=await adminClient.auth.admin.createUser({
+      email:'m.khalid@alhaidariya.com',
+      password:'Clearance@2026',
+      email_confirm:true,
+      user_metadata:{full_name:'M. Khalid'}
+    });
+    if(res.error) throw new Error(res.error.message);
 
-  var anyOk=results.some(function(r){return r.ok;});
-  if(anyOk){
-    document.getElementById('sec3').classList.add('done');
-    document.getElementById('sec3').classList.remove('active');
+    // Create profile
+    var profRes=await adminClient.from('user_profiles').upsert({
+      id:res.data.user.id,
+      full_name:'M. Khalid',
+      role:'admin'
+    },{onConflict:'id'});
+    if(profRes.error) throw new Error(profRes.error.message);
+
+    document.getElementById('createResults').innerHTML=
+      '<div class="result-row r-ok"><span>&#x2713; M. Khalid (m.khalid@alhaidariya.com)</span><span>Admin created!</span></div>';
+
+    document.getElementById('sec2').classList.add('done');
+    document.getElementById('sec2').classList.remove('active');
     document.getElementById('finalBox').style.display='block';
+  }catch(e){
+    var msg=e.message||'Failed';
+    if(msg.includes('already been registered')){
+      // User already exists — that's fine
+      document.getElementById('createResults').innerHTML=
+        '<div class="result-row r-ok"><span>&#x2713; M. Khalid</span><span>Account already exists!</span></div>';
+      document.getElementById('sec2').classList.add('done');
+      document.getElementById('sec2').classList.remove('active');
+      document.getElementById('finalBox').style.display='block';
+    } else {
+      errEl.textContent='Error: '+msg;
+      errEl.style.display='block';
+    }
   }
-  btn.textContent='Create Accounts';btn.disabled=false;
+  btn.textContent='Create Admin Account';btn.disabled=false;
 }
 </script>
 </body>

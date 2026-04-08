@@ -794,27 +794,14 @@ var activePgNum = 1;
 /* ═══════════════════════════════════════════
    SUPABASE CONFIG
 ═══════════════════════════════════════════ */
-var SUPA_URL  = '';
-var SUPA_ANON = '';
-var SUPA_SVC  = '';
+var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
+var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
+var SUPA_SVC  = localStorage.getItem('clr_svc_key') || '';
 var supa = null;
 var supaAdmin = null;
 var currentUser = null;
 var currentProfile = null;
 var _syncTimer = null;
-
-// Try to load config from localStorage (set by setup page)
-(function(){
-  var cfg = localStorage.getItem('clr_supabase_config');
-  if(cfg){
-    try{
-      var c = JSON.parse(cfg);
-      SUPA_URL = c.url || '';
-      SUPA_ANON = c.anon || '';
-      SUPA_SVC = c.svc || '';
-    }catch(e){}
-  }
-})();
 
 /* ═══════════════════════════════════════════
    UTILITY
