@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-.wrap{max-width:560px;width:100%;}
+.wrap{max-width:580px;width:100%;}
 .box{background:white;border-radius:20px;padding:32px 28px;box-shadow:0 32px 80px rgba(0,0,0,.35);margin-bottom:16px;}
 h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
 .sub{font-size:13px;color:#9990B0;margin-bottom:24px;}
@@ -19,52 +19,70 @@ h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
 .section.done .section-num{background:#1D9E75;}
 .section-title{display:flex;align-items:center;font-size:15px;font-weight:bold;color:#2C2838;margin-bottom:12px;}
 label{display:block;font-size:11px;font-weight:bold;color:#5C5472;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;margin-top:10px;}
-input,select{width:100%;padding:11px 13px;border:1.5px solid #D8D4E4;border-radius:8px;font-family:Tahoma;font-size:14px;outline:none;}
-input:focus,select:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,136,.12);}
+input{width:100%;padding:11px 13px;border:1.5px solid #D8D4E4;border-radius:8px;font-family:Tahoma;font-size:13px;outline:none;}
+input:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,136,.12);}
 .btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-family:Tahoma;font-size:14px;font-weight:bold;cursor:pointer;margin-top:12px;transition:all .2s;}
 .btn-p{background:#6A5288;color:white;}
 .btn-p:hover:not(:disabled){background:#4E3A6B;}
 .btn-p:disabled{opacity:.5;cursor:not-allowed;}
-.sql-block{background:#1e1e2e;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#cdd6f4;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6;max-height:200px;overflow-y:auto;}
-.copy-btn{background:#E4DAF2;color:#4E3A6B;border:none;border-radius:6px;padding:6px 14px;font-family:Tahoma;font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:10px;width:100%;}
+.sql-block{background:#1e1e2e;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;color:#cdd6f4;margin:10px 0;overflow-x:auto;white-space:pre;line-height:1.6;max-height:220px;overflow-y:auto;}
+.copy-btn{background:#E4DAF2;color:#4E3A6B;border:none;border-radius:6px;padding:7px 14px;font-family:Tahoma;font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:8px;width:100%;}
 .copy-btn:hover{background:#D8D4E4;}
 .done-badge{display:none;background:#1D9E75;color:white;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:bold;margin-left:auto;}
 .section.done .done-badge{display:inline-block;}
 .note{font-size:12px;color:#5C5472;line-height:1.7;margin-top:6px;}
 .err{background:#FCEBEB;border-radius:8px;padding:10px 12px;font-size:12px;color:#E24B4A;margin-top:10px;display:none;}
+.ok{background:#E1F5EE;border-radius:8px;padding:10px 12px;font-size:12px;color:#167a5b;margin-top:10px;display:none;}
 .result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px;}
 .r-ok{background:#E1F5EE;color:#167a5b;}
 .r-err{background:#FCEBEB;color:#b03030;}
-.steps-box{background:#F0EBF8;border-radius:8px;padding:14px;margin:10px 0;font-size:12px;line-height:1.8;color:#4E3A6B;}
+.steps-box{background:#F0EBF8;border-radius:8px;padding:14px;margin:10px 0;font-size:12px;line-height:1.9;color:#4E3A6B;}
 .steps-box b{color:#27233A;}
 .final{display:none;background:#E1F5EE;border-radius:12px;padding:24px;text-align:center;margin-top:4px;}
 .final h2{color:#1D9E75;font-size:20px;margin-bottom:12px;}
 .final p{font-size:13px;color:#5C5472;margin-bottom:8px;line-height:1.8;}
-.final a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;}
+.final a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;text-align:center;}
+.progress{background:#E4DAF2;border-radius:8px;padding:10px 14px;font-size:12px;color:#4E3A6B;margin-top:10px;display:none;line-height:1.8;}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="box">
-  <h1>Vehicle Clearance — Setup</h1>
-  <p class="sub">Two simple steps to get your system running.</p>
+  <h1>Vehicle Clearance — Setup &amp; Fix</h1>
+  <p class="sub">Two steps to set up or repair your clearance system.</p>
+
+  <!-- SERVICE KEY INPUT (top of page) -->
+  <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:10px;padding:14px;margin-bottom:20px;">
+    <label style="color:#B8860B;margin-top:0">Service Role Key</label>
+    <input type="password" id="svcKeyInput" placeholder="sb_secret_..." autocomplete="off">
+    <p style="font-size:11px;color:#9990B0;margin-top:6px;">
+      Get it from: <b>Supabase Dashboard</b> &rarr; <b>Project Settings</b> &rarr; <b>API</b> &rarr; <b>service_role</b> (secret key)
+    </p>
+  </div>
 
   <!-- STEP 1: SQL -->
   <div class="section active" id="sec1">
     <div class="section-title">
-      <span class="section-num">1</span> Create Database Tables
+      <span class="section-num">1</span> Run Fix SQL
       <span class="done-badge" id="s1badge">Done</span>
     </div>
     <div class="steps-box">
       <b>Follow these steps:</b><br>
-      1. Open <a href="https://supabase.com/dashboard/project/phyvnqcmasqzpnxabcwr/sql" target="_blank" style="color:#6A5288;font-weight:bold">Supabase SQL Editor</a> (click this link)<br>
-      2. Click the <b>"Copy SQL"</b> button below<br>
-      3. Paste it in the SQL Editor<br>
-      4. Click the <b>green "Run"</b> button<br>
-      5. Come back here and click <b>"I've run the SQL"</b>
+      1. Open the <a href="https://supabase.com/dashboard/project/phyvnqcmasqzpnxabcwr/sql/new" target="_blank" style="color:#6A5288;font-weight:bold">Supabase SQL Editor &#x2197;</a><br>
+      2. Click <b>"Copy SQL"</b> below<br>
+      3. Paste it in the SQL Editor and click <b>"Run"</b><br>
+      4. Come back and click <b>"I've run the SQL"</b>
     </div>
-    <button class="copy-btn" onclick="copySql()">Copy SQL</button>
-    <div class="sql-block" id="sqlblock">CREATE TABLE IF NOT EXISTS user_profiles (
+    <button class="copy-btn" onclick="copySql()">&#x2398; Copy SQL</button>
+    <div class="sql-block" id="sqlblock">-- Step 1: Remove any broken/old user records
+DELETE FROM auth.identities WHERE provider_id = 'm.khalid@alhaidariya.com';
+DELETE FROM auth.users WHERE email = 'm.khalid@alhaidariya.com';
+
+-- Step 2: Recreate tables cleanly
+DROP TABLE IF EXISTS app_data;
+DROP TABLE IF EXISTS user_profiles;
+
+CREATE TABLE user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   full_name TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'viewer'
@@ -72,7 +90,7 @@ input:focus,select:focus{border-color:#6A5288;box-shadow:0 0 0 3px rgba(106,82,1
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS app_data (
+CREATE TABLE app_data (
   key TEXT PRIMARY KEY,
   value JSONB,
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -86,7 +104,6 @@ DROP POLICY IF EXISTS "auth_all_data" ON app_data;
 
 CREATE POLICY "auth_all_profiles" ON user_profiles
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
 CREATE POLICY "auth_all_data" ON app_data
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
@@ -96,9 +113,21 @@ INSERT INTO app_data (key, value) VALUES
   ('clearance_vehicles', '[]'::jsonb),
   ('clearance_records', '[]'::jsonb),
   ('clearance_notifications', '[]'::jsonb)
-ON CONFLICT (key) DO NOTHING;</div>
+ON CONFLICT (key) DO NOTHING;
+
+-- Step 3: Set permissions
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT ALL ON TABLES TO anon, authenticated, service_role;
+
+-- Step 4: Reload PostgREST
+NOTIFY pgrst, 'reload schema';
+NOTIFY pgrst, 'reload config';</div>
     <div class="err" id="s1err"></div>
-    <button class="btn btn-p" onclick="markStep1Done()">I've run the SQL</button>
+    <div class="ok" id="s1ok"></div>
+    <button class="btn btn-p" onclick="markStep1Done()">I've run the SQL &rarr;</button>
   </div>
 
   <!-- STEP 2: Create Admin Account -->
@@ -107,26 +136,24 @@ ON CONFLICT (key) DO NOTHING;</div>
       <span class="section-num">2</span> Create Admin Account
       <span class="done-badge" id="s2badge">Done</span>
     </div>
-    <p class="note">Enter your Service Role Key, then click Create.</p>
+    <p class="note">This will automatically create the admin user and set their role. Any previous broken account will be replaced.</p>
 
-    <label>Service Role Key (from Supabase Settings &rarr; API)</label>
-    <input type="text" id="svcKeyInput" placeholder="sb_secret_..." style="margin-bottom:12px">
-
-    <div style="background:#F8F7FA;border-radius:8px;padding:14px;margin:10px 0;font-size:13px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Name:</span><b>M. Khalid</b></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Email:</span><b>m.khalid@alhaidariya.com</b></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#9990B0">Password:</span><b>Clearance@2026</b></div>
+    <div style="background:#F8F7FA;border-radius:8px;padding:14px;margin:12px 0;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Name:</span><b>M. Khalid</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Email:</span><b>m.khalid@alhaidariya.com</b></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Password:</span><b>Clearance@2026</b></div>
       <div style="display:flex;justify-content:space-between"><span style="color:#9990B0">Role:</span><b style="color:#185FA5">Admin</b></div>
     </div>
 
+    <div class="progress" id="progress"></div>
     <div id="createResults"></div>
     <div class="err" id="s2err"></div>
-    <button class="btn btn-p" id="createBtn" onclick="createAdmin()">Create Admin Account</button>
+    <button class="btn btn-p" id="createBtn" onclick="createAdmin()">Create Admin Account &rarr;</button>
   </div>
 
   <!-- FINAL -->
   <div class="final" id="finalBox">
-    <h2>Setup Complete!</h2>
+    <h2>&#x2713; Setup Complete!</h2>
     <p>Your Vehicle Clearance System is ready to use.</p>
     <p style="font-size:12px;color:#9990B0"><b>Email:</b> m.khalid@alhaidariya.com<br><b>Password:</b> Clearance@2026</p>
     <a href="clearance.html">Open Clearance System &rarr;</a>
@@ -137,92 +164,167 @@ ON CONFLICT (key) DO NOTHING;</div>
 <script>
 var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
 var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
-var SUPA_SVC  = localStorage.getItem('clr_svc_key') || '';
+
+// Pre-fill service key from localStorage if previously saved
+window.addEventListener('DOMContentLoaded', function(){
+  var saved = localStorage.getItem('clr_svc_key');
+  if(saved) document.getElementById('svcKeyInput').value = saved;
+});
+
+function getSvcKey(){
+  return document.getElementById('svcKeyInput').value.trim();
+}
 
 function copySql(){
-  var text=document.getElementById('sqlblock').textContent;
+  var text = document.getElementById('sqlblock').textContent;
   navigator.clipboard.writeText(text).then(function(){
-    var btn=document.querySelector('.copy-btn');
-    btn.textContent='Copied!';
-    setTimeout(function(){btn.textContent='Copy SQL';},2000);
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = '\u2398 Copy SQL'; }, 2000);
+  }).catch(function(){
+    // Fallback for older browsers
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = '\u2398 Copy SQL'; }, 2000);
   });
 }
 
 async function markStep1Done(){
-  // Test if tables were created by trying to read from app_data
-  var errEl=document.getElementById('s1err');
-  errEl.style.display='none';
+  var errEl = document.getElementById('s1err');
+  var okEl  = document.getElementById('s1ok');
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  var svcKey = getSvcKey();
+  if(!svcKey){
+    errEl.textContent = 'Please enter your Service Role Key at the top first.';
+    errEl.style.display = 'block';
+    return;
+  }
+  localStorage.setItem('clr_svc_key', svcKey);
+
   try{
-    var client=supabase.createClient(SUPA_URL,SUPA_ANON);
-    // Try reading — if tables exist this will work (may return empty array, that's ok)
-    var res=await client.from('app_data').select('key').limit(1);
+    // Use service key to bypass RLS and verify tables exist
+    var adminClient = supabase.createClient(SUPA_URL, svcKey);
+    var res = await adminClient.from('app_data').select('key').limit(1);
     if(res.error) throw new Error(res.error.message);
-    document.getElementById('sec1').classList.add('done');
-    document.getElementById('sec1').classList.remove('active');
-    document.getElementById('sec2').classList.add('active');
+
+    okEl.textContent = 'Tables verified! Proceeding to step 2...';
+    okEl.style.display = 'block';
+    setTimeout(function(){
+      document.getElementById('sec1').classList.add('done');
+      document.getElementById('sec1').classList.remove('active');
+      document.getElementById('sec2').classList.add('active');
+    }, 800);
   }catch(e){
-    errEl.textContent='Tables not found. Make sure you ran the SQL in Supabase first. Error: '+(e.message||e);
-    errEl.style.display='block';
+    var msg = e.message || String(e);
+    if(msg.toLowerCase().includes('relation') || msg.toLowerCase().includes('does not exist')){
+      errEl.textContent = 'Tables not found yet. Please run the SQL in Supabase SQL Editor first, then try again.';
+    } else {
+      errEl.textContent = 'Verification failed: ' + msg + '. Make sure you ran the SQL and the Service Role Key is correct.';
+    }
+    errEl.style.display = 'block';
   }
 }
 
+async function log(msg){
+  var el = document.getElementById('progress');
+  el.style.display = 'block';
+  el.innerHTML += msg + '<br>';
+}
+
 async function createAdmin(){
-  var errEl=document.getElementById('s2err');
-  var btn=document.getElementById('createBtn');
-  errEl.style.display='none';
+  var errEl   = document.getElementById('s2err');
+  var btn     = document.getElementById('createBtn');
+  var progEl  = document.getElementById('progress');
+  var resultsEl = document.getElementById('createResults');
+  errEl.style.display = 'none';
+  progEl.innerHTML = '';
+  progEl.style.display = 'none';
+  resultsEl.innerHTML = '';
 
-  var svcKey=document.getElementById('svcKeyInput').value.trim();
+  var svcKey = getSvcKey();
   if(!svcKey){
-    errEl.textContent='Please enter the Service Role Key.';
-    errEl.style.display='block';return;
+    errEl.textContent = 'Please enter your Service Role Key at the top first.';
+    errEl.style.display = 'block';
+    return;
   }
-  // Save to localStorage for the main app
-  localStorage.setItem('clr_svc_key',svcKey);
-  SUPA_SVC=svcKey;
+  localStorage.setItem('clr_svc_key', svcKey);
 
-  btn.textContent='Creating...';btn.disabled=true;
+  btn.textContent = 'Working...';
+  btn.disabled = true;
 
   try{
-    var adminClient=supabase.createClient(SUPA_URL,svcKey);
+    var adminClient = supabase.createClient(SUPA_URL, svcKey);
 
-    // Create auth user
-    var res=await adminClient.auth.admin.createUser({
-      email:'m.khalid@alhaidariya.com',
-      password:'Clearance@2026',
-      email_confirm:true,
-      user_metadata:{full_name:'M. Khalid'}
+    // Step 1: Find and remove any existing broken user
+    await log('Checking for existing accounts...');
+    try{
+      var listRes = await adminClient.auth.admin.listUsers({ perPage: 200 });
+      if(listRes.data && listRes.data.users){
+        var existing = listRes.data.users.find(function(u){
+          return u.email === 'm.khalid@alhaidariya.com';
+        });
+        if(existing){
+          await log('Found existing account — removing broken record...');
+          await adminClient.auth.admin.deleteUser(existing.id);
+          await log('Removed old account.');
+        }
+      }
+    }catch(e){
+      // Not a fatal error — continue
+      await log('Note: ' + (e.message || 'Could not check existing users') + ' (continuing...)');
+    }
+
+    // Small delay to let GoTrue settle after deletion
+    await new Promise(function(ok){ setTimeout(ok, 1000); });
+
+    // Step 2: Create fresh user via Admin API
+    await log('Creating admin account...');
+    var res = await adminClient.auth.admin.createUser({
+      email: 'm.khalid@alhaidariya.com',
+      password: 'Clearance@2026',
+      email_confirm: true,
+      user_metadata: { full_name: 'M. Khalid' }
     });
-    if(res.error) throw new Error(res.error.message);
+    if(res.error) throw new Error('User creation failed: ' + res.error.message);
+    var userId = res.data.user.id;
+    await log('Admin account created (ID: ' + userId.slice(0,8) + '...)');
 
-    // Create profile
-    var profRes=await adminClient.from('user_profiles').upsert({
-      id:res.data.user.id,
-      full_name:'M. Khalid',
-      role:'admin'
-    },{onConflict:'id'});
-    if(profRes.error) throw new Error(profRes.error.message);
+    // Small delay before inserting profile
+    await new Promise(function(ok){ setTimeout(ok, 500); });
 
-    document.getElementById('createResults').innerHTML=
-      '<div class="result-row r-ok"><span>&#x2713; M. Khalid (m.khalid@alhaidariya.com)</span><span>Admin created!</span></div>';
+    // Step 3: Insert user_profiles entry
+    await log('Setting admin role...');
+    var profRes = await adminClient.from('user_profiles').upsert({
+      id: userId,
+      full_name: 'M. Khalid',
+      role: 'admin'
+    }, { onConflict: 'id' });
+    if(profRes.error) throw new Error('Profile creation failed: ' + profRes.error.message);
+    await log('Admin role set successfully!');
+
+    resultsEl.innerHTML =
+      '<div class="result-row r-ok"><span>&#x2713; M. Khalid (m.khalid@alhaidariya.com)</span><span style="font-weight:bold">Admin &mdash; Ready!</span></div>';
 
     document.getElementById('sec2').classList.add('done');
     document.getElementById('sec2').classList.remove('active');
-    document.getElementById('finalBox').style.display='block';
+    document.getElementById('finalBox').style.display = 'block';
+
   }catch(e){
-    var msg=e.message||'Failed';
-    if(msg.includes('already been registered')){
-      // User already exists — that's fine
-      document.getElementById('createResults').innerHTML=
-        '<div class="result-row r-ok"><span>&#x2713; M. Khalid</span><span>Account already exists!</span></div>';
-      document.getElementById('sec2').classList.add('done');
-      document.getElementById('sec2').classList.remove('active');
-      document.getElementById('finalBox').style.display='block';
-    } else {
-      errEl.textContent='Error: '+msg;
-      errEl.style.display='block';
-    }
+    var msg = e.message || String(e);
+    errEl.textContent = 'Error: ' + msg;
+    errEl.style.display = 'block';
   }
-  btn.textContent='Create Admin Account';btn.disabled=false;
+
+  btn.textContent = 'Create Admin Account \u2192';
+  btn.disabled = false;
 }
 </script>
 </body>

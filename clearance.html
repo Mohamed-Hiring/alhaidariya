@@ -931,26 +931,9 @@ async function signIn(){
   if(!email||!pass){errEl.textContent=t('enterCredentials');errEl.style.display='block';return;}
   btn.textContent=t('signingIn');btn.disabled=true;
 
-  // If schema not ready, warm up first
-  if(!_schemaReady){
-    btn.textContent=currentLang==='ar'?'جاري الاتصال بقاعدة البيانات...':'Connecting to database...';
-    await warmUpDB();
-  }
-
   var res=await supa.auth.signInWithPassword({email:email,password:pass});
   if(res.error){
     var msg=res.error.message||'';
-
-    // Handle schema error with retry
-    if(msg.toLowerCase().includes('schema')){
-      btn.textContent=currentLang==='ar'?'جاري إعادة الاتصال...':'Reconnecting...';
-      var ok=await warmUpDB();
-      if(ok){
-        res=await supa.auth.signInWithPassword({email:email,password:pass});
-        if(!res.error){await afterLogin(res.data.user);return;}
-        msg=res.error.message||'';
-      }
-    }
 
     if(msg.toLowerCase().includes('email not confirmed')){
       // Try to auto-confirm the email
@@ -981,10 +964,17 @@ async function signIn(){
         }catch(e){msg+=' (auto-confirm failed)';}
       }
     }
+    if(msg.toLowerCase().includes('schema')||msg.toLowerCase().includes('database error')){
+      errEl.innerHTML=currentLang==='ar'?
+        'خطأ في قاعدة البيانات. <a href="clearance_setup.html" style="color:var(--p);font-weight:600;text-decoration:underline">انقر هنا للإصلاح &rarr;</a>':
+        'Database error. <a href="clearance_setup.html" style="color:var(--p);font-weight:600;text-decoration:underline">Click here to fix it &rarr;</a>';
+      errEl.style.display='block';
+      btn.textContent=t('signIn');btn.disabled=false;
+      return;
+    }
     if(msg.toLowerCase().includes('invalid login')||msg.toLowerCase().includes('invalid credentials')) msg=t('incorrectLogin');
     else if(msg.toLowerCase().includes('network')||msg.toLowerCase().includes('fetch')) msg=t('networkError');
     else if(msg.toLowerCase().includes('too many')) msg=t('tooManyAttempts');
-    else if(msg.toLowerCase().includes('schema')) msg=currentLang==='ar'?'قاعدة البيانات تحتاج وقت للاتصال. حاول مرة ثانية.':'Database is warming up. Please try again.';
     errEl.innerHTML=msg;errEl.style.display='block';
     btn.textContent=t('signIn');btn.disabled=false;
     return;
