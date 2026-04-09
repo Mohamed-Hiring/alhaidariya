@@ -165,7 +165,6 @@ NOTIFY pgrst, 'reload config';</div>
 var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
 var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
 
-// Pre-fill service key from localStorage if previously saved
 window.addEventListener('DOMContentLoaded', function(){
   var saved = localStorage.getItem('clr_svc_key');
   if(saved) document.getElementById('svcKeyInput').value = saved;
@@ -175,6 +174,22 @@ function getSvcKey(){
   return document.getElementById('svcKeyInput').value.trim();
 }
 
+// Build headers for raw fetch calls (bypasses supabase-js browser restriction)
+function svcHeaders(svcKey){
+  return {
+    'Authorization': 'Bearer ' + svcKey,
+    'apikey': svcKey,
+    'Content-Type': 'application/json'
+  };
+}
+
+async function apiCall(url, opts){
+  var r = await fetch(url, opts);
+  var body = await r.json().catch(function(){ return {}; });
+  if(!r.ok) throw new Error(body.message || body.error || ('HTTP ' + r.status));
+  return body;
+}
+
 function copySql(){
   var text = document.getElementById('sqlblock').textContent;
   navigator.clipboard.writeText(text).then(function(){
@@ -182,7 +197,6 @@ function copySql(){
     btn.textContent = 'Copied!';
     setTimeout(function(){ btn.textContent = '\u2398 Copy SQL'; }, 2000);
   }).catch(function(){
-    // Fallback for older browsers
     var ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
@@ -210,10 +224,19 @@ async function markStep1Done(){
   localStorage.setItem('clr_svc_key', svcKey);
 
   try{
-    // Use service key to bypass RLS and verify tables exist
-    var adminClient = supabase.createClient(SUPA_URL, svcKey);
-    var res = await adminClient.from('app_data').select('key').limit(1);
-    if(res.error) throw new Error(res.error.message);
+    // Use raw fetch with service role to bypass RLS and verify tables exist
+    var r = await fetch(
+      SUPA_URL + '/rest/v1/app_data?select=key&limit=1',
+      { headers: svcHeaders(svcKey) }
+    );
+    if(!r.ok){
+      var body = await r.json().catch(function(){ return {}; });
+      var msg = body.message || body.hint || ('HTTP ' + r.status);
+      if(msg.toLowerCase().includes('relation') || msg.toLowerCase().includes('does not exist')){
+        throw new Error('Tables not found. Please run the SQL in Supabase SQL Editor first.');
+      }
+      throw new Error(msg);
+    }
 
     okEl.textContent = 'Tables verified! Proceeding to step 2...';
     okEl.style.display = 'block';
@@ -223,31 +246,26 @@ async function markStep1Done(){
       document.getElementById('sec2').classList.add('active');
     }, 800);
   }catch(e){
-    var msg = e.message || String(e);
-    if(msg.toLowerCase().includes('relation') || msg.toLowerCase().includes('does not exist')){
-      errEl.textContent = 'Tables not found yet. Please run the SQL in Supabase SQL Editor first, then try again.';
-    } else {
-      errEl.textContent = 'Verification failed: ' + msg + '. Make sure you ran the SQL and the Service Role Key is correct.';
-    }
+    errEl.textContent = 'Verification failed: ' + (e.message || e);
     errEl.style.display = 'block';
   }
 }
 
-async function log(msg){
+function addLog(msg){
   var el = document.getElementById('progress');
   el.style.display = 'block';
   el.innerHTML += msg + '<br>';
 }
 
 async function createAdmin(){
-  var errEl   = document.getElementById('s2err');
-  var btn     = document.getElementById('createBtn');
-  var progEl  = document.getElementById('progress');
+  var errEl     = document.getElementById('s2err');
+  var btn       = document.getElementById('createBtn');
+  var progEl    = document.getElementById('progress');
   var resultsEl = document.getElementById('createResults');
-  errEl.style.display = 'none';
-  progEl.innerHTML = '';
-  progEl.style.display = 'none';
-  resultsEl.innerHTML = '';
+  errEl.style.display   = 'none';
+  progEl.innerHTML      = '';
+  progEl.style.display  = 'none';
+  resultsEl.innerHTML   = '';
 
   var svcKey = getSvcKey();
   if(!svcKey){
@@ -261,54 +279,59 @@ async function createAdmin(){
   btn.disabled = true;
 
   try{
-    var adminClient = supabase.createClient(SUPA_URL, svcKey);
+    var hdrs = svcHeaders(svcKey);
 
-    // Step 1: Find and remove any existing broken user
-    await log('Checking for existing accounts...');
+    // Step 1: Find and remove any existing broken user (raw fetch)
+    addLog('Checking for existing accounts...');
     try{
-      var listRes = await adminClient.auth.admin.listUsers({ perPage: 200 });
-      if(listRes.data && listRes.data.users){
-        var existing = listRes.data.users.find(function(u){
-          return u.email === 'm.khalid@alhaidariya.com';
-        });
+      var listData = await apiCall(
+        SUPA_URL + '/auth/v1/admin/users?per_page=200',
+        { headers: hdrs }
+      );
+      var users = listData.users || listData;
+      if(Array.isArray(users)){
+        var existing = users.find(function(u){ return u.email === 'm.khalid@alhaidariya.com'; });
         if(existing){
-          await log('Found existing account — removing broken record...');
-          await adminClient.auth.admin.deleteUser(existing.id);
-          await log('Removed old account.');
+          addLog('Found existing account \u2014 removing broken record...');
+          await apiCall(SUPA_URL + '/auth/v1/admin/users/' + existing.id, { method: 'DELETE', headers: hdrs });
+          addLog('Old account removed.');
+          await new Promise(function(ok){ setTimeout(ok, 1000); });
         }
       }
     }catch(e){
-      // Not a fatal error — continue
-      await log('Note: ' + (e.message || 'Could not check existing users') + ' (continuing...)');
+      addLog('Note: ' + (e.message || 'Could not check existing users') + ' (continuing...)');
     }
 
-    // Small delay to let GoTrue settle after deletion
-    await new Promise(function(ok){ setTimeout(ok, 1000); });
-
-    // Step 2: Create fresh user via Admin API
-    await log('Creating admin account...');
-    var res = await adminClient.auth.admin.createUser({
-      email: 'm.khalid@alhaidariya.com',
-      password: 'Clearance@2026',
-      email_confirm: true,
-      user_metadata: { full_name: 'M. Khalid' }
+    // Step 2: Create fresh user (raw fetch)
+    addLog('Creating admin account...');
+    var created = await apiCall(SUPA_URL + '/auth/v1/admin/users', {
+      method: 'POST',
+      headers: hdrs,
+      body: JSON.stringify({
+        email: 'm.khalid@alhaidariya.com',
+        password: 'Clearance@2026',
+        email_confirm: true,
+        user_metadata: { full_name: 'M. Khalid' }
+      })
     });
-    if(res.error) throw new Error('User creation failed: ' + res.error.message);
-    var userId = res.data.user.id;
-    await log('Admin account created (ID: ' + userId.slice(0,8) + '...)');
+    var userId = created.id;
+    if(!userId) throw new Error('No user ID returned — creation may have failed.');
+    addLog('Admin account created (ID: ' + userId.slice(0,8) + '...)');
 
-    // Small delay before inserting profile
-    await new Promise(function(ok){ setTimeout(ok, 500); });
+    await new Promise(function(ok){ setTimeout(ok, 600); });
 
-    // Step 3: Insert user_profiles entry
-    await log('Setting admin role...');
-    var profRes = await adminClient.from('user_profiles').upsert({
-      id: userId,
-      full_name: 'M. Khalid',
-      role: 'admin'
-    }, { onConflict: 'id' });
-    if(profRes.error) throw new Error('Profile creation failed: ' + profRes.error.message);
-    await log('Admin role set successfully!');
+    // Step 3: Insert user_profiles (raw fetch, service role bypasses RLS)
+    addLog('Setting admin role...');
+    var profR = await fetch(SUPA_URL + '/rest/v1/user_profiles', {
+      method: 'POST',
+      headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates' }),
+      body: JSON.stringify({ id: userId, full_name: 'M. Khalid', role: 'admin' })
+    });
+    if(!profR.ok){
+      var pb = await profR.json().catch(function(){ return {}; });
+      throw new Error('Profile error: ' + (pb.message || pb.hint || ('HTTP ' + profR.status)));
+    }
+    addLog('Admin role set!');
 
     resultsEl.innerHTML =
       '<div class="result-row r-ok"><span>&#x2713; M. Khalid (m.khalid@alhaidariya.com)</span><span style="font-weight:bold">Admin &mdash; Ready!</span></div>';
@@ -318,8 +341,7 @@ async function createAdmin(){
     document.getElementById('finalBox').style.display = 'block';
 
   }catch(e){
-    var msg = e.message || String(e);
-    errEl.textContent = 'Error: ' + msg;
+    errEl.textContent = 'Error: ' + (e.message || e);
     errEl.style.display = 'block';
   }
 
