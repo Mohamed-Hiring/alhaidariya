@@ -136,19 +136,21 @@ NOTIFY pgrst, 'reload config';</div>
       <span class="section-num">2</span> Create Admin Account
       <span class="done-badge" id="s2badge">Done</span>
     </div>
-    <p class="note">This will automatically create the admin user and set their role. Any previous broken account will be replaced.</p>
 
-    <div style="background:#F8F7FA;border-radius:8px;padding:14px;margin:12px 0;font-size:13px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Name:</span><b>M. Khalid</b></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Email:</span><b>m.khalid@alhaidariya.com</b></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#9990B0">Password:</span><b>Clearance@2026</b></div>
-      <div style="display:flex;justify-content:space-between"><span style="color:#9990B0">Role:</span><b style="color:#185FA5">Admin</b></div>
+    <div class="steps-box">
+      <b>A &mdash; Create account in Supabase (30 seconds):</b><br>
+      1. Open <a href="https://supabase.com/dashboard/project/phyvnqcmasqzpnxabcwr/auth/users" target="_blank" style="color:#6A5288;font-weight:bold">Supabase &rarr; Authentication &rarr; Users &#x2197;</a><br>
+      2. Click <b>"Add user"</b> &rarr; <b>"Create new user"</b><br>
+      3. Email: <b>m.khalid@alhaidariya.com</b><br>
+      4. Password: <b>Clearance@2026</b><br>
+      5. Turn ON <b>"Auto Confirm User"</b> &rarr; click <b>Create User</b><br><br>
+      <b>B &mdash; Then click the button below:</b>
     </div>
 
     <div class="progress" id="progress"></div>
     <div id="createResults"></div>
     <div class="err" id="s2err"></div>
-    <button class="btn btn-p" id="createBtn" onclick="createAdmin()">Create Admin Account &rarr;</button>
+    <button class="btn btn-p" id="createBtn" onclick="setAdminRole()">Set Admin Role &rarr;</button>
   </div>
 
   <!-- FINAL -->
@@ -257,7 +259,7 @@ function addLog(msg){
   el.innerHTML += msg + '<br>';
 }
 
-async function createAdmin(){
+async function setAdminRole(){
   var errEl     = document.getElementById('s2err');
   var btn       = document.getElementById('createBtn');
   var progEl    = document.getElementById('progress');
@@ -267,71 +269,55 @@ async function createAdmin(){
   progEl.style.display  = 'none';
   resultsEl.innerHTML   = '';
 
-  var svcKey = getSvcKey();
-  if(!svcKey){
-    errEl.textContent = 'Please enter your Service Role Key at the top first.';
-    errEl.style.display = 'block';
-    return;
-  }
-  localStorage.setItem('clr_svc_key', svcKey);
-
   btn.textContent = 'Working...';
   btn.disabled = true;
 
   try{
-    var hdrs = svcHeaders(svcKey);
-
-    // Step 1: Find and remove any existing broken user (raw fetch)
-    addLog('Checking for existing accounts...');
-    try{
-      var listData = await apiCall(
-        SUPA_URL + '/auth/v1/admin/users?per_page=200',
-        { headers: hdrs }
-      );
-      var users = listData.users || listData;
-      if(Array.isArray(users)){
-        var existing = users.find(function(u){ return u.email === 'm.khalid@alhaidariya.com'; });
-        if(existing){
-          addLog('Found existing account \u2014 removing broken record...');
-          await apiCall(SUPA_URL + '/auth/v1/admin/users/' + existing.id, { method: 'DELETE', headers: hdrs });
-          addLog('Old account removed.');
-          await new Promise(function(ok){ setTimeout(ok, 1000); });
-        }
-      }
-    }catch(e){
-      addLog('Note: ' + (e.message || 'Could not check existing users') + ' (continuing...)');
-    }
-
-    // Step 2: Create fresh user (raw fetch)
-    addLog('Creating admin account...');
-    var created = await apiCall(SUPA_URL + '/auth/v1/admin/users', {
+    // Step 1: Sign in with the credentials to verify account exists and get session
+    addLog('Signing in to verify account...');
+    var r = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
-      headers: hdrs,
-      body: JSON.stringify({
-        email: 'm.khalid@alhaidariya.com',
-        password: 'Clearance@2026',
-        email_confirm: true,
-        user_metadata: { full_name: 'M. Khalid' }
-      })
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_ANON },
+      body: JSON.stringify({ email: 'm.khalid@alhaidariya.com', password: 'Clearance@2026' })
     });
-    var userId = created.id;
-    if(!userId) throw new Error('No user ID returned — creation may have failed.');
-    addLog('Admin account created (ID: ' + userId.slice(0,8) + '...)');
+    var session = await r.json();
+    if(!session.access_token){
+      var errMsg = session.error_description || session.msg || session.error || 'Login failed';
+      if(errMsg.toLowerCase().includes('invalid') || errMsg.toLowerCase().includes('credentials') || errMsg.toLowerCase().includes('not found')){
+        throw new Error('Account not found. Please complete sub-step A first: create the account in Supabase Authentication \u2192 Users.');
+      }
+      throw new Error(errMsg);
+    }
+    addLog('Account verified \u2713');
 
-    await new Promise(function(ok){ setTimeout(ok, 600); });
+    // Step 2: Decode JWT to get user ID
+    var parts = session.access_token.split('.');
+    var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    var userId = payload.sub;
 
-    // Step 3: Insert user_profiles (raw fetch, service role bypasses RLS)
+    // Step 3: Insert/upsert user_profiles using the authenticated session (RLS allows it)
     addLog('Setting admin role...');
     var profR = await fetch(SUPA_URL + '/rest/v1/user_profiles', {
       method: 'POST',
-      headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates' }),
+      headers: {
+        'Authorization': 'Bearer ' + session.access_token,
+        'apikey': SUPA_ANON,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
       body: JSON.stringify({ id: userId, full_name: 'M. Khalid', role: 'admin' })
     });
     if(!profR.ok){
       var pb = await profR.json().catch(function(){ return {}; });
       throw new Error('Profile error: ' + (pb.message || pb.hint || ('HTTP ' + profR.status)));
     }
-    addLog('Admin role set!');
+    addLog('Admin role set \u2713');
+
+    // Step 4: Sign out the temporary session
+    await fetch(SUPA_URL + '/auth/v1/logout', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': SUPA_ANON }
+    }).catch(function(){});
 
     resultsEl.innerHTML =
       '<div class="result-row r-ok"><span>&#x2713; M. Khalid (m.khalid@alhaidariya.com)</span><span style="font-weight:bold">Admin &mdash; Ready!</span></div>';
@@ -345,7 +331,7 @@ async function createAdmin(){
     errEl.style.display = 'block';
   }
 
-  btn.textContent = 'Create Admin Account \u2192';
+  btn.textContent = 'Set Admin Role \u2192';
   btn.disabled = false;
 }
 </script>
