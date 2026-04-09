@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Haidariya — Import Vehicles</title>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="import-data.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.wrap{max-width:600px;width:100%;}
+.box{background:white;border-radius:20px;padding:32px 28px;box-shadow:0 32px 80px rgba(0,0,0,.35);}
+h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
+.sub{font-size:13px;color:#9990B0;margin-bottom:24px;}
+.stat{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.stat-card{flex:1;min-width:120px;background:#F0EBF8;border-radius:12px;padding:14px;text-align:center;}
+.stat-num{font-size:28px;font-weight:bold;color:#6A5288;}
+.stat-label{font-size:11px;color:#9990B0;margin-top:4px;}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:20px;}
+.sup-card{background:#F8F7FA;border-radius:8px;padding:10px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
+.sup-card b{color:#6A5288;}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:12px;font-family:Tahoma;font-size:16px;font-weight:bold;cursor:pointer;transition:all .2s;}
+.btn-p{background:#6A5288;color:white;}
+.btn-p:hover:not(:disabled){background:#4E3A6B;}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;}
+.progress{background:#F0EBF8;border-radius:10px;padding:14px;margin-top:16px;font-size:13px;color:#4E3A6B;line-height:1.8;display:none;}
+.bar-bg{background:#E4DAF2;border-radius:6px;height:8px;margin-top:8px;overflow:hidden;}
+.bar-fill{background:#6A5288;height:100%;border-radius:6px;transition:width .3s;}
+.err{background:#FCEBEB;border-radius:8px;padding:10px 12px;font-size:12px;color:#E24B4A;margin-top:12px;display:none;}
+.done{background:#E1F5EE;border-radius:12px;padding:24px;text-align:center;margin-top:16px;display:none;}
+.done h2{color:#1D9E75;font-size:20px;margin-bottom:8px;}
+.done p{font-size:13px;color:#5C5472;}
+.done a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="box">
+  <h1>Import Vehicle Data</h1>
+  <p class="sub">Import 894 vehicles from the department Excel file into the clearance system.</p>
+
+  <div class="stat" id="stats">
+    <div class="stat-card"><div class="stat-num" id="sVehicles">-</div><div class="stat-label">Vehicles</div></div>
+    <div class="stat-card"><div class="stat-num" id="sRecords">-</div><div class="stat-label">Records</div></div>
+    <div class="stat-card"><div class="stat-num" id="sSupervisors">-</div><div class="stat-label">Supervisors</div></div>
+  </div>
+
+  <div id="supGrid" class="sup-grid"></div>
+
+  <div class="progress" id="progress">
+    <div id="progText">Preparing...</div>
+    <div class="bar-bg"><div class="bar-fill" id="progBar" style="width:0%"></div></div>
+  </div>
+  <div class="err" id="errBox"></div>
+  <div class="done" id="doneBox">
+    <h2>&#x2713; Import Complete!</h2>
+    <p id="doneMsg"></p>
+    <a href="clearance.html">Open Clearance System &rarr;</a>
+  </div>
+
+  <button class="btn btn-p" id="importBtn" onclick="runImport()">Import All Vehicles &rarr;</button>
+</div>
+</div>
+
+<script>
+var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
+var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
+
+window.addEventListener('DOMContentLoaded', function(){
+  if(typeof IMPORT_VEHICLES === 'undefined'){
+    document.getElementById('errBox').textContent = 'import-data.js not loaded. Make sure the file exists.';
+    document.getElementById('errBox').style.display = 'block';
+    document.getElementById('importBtn').disabled = true;
+    return;
+  }
+
+  // Show stats
+  document.getElementById('sVehicles').textContent = IMPORT_VEHICLES.length;
+  document.getElementById('sRecords').textContent = IMPORT_RECORDS.length;
+
+  // Count supervisors
+  var sups = {};
+  IMPORT_VEHICLES.forEach(function(v){
+    var s = v.assignedTo || '(unassigned)';
+    sups[s] = (sups[s]||0) + 1;
+  });
+  var supNames = Object.keys(sups).sort(function(a,b){ return sups[b]-sups[a]; });
+  document.getElementById('sSupervisors').textContent = supNames.length;
+
+  var html = '';
+  supNames.forEach(function(s){
+    html += '<div class="sup-card"><span>' + s + '</span><b>' + sups[s] + '</b></div>';
+  });
+  document.getElementById('supGrid').innerHTML = html;
+});
+
+function setProgress(text, pct){
+  var el = document.getElementById('progress');
+  el.style.display = 'block';
+  document.getElementById('progText').textContent = text;
+  document.getElementById('progBar').style.width = pct + '%';
+}
+
+async function runImport(){
+  var btn = document.getElementById('importBtn');
+  var errEl = document.getElementById('errBox');
+  errEl.style.display = 'none';
+  btn.textContent = 'Importing...';
+  btn.disabled = true;
+
+  try{
+    if(typeof supabase === 'undefined') throw new Error('Supabase SDK not loaded. Please refresh.');
+    if(typeof IMPORT_VEHICLES === 'undefined') throw new Error('Import data not loaded.');
+
+    // Sign in first
+    setProgress('Signing in...', 5);
+    var supa = supabase.createClient(SUPA_URL, SUPA_ANON);
+    var auth = await supa.auth.signInWithPassword({
+      email: 'm.khalid@alhaidariya.com',
+      password: 'Clearance@2026'
+    });
+    if(auth.error) throw new Error('Login failed: ' + auth.error.message + '. Set up the admin account first via clearance_setup.html');
+
+    setProgress('Loading existing data...', 10);
+    // Load existing data
+    var existingVehicles = [];
+    var existingRecords = [];
+    var existingNotifications = [];
+    var res = await supa.from('app_data').select('key,value');
+    if(res.data){
+      res.data.forEach(function(row){
+        if(row.key === 'clearance_vehicles') existingVehicles = row.value || [];
+        if(row.key === 'clearance_records') existingRecords = row.value || [];
+        if(row.key === 'clearance_notifications') existingNotifications = row.value || [];
+      });
+    }
+
+    setProgress('Merging vehicles (existing: ' + existingVehicles.length + ')...', 20);
+    // Deduplicate by plateNumber + chassisNumber
+    var existingKeys = {};
+    existingVehicles.forEach(function(v){
+      existingKeys[v.plateNumber + '||' + v.chassisNumber] = true;
+    });
+
+    var newVehicles = [];
+    var newRecords = [];
+    IMPORT_VEHICLES.forEach(function(v){
+      var key = v.plateNumber + '||' + v.chassisNumber;
+      if(!existingKeys[key]){
+        newVehicles.push(v);
+        existingKeys[key] = true;
+      }
+    });
+    // Only add records for vehicles that were imported
+    var importedIds = {};
+    newVehicles.forEach(function(v){ importedIds[v.id] = true; });
+    IMPORT_RECORDS.forEach(function(r){
+      if(importedIds[r.vehicleId]) newRecords.push(r);
+    });
+
+    var allVehicles = existingVehicles.concat(newVehicles);
+    var allRecords = existingRecords.concat(newRecords);
+
+    setProgress('Uploading vehicles (' + allVehicles.length + ' total)...', 40);
+    // Upload vehicles
+    var vRes = await supa.from('app_data').upsert({
+      key: 'clearance_vehicles',
+      value: allVehicles,
+      updated_at: new Date().toISOString()
+    }, {onConflict: 'key'});
+    if(vRes.error) throw new Error('Vehicle upload failed: ' + vRes.error.message);
+
+    setProgress('Uploading records (' + allRecords.length + ' total)...', 70);
+    // Upload records
+    var rRes = await supa.from('app_data').upsert({
+      key: 'clearance_records',
+      value: allRecords,
+      updated_at: new Date().toISOString()
+    }, {onConflict: 'key'});
+    if(rRes.error) throw new Error('Records upload failed: ' + rRes.error.message);
+
+    setProgress('Done!', 100);
+
+    // Sign out
+    await supa.auth.signOut();
+
+    // Show success
+    document.getElementById('doneMsg').textContent =
+      newVehicles.length + ' vehicles imported, ' + newRecords.length + ' clearance records created. ' +
+      (existingVehicles.length > 0 ? existingVehicles.length + ' existing vehicles preserved.' : '');
+    document.getElementById('doneBox').style.display = 'block';
+    btn.style.display = 'none';
+
+  }catch(e){
+    errEl.textContent = 'Error: ' + (e.message || e);
+    errEl.style.display = 'block';
+    btn.textContent = 'Retry Import \u2192';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

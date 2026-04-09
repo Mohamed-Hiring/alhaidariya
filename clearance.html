@@ -361,6 +361,9 @@ body.rtl .toast-container{right:auto;left:20px;}
       <option value="small" data-i18n="small">Small</option>
       <option value="large" data-i18n="large">Large</option>
     </select>
+    <select id="vSupervisorFilter" onchange="renderVehicles()" style="padding:8px 14px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;">
+      <option value="all" data-i18n="allSupervisors">All Supervisors</option>
+    </select>
   </div>
   <div class="v-grid" id="vehicleGrid"></div>
 </div>
@@ -445,6 +448,9 @@ body.rtl .toast-container{right:auto;left:20px;}
       <div class="fg"><label data-i18n="yearOfManufacture">Year of Manufacture</label><input id="vYear" type="number" min="1990" max="2030"></div>
       <div class="fg"><label data-i18n="color">Color</label><input id="vColor" type="text"></div>
       <div class="fg"><label data-i18n="driverName">Driver / Operator</label><input id="vDriver" type="text"></div>
+      <div class="fg"><label data-i18n="supervisor">Supervisor</label>
+        <select id="vAssignedTo"><option value="">-</option></select>
+      </div>
       <div class="fg"><label data-i18n="insurancePolicyNo">Insurance Policy No.</label><input id="vInsPolicy" type="text"></div>
       <div class="fg"><label data-i18n="insuranceExpiry">Insurance Expiry</label><input id="vInsExpiry" type="date"></div>
       <div class="fg fg-full"><label data-i18n="notes">Notes</label><textarea id="vNotes" rows="2"></textarea></div>
@@ -643,6 +649,8 @@ var LANG = {
     date:'Date',
     resolvedDate:'Resolved',
     assignedTo:'Assigned To',
+    supervisor:'Supervisor',
+    allSupervisors:'All Supervisors',
     createdAt:'Created',
     year:'Year',
     actions:'Actions'
@@ -755,6 +763,8 @@ var LANG = {
     date:'\u0627\u0644\u062A\u0627\u0631\u064A\u062E',
     resolvedDate:'\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u062D\u0644',
     assignedTo:'\u0645\u0639\u064A\u0646 \u0625\u0644\u0649',
+    supervisor:'\u0627\u0644\u0645\u0633\u0624\u0648\u0644',
+    allSupervisors:'\u0643\u0644 \u0627\u0644\u0645\u0633\u0624\u0648\u0644\u064A\u0646',
     createdAt:'\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0625\u0646\u0634\u0627\u0621',
     year:'\u0627\u0644\u0633\u0646\u0629',
     actions:'\u0627\u0644\u0625\u062C\u0631\u0627\u0621\u0627\u062A'
@@ -1012,6 +1022,7 @@ async function afterLogin(user){
   document.getElementById('loginBtn').textContent=t('signIn');
   document.getElementById('loginBtn').disabled=false;
   checkDueVehicles();
+  buildSupervisorDropdown();
   renderDashboard();
   updateNotifBadge();
   setupRealtime();
@@ -1301,6 +1312,28 @@ async function ackNotif(id){
 /* ═══════════════════════════════════════════
    VEHICLES
 ═══════════════════════════════════════════ */
+function buildSupervisorDropdown(){
+  var sups={};
+  vehicles.forEach(function(v){ if(v.assignedTo) sups[v.assignedTo]=true; });
+  var names=Object.keys(sups).sort();
+  // Vehicle filter dropdown
+  var sel=document.getElementById('vSupervisorFilter');
+  if(sel){
+    var cur=sel.value;
+    sel.innerHTML='<option value="all">'+t('allSupervisors')+'</option>';
+    names.forEach(function(n){ sel.innerHTML+='<option value="'+esc(n)+'">'+esc(n)+'</option>'; });
+    sel.value=cur||'all';
+  }
+  // Vehicle form dropdown
+  var fsel=document.getElementById('vAssignedTo');
+  if(fsel){
+    var fcur=fsel.value;
+    fsel.innerHTML='<option value="">-</option>';
+    names.forEach(function(n){ fsel.innerHTML+='<option value="'+esc(n)+'">'+esc(n)+'</option>'; });
+    fsel.value=fcur;
+  }
+}
+
 function filterVehicles(status,btn){
   vStatusFilter=status;
   document.querySelectorAll('#pg-2 .fbtn').forEach(function(b){b.classList.remove('active');});
@@ -1311,6 +1344,7 @@ function filterVehicles(status,btn){
 function renderVehicles(){
   var search=(document.getElementById('vSearch').value||'').toLowerCase();
   var typeFilter=document.getElementById('vTypeFilter').value;
+  var supFilter=document.getElementById('vSupervisorFilter')?document.getElementById('vSupervisorFilter').value:'all';
   var grid=document.getElementById('vehicleGrid');
 
   var filtered=vehicles.filter(function(v){
@@ -1321,9 +1355,11 @@ function renderVehicles(){
     }
     // Type filter
     if(typeFilter!=='all'&&v.type!==typeFilter) return false;
+    // Supervisor filter
+    if(supFilter!=='all'&&v.assignedTo!==supFilter) return false;
     // Search
     if(search){
-      var haystack=(v.name+' '+v.plateNumber+' '+v.driverName+' '+v.doorNumber+' '+v.chassisNumber).toLowerCase();
+      var haystack=(v.name+' '+v.plateNumber+' '+v.driverName+' '+v.doorNumber+' '+v.chassisNumber+' '+v.assignedTo).toLowerCase();
       if(haystack.indexOf(search)===-1) return false;
     }
     // Role-based: officer sees only assigned
@@ -1347,7 +1383,7 @@ function renderVehicles(){
     html+='<div class="v-card-info">';
     html+='<span>'+t('vehicleType')+': '+t(v.type)+'</span>';
     html+='<span>'+t('registrationMonth')+': '+monthName(v.registrationMonth)+'</span>';
-    html+='<span>'+t('location')+': '+esc(v.location||'-')+'</span>';
+    html+='<span>'+t('supervisor')+': '+esc(v.assignedTo||'-')+'</span>';
     html+='<span>'+t('driverName')+': '+esc(v.driverName||'-')+'</span>';
     html+='</div>';
     html+='</div>';
@@ -1393,6 +1429,8 @@ function openVehicleModal(id){
       document.getElementById('vInsPolicy').value=v.insurancePolicyNumber||'';
       document.getElementById('vInsExpiry').value=v.insuranceExpiryDate||'';
       document.getElementById('vNotes').value=v.notes||'';
+      buildSupervisorDropdown();
+      document.getElementById('vAssignedTo').value=v.assignedTo||'';
     }
   } else {
     title.textContent=t('addVehicle');
@@ -1409,6 +1447,8 @@ function openVehicleModal(id){
     document.getElementById('vInsPolicy').value='';
     document.getElementById('vInsExpiry').value='';
     document.getElementById('vNotes').value='';
+    buildSupervisorDropdown();
+    document.getElementById('vAssignedTo').value=currentProfile?currentProfile.full_name:'';
   }
   document.getElementById('vehicleModal').classList.add('open');
 }
@@ -1431,6 +1471,7 @@ function saveVehicle(){
       v.yearOfManufacture=parseInt(document.getElementById('vYear').value)||0;
       v.color=document.getElementById('vColor').value.trim();
       v.driverName=document.getElementById('vDriver').value.trim();
+      v.assignedTo=document.getElementById('vAssignedTo').value;
       v.insurancePolicyNumber=document.getElementById('vInsPolicy').value.trim();
       v.insuranceExpiryDate=document.getElementById('vInsExpiry').value;
       v.notes=document.getElementById('vNotes').value.trim();
@@ -1450,7 +1491,7 @@ function saveVehicle(){
       insurancePolicyNumber:document.getElementById('vInsPolicy').value.trim(),
       insuranceExpiryDate:document.getElementById('vInsExpiry').value,
       currentStatus:'',
-      assignedTo:currentProfile?currentProfile.full_name:'',
+      assignedTo:document.getElementById('vAssignedTo').value||(currentProfile?currentProfile.full_name:''),
       notes:document.getElementById('vNotes').value.trim(),
       createdAt:now,updatedAt:now
     });
@@ -1483,7 +1524,7 @@ function viewVehicle(id){
     ['vehicleName',v.name],['plateNumber',v.plateNumber],['doorNumber',v.doorNumber],
     ['vehicleType',t(v.type)],['registrationMonth',monthName(v.registrationMonth)],['location',v.location],
     ['chassisNumber',v.chassisNumber],['yearOfManufacture',v.yearOfManufacture],['color',v.color],
-    ['driverName',v.driverName],['insurancePolicyNo',v.insurancePolicyNumber],['insuranceExpiry',fmtD(v.insuranceExpiryDate)]
+    ['driverName',v.driverName],['supervisor',v.assignedTo],['insurancePolicyNo',v.insurancePolicyNumber],['insuranceExpiry',fmtD(v.insuranceExpiryDate)]
   ];
   fields.forEach(function(f){
     html+='<div><span style="font-size:10px;text-transform:uppercase;color:var(--g400);letter-spacing:.3px">'+t(f[0])+'</span><div style="margin-top:2px;font-weight:bold">'+esc(f[1]||'-')+'</div></div>';
