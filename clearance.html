@@ -75,7 +75,7 @@ body{font-family:'Inter',sans-serif;background:#f8f7fc;color:var(--g800);min-hei
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 22px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t);letter-spacing:-.1px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 22px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t);letter-spacing:-.1px;min-height:44px;}
 .btn-p{background:var(--p);color:white;box-shadow:0 2px 8px rgba(124,58,237,.25);}
 .btn-p:hover{background:var(--pd);box-shadow:0 4px 14px rgba(124,58,237,.35);transform:translateY(-1px);}
 .btn-s{background:var(--pb);color:var(--p);border:1.5px solid var(--pb2);}
@@ -89,7 +89,7 @@ body{font-family:'Inter',sans-serif;background:#f8f7fc;color:var(--g800);min-hei
 .btn-am{background:var(--amb);color:var(--am);}
 .btn-am:hover{background:#f5e2b8;}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
-.btn-sm{padding:7px 14px;font-size:12px;}
+.btn-sm{padding:9px 16px;font-size:12px;min-height:38px;}
 
 /* ── CARDS / PANELS ── */
 .card{background:white;border-radius:var(--r);box-shadow:var(--sh);padding:24px;margin-bottom:16px;border:1px solid var(--g100);transition:box-shadow var(--t);}
@@ -137,11 +137,11 @@ body{font-family:'Inter',sans-serif;background:#f8f7fc;color:var(--g800);min-hei
 /* ── FORMS ── */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
-.fg{display:flex;flex-direction:column;gap:4px;}
+.fg{display:flex;flex-direction:column;gap:6px;}
 .fg label{font-size:12px;font-weight:600;color:var(--g600);letter-spacing:.2px;}
-.fg input,.fg select,.fg textarea{padding:11px 14px;border:2px solid var(--g200);border-radius:10px;font-size:13px;outline:none;transition:all var(--t);background:var(--g50);}
+.fg input,.fg select,.fg textarea{padding:13px 14px;border:2px solid var(--g200);border-radius:10px;font-size:14px;outline:none;transition:all var(--t);background:var(--g50);min-height:44px;font-family:inherit;}
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--p);box-shadow:var(--shi);background:white;}
-.fg textarea{resize:vertical;min-height:60px;}
+.fg textarea{resize:vertical;min-height:72px;}
 .fg-full{grid-column:1/-1;}
 
 /* ── MODAL ── */
@@ -162,9 +162,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 
 /* ── FILTER BAR ── */
 .filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
-.filter-bar input[type=text],.filter-bar input[type=search]{padding:9px 14px;border:2px solid var(--g200);border-radius:10px;font-size:13px;min-width:200px;outline:none;transition:all var(--t);background:var(--g50);}
+.filter-bar input[type=text],.filter-bar input[type=search]{padding:12px 16px;border:2px solid var(--g200);border-radius:10px;font-size:14px;min-width:200px;outline:none;transition:all var(--t);background:var(--g50);min-height:44px;}
 .filter-bar input:focus{border-color:var(--p);box-shadow:var(--shi);background:white;}
-.fbtn{padding:8px 16px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;background:white;cursor:pointer;transition:all var(--t);}
+.fbtn{padding:10px 18px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;background:white;cursor:pointer;transition:all var(--t);min-height:40px;}
 .fbtn:hover{border-color:var(--p);color:var(--p);background:var(--pb);}
 .fbtn.active{background:var(--p);color:white;border-color:var(--p);box-shadow:0 2px 8px rgba(124,58,237,.25);}
 
@@ -191,23 +191,39 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 
 /* Vehicle list (table) view */
 .v-list{background:white;border-radius:var(--rm);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--g100);}
-.v-list-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:12px;padding:12px 18px;border-bottom:1px solid var(--g100);align-items:center;cursor:pointer;transition:background var(--t);border-left:4px solid var(--g300);}
+.v-list-row{display:grid;grid-template-columns:2fr 1.1fr 1.2fr 1fr 1.1fr 24px;gap:14px;padding:16px 20px;border-bottom:1px solid var(--g100);align-items:center;cursor:pointer;transition:all var(--t);border-left:4px solid var(--g300);min-height:60px;}
 .v-list-row:hover{background:var(--g50);}
 .v-list-row:last-child{border-bottom:none;}
 .v-list-row.vs-completed,.v-list-row.vs-paid{background:#f0fdf4;border-left-color:var(--gn);}
+.v-list-row.vs-completed:hover,.v-list-row.vs-paid:hover{background:#dcfce7;}
 .v-list-row.vs-passed{background:#f0fdfa;border-left-color:var(--tl);}
+.v-list-row.vs-passed:hover{background:#ccfbf1;}
 .v-list-row.vs-pending_inspection{background:#eff6ff;border-left-color:var(--bl);}
+.v-list-row.vs-pending_inspection:hover{background:#dbeafe;}
 .v-list-row.vs-due{background:#fffbeb;border-left-color:var(--am);}
+.v-list-row.vs-due:hover{background:#fef3c7;}
 .v-list-row.vs-failed{background:#fef2f2;border-left-color:var(--rd);}
+.v-list-row.vs-failed:hover{background:#fee2e2;}
 .v-list-row.vs-longterm{background:#450a0a;color:#fecaca;border-left-color:#991b1b;}
-.v-list-head{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:12px;padding:12px 18px;background:var(--g50);font-size:11px;font-weight:700;text-transform:uppercase;color:var(--g600);letter-spacing:.5px;border-bottom:2px solid var(--g200);border-left:4px solid transparent;}
+.v-list-row.vs-longterm:hover{background:#5a0f0f;}
+.v-list-row.vs-longterm .v-list-cell{color:#fecaca;}
+.v-list-row.vs-longterm .v-list-cell.primary{color:#fff;}
+.v-list-head{display:grid;grid-template-columns:2fr 1.1fr 1.2fr 1fr 1.1fr 24px;gap:14px;padding:14px 20px;background:var(--g50);font-size:11px;font-weight:700;text-transform:uppercase;color:var(--g600);letter-spacing:.5px;border-bottom:2px solid var(--g200);border-left:4px solid transparent;}
 .v-list-cell{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.v-list-cell.primary{font-weight:700;}
+.v-list-cell.primary{font-weight:700;font-size:14px;color:var(--g800);letter-spacing:-.1px;}
+.v-list-cell.c-meta{display:none;}
+.v-list-chevron{color:var(--g400);font-size:18px;text-align:center;}
 @media(max-width:768px){
   .v-list-head{display:none;}
-  .v-list-row{grid-template-columns:1fr auto;gap:4px;padding:12px 14px;}
-  .v-list-row .v-list-cell:nth-child(n+3){font-size:11px;color:var(--g600);grid-column:1;}
-  .v-list-row .v-list-cell:last-child{grid-row:1/6;align-self:start;}
+  .v-list-row{grid-template-columns:1fr auto;grid-template-areas:"name badge" "plate badge" "meta meta";gap:2px 12px;padding:14px 16px;min-height:auto;}
+  .v-list-row:hover{transform:none;}
+  .v-list-cell{white-space:normal;}
+  .v-list-cell.primary{grid-area:name;font-size:15px;}
+  .v-list-cell.c-plate{grid-area:plate;font-size:12px;color:var(--g600);font-weight:600;}
+  .v-list-cell.c-sup,.v-list-cell.c-month{display:none;}
+  .v-list-cell.c-meta{grid-area:meta;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--g600);margin-top:6px;}
+  .v-list-cell.c-status{grid-area:badge;align-self:center;}
+  .v-list-chevron{display:none;}
 }
 
 /* View toggle */
@@ -273,21 +289,37 @@ body.is-admin .admin-only{display:inline-flex;}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .hdr{padding:0 16px;height:56px;}
-  .hdr-logo{font-size:16px;}
+  .hdr{padding:0 14px;height:56px;}
+  .hdr-logo{font-size:15px;}
   .pg{padding:16px 12px;}
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .stat-card{padding:16px 12px;}
+  .stat-card .stat-num{font-size:28px;}
   .v-grid{grid-template-columns:1fr;}
   .cr-cost-grid{grid-template-columns:1fr;}
   .form-grid{grid-template-columns:1fr;}
   .user-info span:first-child{display:none;}
-  .card{padding:18px;}
-  .modal{padding:24px 20px;border-radius:16px;margin:10px;}
+  .card{padding:18px 16px;border-radius:var(--rm);}
+  .card-title{font-size:15px;}
+  .modal{padding:22px 18px;border-radius:16px;margin:10px;max-height:94vh;}
+  .modal h2{font-size:16px;}
   .login-box{padding:36px 24px;}
+  .nb{padding:14px 14px;font-size:13px;}
+  .filter-bar{gap:8px;}
+  .filter-bar input[type=text],.filter-bar input[type=search]{min-width:0;width:100%;}
+  .card-header{flex-wrap:wrap;gap:10px;}
+  .quick-actions-row .btn{min-width:auto;flex:1 1 calc(50% - 4px);}
+  .v-card{padding:16px 16px 16px 20px;}
+  .v-card-name{font-size:14px;}
 }
 @media(max-width:480px){
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
   .hdr-sub{display:none;}
+  .hdr{padding:0 12px;}
+  .pg{padding:14px 10px;}
+  .btn{padding:12px 18px;}
+  .btn-sm{padding:9px 14px;}
+  .view-toggle button{padding:8px 14px;}
 }
 
 /* ── SCROLLBAR ── */
@@ -390,8 +422,8 @@ body.rtl .toast-container{right:auto;left:20px;}
     <div class="card-title" data-i18n="vehicleManagement">Vehicle Management</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <div class="view-toggle">
-        <button id="viewCardsBtn" class="active" onclick="setVehicleView('cards')" data-i18n="cardView">Cards</button>
-        <button id="viewListBtn" onclick="setVehicleView('list')" data-i18n="listView">List</button>
+        <button id="viewListBtn" class="active" onclick="setVehicleView('list')" data-i18n="listView">List</button>
+        <button id="viewCardsBtn" onclick="setVehicleView('cards')" data-i18n="cardView">Cards</button>
       </div>
       <button class="btn btn-s btn-sm viewer-hide" onclick="openSupervisorExport()" data-i18n="exportList">Export PDF</button>
       <button class="btn btn-p btn-sm viewer-hide" onclick="openVehicleModal()" data-i18n="addVehicle">+ Add Vehicle</button>
@@ -457,6 +489,14 @@ body.rtl .toast-container{right:auto;left:20px;}
 
 <!-- ═══ PAGE 5: SETTINGS ═══ -->
 <div class="pg" id="pg-5">
+  <div class="card admin-only">
+    <div class="card-title" data-i18n="dataTools">Data Tools</div>
+    <p style="font-size:12px;color:var(--g600);margin:8px 0 16px" data-i18n="dataToolsDesc">Clean duplicate vehicles and records, or re-import the full Excel file.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="manualCleanData()" data-i18n="cleanDuplicates">Clean Duplicates Now</button>
+      <a class="btn btn-s" href="clearance_import.html" data-i18n="openImport">Open Import Page &rarr;</a>
+    </div>
+  </div>
   <div class="card">
     <div class="card-title" data-i18n="userManagement">User Management</div>
     <p style="font-size:12px;color:var(--g400);margin:8px 0 16px" data-i18n="userMgmtDesc">Manage system users and their roles.</p>
@@ -718,6 +758,10 @@ var LANG = {
     exportPDF:'Export PDF',
     userManagement:'User Management',
     userMgmtDesc:'Manage system users and their roles.',
+    dataTools:'Data Tools',
+    dataToolsDesc:'Clean duplicate vehicles and records, or re-import the full Excel file.',
+    cleanDuplicates:'Clean Duplicates Now',
+    openImport:'Open Import Page \u2192',
     systemInfo:'System Info',
     totalVehicles:'Total Vehicles',
     completedThisYear:'Completed This Year',
@@ -842,6 +886,10 @@ var LANG = {
     exportPDF:'\u062A\u0635\u062F\u064A\u0631 PDF',
     userManagement:'\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646',
     userMgmtDesc:'\u0625\u062F\u0627\u0631\u0629 \u0645\u0633\u062A\u062E\u062F\u0645\u064A \u0627\u0644\u0646\u0638\u0627\u0645 \u0648\u0623\u062F\u0648\u0627\u0631\u0647\u0645.',
+    dataTools:'\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A',
+    dataToolsDesc:'\u062A\u0646\u0638\u064A\u0641 \u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A \u0648\u0627\u0644\u0633\u062C\u0644\u0627\u062A \u0627\u0644\u0645\u0643\u0631\u0631\u0629\u060C \u0623\u0648 \u0625\u0639\u0627\u062F\u0629 \u0627\u0633\u062A\u064A\u0631\u0627\u062F \u0645\u0644\u0641 \u0625\u0643\u0633\u0644.',
+    cleanDuplicates:'\u062A\u0646\u0638\u064A\u0641 \u0627\u0644\u0645\u0643\u0631\u0631\u0627\u062A \u0627\u0644\u0622\u0646',
+    openImport:'\u0641\u062A\u062D \u0635\u0641\u062D\u0629 \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F \u2192',
     systemInfo:'\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0646\u0638\u0627\u0645',
     totalVehicles:'\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A',
     completedThisYear:'\u0645\u0643\u062A\u0645\u0644 \u0647\u0630\u0627 \u0627\u0644\u0639\u0627\u0645',
@@ -943,7 +991,7 @@ var notifications = [];
 var vStatusFilter = 'all';
 var crStatusFilter = 'all';
 var activePgNum = 1;
-var vehicleView = localStorage.getItem('clr_view') || 'cards';
+var vehicleView = localStorage.getItem('clr_view') || 'list';
 var lastFilteredVehicles = [];
 
 /* ═══════════════════════════════════════════
@@ -1160,6 +1208,86 @@ async function loadAllData(){
       if(row.key==='clearance_records') records=row.value||[];
       if(row.key==='clearance_notifications') notifications=row.value||[];
     });
+  }
+  // Auto-clean duplicates on every load — fixes old bad imports silently
+  autoCleanDuplicates();
+}
+
+/* Remove duplicate vehicles (same plate+chassis) and collapse duplicate
+   records to one per (vehicleId, year) preferring completed > paid >
+   pending > failed. Runs locally; if anything changed it syncs back. */
+var STATUS_PRIORITY={completed:4,paid:3,pending_inspection:2,failed:1};
+function autoCleanDuplicates(){
+  var seen={},idRemap={},cleanV=[];
+  var changed=false;
+  vehicles.forEach(function(v){
+    var plate=(v.plateNumber||'').toString().trim().toUpperCase();
+    var chassis=(v.chassisNumber||'').toString().trim().toUpperCase();
+    if(!plate||plate==='NOT REGISTERED'){ cleanV.push(v); return; }
+    var key=plate+'||'+chassis;
+    if(seen[key]){
+      idRemap[v.id]=seen[key];
+      changed=true;
+      return;
+    }
+    seen[key]=v.id;
+    cleanV.push(v);
+  });
+
+  var byKey={};
+  records.forEach(function(r){
+    if(!r||!r.vehicleId) return;
+    var vid=idRemap[r.vehicleId]||r.vehicleId;
+    var key=vid+'||'+r.year;
+    var prev=byKey[key];
+    var pNew=STATUS_PRIORITY[r.status]||0;
+    var pOld=prev?(STATUS_PRIORITY[prev.status]||0):-1;
+    if(!prev||pNew>pOld){
+      var copy=JSON.parse(JSON.stringify(r));
+      copy.vehicleId=vid;
+      copy.id='rec_'+vid+'_'+r.year;
+      byKey[key]=copy;
+    } else {
+      changed=true;
+    }
+  });
+  var cleanR=Object.keys(byKey).map(function(k){return byKey[k];});
+  if(cleanR.length!==records.length) changed=true;
+
+  if(changed){
+    vehicles=cleanV;
+    records=cleanR;
+    // Persist cleaned data back to Supabase
+    syncVehicles();
+    syncRecords();
+    try{
+      if(currentProfile&&currentProfile.role==='admin'){
+        showToast((currentLang==='ar'?'\u062A\u0645 \u062A\u0646\u0638\u064A\u0641 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0643\u0631\u0631\u0629 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B':'Duplicate data auto-cleaned'));
+      }
+    }catch(e){}
+  }
+  return changed;
+}
+
+/* Admin-invoked clean. Shows confirmation + result toast. */
+function manualCleanData(){
+  var msg=currentLang==='ar'
+    ?'\u0647\u0644 \u062A\u0631\u064A\u062F \u062A\u0646\u0638\u064A\u0641 \u0627\u0644\u0645\u0631\u0643\u0628\u0627\u062A \u0648\u0627\u0644\u0633\u062C\u0644\u0627\u062A \u0627\u0644\u0645\u0643\u0631\u0631\u0629\u061F'
+    :'Clean duplicate vehicles and clearance records?';
+  if(!confirm(msg)) return;
+  var vBefore=vehicles.length, rBefore=records.length;
+  var changed=autoCleanDuplicates();
+  var vAfter=vehicles.length, rAfter=records.length;
+  var removedV=vBefore-vAfter, removedR=rBefore-rAfter;
+  reRenderAll();
+  if(changed){
+    showToast(currentLang==='ar'
+      ?('\u062A\u0645 \u062D\u0630\u0641 '+removedV+' \u0645\u0631\u0643\u0628\u0629 \u0645\u0643\u0631\u0631\u0629 \u0648 '+removedR+' \u0633\u062C\u0644')
+      :('Removed '+removedV+' duplicate vehicles and '+removedR+' records'));
+  } else {
+    showToast(currentLang==='ar'
+      ?'\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0643\u0631\u0631\u0629'
+      :'No duplicates found');
   }
 }
 
@@ -1520,20 +1648,22 @@ function renderVehicles(){
     html+='<div>'+t('plateNumber')+'</div>';
     html+='<div>'+t('supervisor')+'</div>';
     html+='<div>'+t('registrationMonth')+'</div>';
-    html+='<div>'+t('actions')+'</div>';
+    html+='<div>'+t('status')+'</div>';
     html+='<div></div>';
     html+='</div>';
     filtered.forEach(function(v){
       var status=getVehicleStatus(v);
       var cls='v-list-row vs-'+status;
       if(isLongTermBroken(v)) cls='v-list-row vs-longterm';
+      var meta='<span>'+esc(v.assignedTo||'-')+'</span><span>'+monthName(v.registrationMonth)+'</span>';
       html+='<div class="'+cls+'" onclick="viewVehicle(\''+v.id+'\')">';
       html+='<div class="v-list-cell primary">'+esc(v.name)+'</div>';
-      html+='<div class="v-list-cell">'+esc(v.plateNumber)+'</div>';
-      html+='<div class="v-list-cell">'+esc(v.assignedTo||'-')+'</div>';
-      html+='<div class="v-list-cell">'+monthName(v.registrationMonth)+'</div>';
-      html+='<div class="v-list-cell">'+statusBadge(status)+'</div>';
-      html+='<div class="v-list-cell">\u203A</div>';
+      html+='<div class="v-list-cell c-plate">'+esc(v.plateNumber||'-')+'</div>';
+      html+='<div class="v-list-cell c-sup">'+esc(v.assignedTo||'-')+'</div>';
+      html+='<div class="v-list-cell c-month">'+monthName(v.registrationMonth)+'</div>';
+      html+='<div class="v-list-cell c-status">'+statusBadge(status)+'</div>';
+      html+='<div class="v-list-cell c-meta">'+meta+'</div>';
+      html+='<div class="v-list-chevron">\u203A</div>';
       html+='</div>';
     });
     html+='</div>';
