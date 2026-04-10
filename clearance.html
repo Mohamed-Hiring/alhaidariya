@@ -261,10 +261,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .tl-item.tl-completed::before{background:var(--gn);}
 .tl-item .tl-date{font-size:11px;color:var(--g400);font-weight:500;}
 .tl-item .tl-text{font-size:13px;margin-top:4px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
-.tl-actions{margin-top:8px;}
-.tl-status-sel{padding:8px 12px;border:1.5px solid var(--g200);border-radius:8px;background:white;font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;outline:none;min-height:36px;font-family:inherit;}
-.tl-status-sel:hover{border-color:var(--p);color:var(--p);}
-.tl-status-sel:focus{border-color:var(--p);box-shadow:var(--shi);}
+.tl-actions{display:block;margin-top:10px;}
+.tl-status-sel{display:inline-block;padding:10px 14px;border:1.5px solid var(--p);border-radius:8px;background:var(--pb);font-size:12px;font-weight:600;color:var(--p);cursor:pointer;outline:none;min-height:40px;font-family:inherit;width:auto;max-width:100%;}
+.tl-status-sel:hover{background:var(--pb2);}
+.tl-status-sel:focus{border-color:var(--pd);box-shadow:var(--shi);background:white;}
 
 /* ── NOTIFICATION PANEL ── */
 .notif-panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
@@ -2060,29 +2060,53 @@ function viewVehicle(id){
   }
   html+='</div>';
 
-  // Clearance history — dedupe at render time as a safety net, keep
-  // only the highest-priority record per year. Any extras that are
-  // found get pruned permanently from memory and the DB.
+  // Clearance history — aggressive render-time dedup using object
+  // identity (not id matching) because the buggy old import created
+  // records that share the same id. Keep only the highest-priority
+  // record per year; everything else is pruned and the DB is synced.
   var vAll=records.filter(function(r){return r.vehicleId===id;});
   var bestByYear={};
-  var extraIds=[];
   vAll.forEach(function(r){
-    var cur=bestByYear[r.year];
+    var yr=parseInt(r.year,10)||0;
+    if(!yr) return;
+    var cur=bestByYear[yr];
     var pNew=STATUS_PRIORITY[r.status]||0;
     var pOld=cur?(STATUS_PRIORITY[cur.status]||0):-1;
-    if(!cur){ bestByYear[r.year]=r; }
-    else if(pNew>pOld){ extraIds.push(cur.id); bestByYear[r.year]=r; }
-    else { extraIds.push(r.id); }
+    if(!cur||pNew>pOld) bestByYear[yr]=r;
   });
-  if(extraIds.length){
-    // Prune permanently so the next render is clean
-    records=records.filter(function(r){return extraIds.indexOf(r.id)===-1;});
+  // Build the keep-list by object identity
+  var keepObjs=[];
+  Object.keys(bestByYear).forEach(function(y){keepObjs.push(bestByYear[y]);});
+  var removedCount=0;
+  // Filter out every record for this vehicle that isn't in the keep set
+  // (identity comparison), leaving records for other vehicles untouched.
+  var newRecords=[];
+  records.forEach(function(r){
+    if(r.vehicleId!==id){ newRecords.push(r); return; }
+    if(keepObjs.indexOf(r)!==-1){ newRecords.push(r); return; }
+    removedCount++;
+  });
+  if(removedCount>0){
+    // Regenerate canonical ids on the survivors to prevent future collisions
+    Object.keys(bestByYear).forEach(function(y){
+      var b=bestByYear[y];
+      b.id='rec_'+id+'_'+y;
+      b.year=parseInt(y,10);
+      b.vehicleId=id;
+    });
+    records=newRecords;
     syncRecords();
   }
   var vRecords=Object.keys(bestByYear).map(function(y){return bestByYear[y];})
     .sort(function(a,b){return b.year-a.year;});
   if(vRecords.length){
-    html+='<div style="margin-top:20px"><div class="card-title" style="margin-bottom:12px">'+t('clearanceHistory')+'</div>';
+    html+='<div style="margin-top:20px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+    html+='<div class="card-title">'+t('clearanceHistory')+'</div>';
+    if(removedCount>0){
+      html+='<span style="font-size:11px;color:var(--gn);font-weight:600">'+(currentLang==='ar'?('\u062A\u0645 \u062D\u0630\u0641 '+removedCount+' \u0645\u0643\u0631\u0631'):('Cleaned '+removedCount+' duplicates'))+'</span>';
+    }
+    html+='</div>';
     html+='<div class="timeline">';
     vRecords.forEach(function(r){
       var cls='tl-item';
@@ -2096,17 +2120,21 @@ function viewVehicle(id){
       var total=(r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0);
       if(total>0) html+=' <span style="font-size:12px;color:var(--g600)">| '+t('totalCost')+': '+fmtN(total)+' BD</span>';
       html+='</div>';
-      // Inline per-record status change dropdown (admin/officer only)
-      html+='<div class="tl-actions viewer-hide">';
-      html+='<select class="tl-status-sel" onchange="changeRecordStatus(\''+r.id+'\',\''+id+'\',this.value);this.value=\'\'">';
-      html+='<option value="">'+t('changeStatus')+'...</option>';
-      html+='<option value="pending_inspection">'+t('status_pending')+'</option>';
-      html+='<option value="passed">'+t('status_passed')+'</option>';
-      html+='<option value="paid">'+t('status_paid')+'</option>';
-      html+='<option value="completed">'+t('status_completed')+'</option>';
-      html+='<option value="failed">'+t('status_failed')+'</option>';
-      html+='</select>';
-      html+='</div>';
+      // Inline per-record status change dropdown — always visible for
+      // non-viewer roles. Uses JS role check instead of CSS class so
+      // the select renders as a normal block element.
+      if(!currentProfile||currentProfile.role!=='viewer'){
+        html+='<div class="tl-actions">';
+        html+='<select class="tl-status-sel" onchange="changeRecordStatus(\''+r.id+'\',\''+id+'\',this.value);this.value=\'\'">';
+        html+='<option value="">\u270E '+t('changeStatus')+'...</option>';
+        html+='<option value="pending_inspection">'+t('status_pending')+'</option>';
+        html+='<option value="passed">'+t('status_passed')+'</option>';
+        html+='<option value="paid">'+t('status_paid')+'</option>';
+        html+='<option value="completed">'+t('status_completed')+'</option>';
+        html+='<option value="failed">'+t('status_failed')+'</option>';
+        html+='</select>';
+        html+='</div>';
+      }
       // Failure history
       if(r.failureHistory&&r.failureHistory.length){
         html+='<div style="margin-top:6px;padding:8px;background:var(--rdb);border-radius:6px;font-size:11px">';
