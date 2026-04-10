@@ -254,13 +254,17 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 /* ── TIMELINE ── */
 .timeline{position:relative;padding-inline-start:24px;}
 .timeline::before{content:'';position:absolute;inset-inline-start:8px;top:0;bottom:0;width:2px;background:var(--g200);}
-.tl-item{position:relative;padding-bottom:16px;}
-.tl-item::before{content:'';position:absolute;inset-inline-start:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--g300);border:2px solid white;}
+.tl-item{position:relative;padding-bottom:18px;}
+.tl-item::before{content:'';position:absolute;inset-inline-start:-20px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--g300);border:2px solid white;}
 .tl-item.tl-passed::before{background:var(--tl);}
 .tl-item.tl-failed::before{background:var(--rd);}
 .tl-item.tl-completed::before{background:var(--gn);}
-.tl-item .tl-date{font-size:11px;color:var(--g400);}
-.tl-item .tl-text{font-size:13px;margin-top:2px;}
+.tl-item .tl-date{font-size:11px;color:var(--g400);font-weight:500;}
+.tl-item .tl-text{font-size:13px;margin-top:4px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.tl-actions{margin-top:8px;}
+.tl-status-sel{padding:8px 12px;border:1.5px solid var(--g200);border-radius:8px;background:white;font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;outline:none;min-height:36px;font-family:inherit;}
+.tl-status-sel:hover{border-color:var(--p);color:var(--p);}
+.tl-status-sel:focus{border-color:var(--p);box-shadow:var(--shi);}
 
 /* ── NOTIFICATION PANEL ── */
 .notif-panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
@@ -798,7 +802,8 @@ var LANG = {
     downloadPdf:'Download PDF',
     quickActions:'Quick Actions',
     markCompleted:'Mark Completed',
-    markPaid:'Mark as Paid'
+    markPaid:'Mark as Paid',
+    changeStatus:'Change status'
   },
   ar: {
     appTitle:'\u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
@@ -926,7 +931,8 @@ var LANG = {
     downloadPdf:'\u062A\u062D\u0645\u064A\u0644 PDF',
     quickActions:'\u0625\u062C\u0631\u0627\u0621\u0627\u062A \u0633\u0631\u064A\u0639\u0629',
     markCompleted:'\u062A\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
-    markPaid:'\u062A\u0633\u062C\u064A\u0644 \u062F\u0641\u0639'
+    markPaid:'\u062A\u0633\u062C\u064A\u0644 \u062F\u0641\u0639',
+    changeStatus:'\u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u0629'
   }
 };
 
@@ -1215,7 +1221,8 @@ async function loadAllData(){
 
 /* Remove duplicate vehicles (same plate+chassis) and collapse duplicate
    records to one per (vehicleId, year) preferring completed > paid >
-   pending > failed. Runs locally; if anything changed it syncs back. */
+   pending > failed. Also drops orphan records whose vehicle no longer
+   exists. Runs locally; if anything changed it syncs back. */
 var STATUS_PRIORITY={completed:4,paid:3,pending_inspection:2,failed:1};
 function autoCleanDuplicates(){
   var seen={},idRemap={},cleanV=[];
@@ -1234,18 +1241,26 @@ function autoCleanDuplicates(){
     cleanV.push(v);
   });
 
+  // Build a set of valid vehicle IDs post-dedup
+  var validIds={};
+  cleanV.forEach(function(v){validIds[v.id]=true;});
+
   var byKey={};
   records.forEach(function(r){
     if(!r||!r.vehicleId) return;
     var vid=idRemap[r.vehicleId]||r.vehicleId;
-    var key=vid+'||'+r.year;
+    if(!validIds[vid]) return; // drop orphan record
+    var yr=parseInt(r.year,10);
+    if(!yr) return; // drop records without a valid year
+    var key=vid+'||'+yr;
     var prev=byKey[key];
     var pNew=STATUS_PRIORITY[r.status]||0;
     var pOld=prev?(STATUS_PRIORITY[prev.status]||0):-1;
     if(!prev||pNew>pOld){
       var copy=JSON.parse(JSON.stringify(r));
       copy.vehicleId=vid;
-      copy.id='rec_'+vid+'_'+r.year;
+      copy.year=yr;
+      copy.id='rec_'+vid+'_'+yr;
       byKey[key]=copy;
     } else {
       changed=true;
@@ -1253,6 +1268,7 @@ function autoCleanDuplicates(){
   });
   var cleanR=Object.keys(byKey).map(function(k){return byKey[k];});
   if(cleanR.length!==records.length) changed=true;
+  if(cleanV.length!==vehicles.length) changed=true;
 
   if(changed){
     vehicles=cleanV;
@@ -1900,6 +1916,52 @@ function confirmQuickFail(){
   renderVehicles();
 }
 
+/* Change any clearance record to any status directly — lets the
+   user flip passed/failed/pending/paid/completed freely from the
+   clearance history timeline. Failed status opens the reason modal. */
+function changeRecordStatus(recordId,vehicleId,newStatus){
+  if(!newStatus) return;
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  if(newStatus==='failed'){
+    openQuickFailModal(recordId,vehicleId);
+    return;
+  }
+  var now=new Date().toISOString();
+  r.status=newStatus;
+  r.updatedAt=now;
+  if(newStatus==='passed'){
+    r.inspectionResult='passed';
+    r.failureReason='';
+  } else if(newStatus==='pending_inspection'){
+    r.inspectionResult='pending';
+    r.failureReason='';
+  } else if(newStatus==='paid'){
+    r.inspectionResult='passed';
+    r.failureReason='';
+    if(!r.inspectionFee) r.inspectionFee={amount:0,paid:true,paidDate:now};
+    else { r.inspectionFee.paid=true; r.inspectionFee.paidDate=now; }
+    if(!r.registrationFee) r.registrationFee={amount:0,paid:true,paidDate:now};
+    else { r.registrationFee.paid=true; r.registrationFee.paidDate=now; }
+    if(!r.insuranceFee) r.insuranceFee={amount:0,paid:true,paidDate:now};
+    else { r.insuranceFee.paid=true; r.insuranceFee.paidDate=now; }
+  } else if(newStatus==='completed'){
+    r.inspectionResult='passed';
+    r.failureReason='';
+    r.completedDate=now;
+    r.registrationCompletedDate=now;
+    r.insuranceCompletedDate=now;
+    if(r.inspectionFee) r.inspectionFee.paid=true;
+    if(r.registrationFee) r.registrationFee.paid=true;
+    if(r.insuranceFee) r.insuranceFee.paid=true;
+  }
+  syncRecords();
+  showToast(t('statusUpdated'));
+  refreshDetail(vehicleId);
+  if(activePgNum===1) renderDashboard();
+  renderVehicles();
+}
+
 function quickReInspect(recordId,vehicleId){
   var r=records.find(function(x){return x.id===recordId;});
   if(!r) return;
@@ -1998,8 +2060,27 @@ function viewVehicle(id){
   }
   html+='</div>';
 
-  // Clearance history
-  var vRecords=records.filter(function(r){return r.vehicleId===id;}).sort(function(a,b){return b.year-a.year;});
+  // Clearance history — dedupe at render time as a safety net, keep
+  // only the highest-priority record per year. Any extras that are
+  // found get pruned permanently from memory and the DB.
+  var vAll=records.filter(function(r){return r.vehicleId===id;});
+  var bestByYear={};
+  var extraIds=[];
+  vAll.forEach(function(r){
+    var cur=bestByYear[r.year];
+    var pNew=STATUS_PRIORITY[r.status]||0;
+    var pOld=cur?(STATUS_PRIORITY[cur.status]||0):-1;
+    if(!cur){ bestByYear[r.year]=r; }
+    else if(pNew>pOld){ extraIds.push(cur.id); bestByYear[r.year]=r; }
+    else { extraIds.push(r.id); }
+  });
+  if(extraIds.length){
+    // Prune permanently so the next render is clean
+    records=records.filter(function(r){return extraIds.indexOf(r.id)===-1;});
+    syncRecords();
+  }
+  var vRecords=Object.keys(bestByYear).map(function(y){return bestByYear[y];})
+    .sort(function(a,b){return b.year-a.year;});
   if(vRecords.length){
     html+='<div style="margin-top:20px"><div class="card-title" style="margin-bottom:12px">'+t('clearanceHistory')+'</div>';
     html+='<div class="timeline">';
@@ -2009,11 +2090,22 @@ function viewVehicle(id){
       else if(r.status==='failed') cls+=' tl-failed';
       else if(r.status==='passed') cls+=' tl-passed';
       html+='<div class="'+cls+'">';
-      html+='<div class="tl-date">'+r.year+' - '+fmtD(r.updatedAt||r.createdAt)+'</div>';
+      html+='<div class="tl-date">'+r.year+' \u00B7 '+fmtD(r.updatedAt||r.createdAt)+'</div>';
       html+='<div class="tl-text">'+statusBadge(r.status);
       if(r.failureReason) html+=' <span style="color:var(--rd);font-size:12px">'+esc(r.failureReason)+'</span>';
       var total=(r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0);
       if(total>0) html+=' <span style="font-size:12px;color:var(--g600)">| '+t('totalCost')+': '+fmtN(total)+' BD</span>';
+      html+='</div>';
+      // Inline per-record status change dropdown (admin/officer only)
+      html+='<div class="tl-actions viewer-hide">';
+      html+='<select class="tl-status-sel" onchange="changeRecordStatus(\''+r.id+'\',\''+id+'\',this.value);this.value=\'\'">';
+      html+='<option value="">'+t('changeStatus')+'...</option>';
+      html+='<option value="pending_inspection">'+t('status_pending')+'</option>';
+      html+='<option value="passed">'+t('status_passed')+'</option>';
+      html+='<option value="paid">'+t('status_paid')+'</option>';
+      html+='<option value="completed">'+t('status_completed')+'</option>';
+      html+='<option value="failed">'+t('status_failed')+'</option>';
+      html+='</select>';
       html+='</div>';
       // Failure history
       if(r.failureHistory&&r.failureHistory.length){
@@ -2033,7 +2125,7 @@ function viewVehicle(id){
 
   // Quick status actions for the active clearance record this year
   var curYear=new Date().getFullYear();
-  var activeRec=records.find(function(r){return r.vehicleId===id&&r.year===curYear;});
+  var activeRec=bestByYear[curYear]||null;
   html+='<div class="quick-actions viewer-hide">';
   html+='<div class="quick-actions-title">'+t('quickActions')+'</div>';
   html+='<div class="quick-actions-row">';
