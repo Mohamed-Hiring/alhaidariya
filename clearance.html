@@ -266,6 +266,180 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .tl-status-sel:hover{background:var(--pb2);}
 .tl-status-sel:focus{border-color:var(--pd);box-shadow:var(--shi);background:white;}
 
+/* ══════════════════════════════════════
+   V2 REDESIGN — Vehicles list, Action sheet,
+   Bulk mode, Dashboard tasks, Vehicle hero
+══════════════════════════════════════ */
+
+/* V2 Vehicle row — big tappable status pill */
+.v2-list{display:flex;flex-direction:column;gap:10px;}
+.v2-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:14px;border:1px solid var(--g100);box-shadow:var(--sh);cursor:pointer;transition:all var(--t);position:relative;overflow:hidden;}
+.v2-row::before{content:'';position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--g300);}
+.v2-row:hover{box-shadow:var(--shm);transform:translateY(-1px);}
+.v2-row:active{transform:scale(.99);}
+.v2-info{flex:1;min-width:0;padding-inline-start:6px;}
+.v2-name{font-size:15px;font-weight:700;color:var(--g800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px;}
+.v2-plate{font-size:12px;color:var(--g600);font-weight:600;margin-top:3px;letter-spacing:.1px;}
+.v2-meta{font-size:11px;color:var(--g400);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;}
+.v2-meta span{display:inline-flex;align-items:center;gap:4px;}
+.v2-pill{flex-shrink:0;padding:10px 16px;border-radius:999px;font-size:12px;font-weight:700;border:none;cursor:pointer;min-height:46px;min-width:102px;text-align:center;transition:all var(--t);letter-spacing:.2px;white-space:nowrap;color:white;box-shadow:0 2px 6px rgba(0,0,0,.15);font-family:inherit;}
+.v2-pill:hover{transform:scale(1.04);box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.v2-pill:active{transform:scale(.96);}
+.v2-pill::before{content:'⬇';font-size:9px;margin-inline-end:4px;opacity:.85;}
+body.is-viewer .v2-pill{pointer-events:none;}
+body.is-viewer .v2-pill::before{display:none;}
+
+/* Status-based colors for v2 rows */
+.v2-row.vs-due::before{background:var(--am);}
+.v2-row.vs-due .v2-pill{background:var(--am);}
+.v2-row.vs-pending_inspection::before{background:var(--bl);}
+.v2-row.vs-pending_inspection .v2-pill{background:var(--bl);}
+.v2-row.vs-passed::before{background:var(--tl);}
+.v2-row.vs-passed .v2-pill{background:var(--tl);}
+.v2-row.vs-paid::before{background:var(--pd);}
+.v2-row.vs-paid .v2-pill{background:var(--pd);}
+.v2-row.vs-completed::before{background:var(--gn);}
+.v2-row.vs-completed .v2-pill{background:var(--gn);}
+.v2-row.vs-failed::before{background:var(--rd);}
+.v2-row.vs-failed .v2-pill{background:var(--rd);}
+.v2-row.vs-longterm{background:#1e0a0a;}
+.v2-row.vs-longterm::before{background:#7f1d1d;}
+.v2-row.vs-longterm .v2-name{color:#fff;}
+.v2-row.vs-longterm .v2-plate{color:#fca5a5;}
+.v2-row.vs-longterm .v2-meta{color:#fca5a5;}
+.v2-row.vs-longterm .v2-pill{background:#7f1d1d;color:#fee;}
+
+/* Bulk select mode */
+.v2-check{width:26px;height:26px;border-radius:8px;border:2.5px solid var(--g300);display:none;flex-shrink:0;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:transparent;background:white;transition:all var(--t);}
+body.bulk-mode .v2-check{display:flex;}
+body.bulk-mode .v2-pill{display:none;}
+body.bulk-mode .v2-row{cursor:pointer;}
+.v2-row.selected{background:var(--pb);}
+.v2-row.selected .v2-check{background:var(--p);border-color:var(--p);color:white;}
+.v2-row.selected .v2-check::before{content:'\2713';}
+
+/* Bulk floating toolbar */
+.bulk-toolbar{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#18181b;color:white;border-radius:18px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,.4);gap:6px;z-index:150;align-items:center;max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:center;}
+body.bulk-mode .bulk-toolbar{display:flex;animation:sheetUp .3s cubic-bezier(.4,0,.2,1);}
+.bulk-toolbar .bt-count{font-size:13px;font-weight:700;padding:0 12px 0 14px;color:#a78bfa;letter-spacing:.2px;}
+.bulk-toolbar button{background:rgba(255,255,255,.1);border:none;color:white;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;min-height:42px;font-family:inherit;transition:all var(--t);}
+.bulk-toolbar button:hover{background:rgba(255,255,255,.2);}
+.bulk-toolbar button.bt-primary{background:var(--p);}
+.bulk-toolbar button.bt-primary:hover{background:var(--pd);}
+.bulk-toolbar button.bt-close{background:rgba(255,255,255,.06);}
+
+/* Action sheet (bottom sheet modal) */
+.sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:210;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.sheet-bg.open{display:flex;animation:fadeIn .2s ease;}
+.sheet{background:white;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:12px 18px 28px;animation:sheetUp .32s cubic-bezier(.4,0,.2,1);max-height:88vh;overflow-y:auto;box-shadow:0 -20px 60px rgba(0,0,0,.3);}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.sheet-handle{width:44px;height:5px;background:var(--g200);border-radius:3px;margin:0 auto 14px;}
+.sheet-title{font-size:17px;font-weight:800;color:var(--g800);text-align:center;letter-spacing:-.3px;}
+.sheet-sub{font-size:12px;color:var(--g400);text-align:center;margin-top:4px;margin-bottom:18px;font-weight:600;}
+.sheet-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;transition:all var(--t);margin-bottom:8px;background:var(--g50);color:var(--g800);text-align:start;font-family:inherit;min-height:64px;}
+.sheet-btn:hover{background:var(--g100);}
+body.rtl .sheet-btn{text-align:right;}
+.sheet-btn .sb-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-weight:bold;}
+.sheet-btn .sb-text{flex:1;min-width:0;}
+.sheet-btn .sb-name{font-size:14px;font-weight:800;line-height:1.2;color:var(--g800);}
+.sheet-btn .sb-desc{font-size:11px;color:var(--g400);font-weight:500;margin-top:3px;}
+.sheet-btn .sb-arrow{color:var(--g300);font-size:18px;}
+.sb-pending .sb-ico{background:var(--blb);color:var(--bld);}
+.sb-passed .sb-ico{background:var(--tlb);color:var(--tld);}
+.sb-paid .sb-ico{background:var(--pb);color:var(--pd);}
+.sb-completed .sb-ico{background:var(--gnb);color:var(--gnd);}
+.sb-failed .sb-ico{background:var(--rdb);color:var(--rdd);}
+.sheet-cancel{display:block;width:100%;background:var(--g100);color:var(--g800);border:none;padding:15px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit;min-height:50px;}
+.sheet-cancel:hover{background:var(--g200);}
+
+/* Dashboard task sections */
+.task-section{background:white;border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:var(--sh);border:1px solid var(--g100);transition:box-shadow var(--t);}
+.task-section:hover{box-shadow:var(--shm);}
+.task-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;}
+.task-section-title{font-size:15px;font-weight:800;color:var(--g800);display:flex;align-items:center;gap:12px;letter-spacing:-.2px;}
+.ts-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.task-section-count{background:var(--g100);color:var(--g600);font-size:12px;font-weight:800;padding:6px 12px;border-radius:12px;min-width:32px;text-align:center;}
+.task-section.ts-week .ts-icon{background:var(--amb);color:var(--amd);}
+.task-section.ts-week .task-section-count{background:var(--amb);color:var(--amd);}
+.task-section.ts-attn .ts-icon{background:var(--rdb);color:var(--rdd);}
+.task-section.ts-attn .task-section-count{background:var(--rdb);color:var(--rdd);}
+.task-section.ts-long .ts-icon{background:#1e0a0a;color:#fca5a5;}
+.task-section.ts-long .task-section-count{background:#1e0a0a;color:#fca5a5;}
+.task-section.ts-ok .ts-icon{background:var(--gnb);color:var(--gnd);}
+.task-section.ts-ok .task-section-count{background:var(--gnb);color:var(--gnd);}
+.task-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--g100);cursor:pointer;transition:all var(--t);}
+.task-item:first-of-type{border-top:none;padding-top:4px;}
+.task-item:hover{background:var(--g50);margin-inline:-18px;padding-inline:18px;border-radius:10px;}
+.task-item .ti-info{flex:1;min-width:0;}
+.task-item .ti-name{font-size:13px;font-weight:700;color:var(--g800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.task-item .ti-meta{font-size:11px;color:var(--g400);margin-top:3px;font-weight:500;}
+.task-item .ti-action{flex-shrink:0;padding:9px 16px;border-radius:20px;background:var(--p);color:white;font-size:11px;font-weight:700;border:none;cursor:pointer;min-height:38px;font-family:inherit;transition:all var(--t);}
+.task-item .ti-action:hover{background:var(--pd);}
+.task-empty{text-align:center;font-size:12px;color:var(--g400);padding:18px 0;font-weight:500;}
+
+/* Monthly progress card */
+.month-progress{background:linear-gradient(135deg,#faf7ff 0%,#f5f0ff 100%);border-radius:18px;padding:22px;box-shadow:var(--sh);border:1px solid var(--pb2);margin-bottom:14px;}
+.mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.mp-title{font-size:14px;font-weight:700;color:var(--g800);letter-spacing:-.2px;}
+.mp-title-sub{font-size:11px;color:var(--g600);margin-top:3px;font-weight:500;}
+.mp-pct{font-size:32px;font-weight:800;color:var(--p);letter-spacing:-1px;line-height:1;}
+.mp-bar{height:12px;background:white;border-radius:10px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.06);}
+.mp-bar-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:10px;transition:width .6s cubic-bezier(.4,0,.2,1);min-width:4px;}
+.mp-numbers{display:flex;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--g600);font-weight:600;}
+.mp-numbers b{color:var(--g800);font-weight:800;}
+
+/* Simplified vehicle detail — big hero status */
+.vd-hero{border-radius:18px;padding:26px 22px;margin-bottom:18px;text-align:center;border:1px solid var(--g100);}
+.vd-hero.st-failed{background:linear-gradient(135deg,#fef2f2,#fee2e2);}
+.vd-hero.st-completed{background:linear-gradient(135deg,#ecfdf5,#d1fae5);}
+.vd-hero.st-passed{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);}
+.vd-hero.st-paid{background:linear-gradient(135deg,#f5f3ff,#ede9fe);}
+.vd-hero.st-pending_inspection{background:linear-gradient(135deg,#eff6ff,#dbeafe);}
+.vd-hero.st-due{background:linear-gradient(135deg,#fffbeb,#fef3c7);}
+.vd-status-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--g600);font-weight:700;}
+.vd-status-name{font-size:24px;font-weight:800;margin:8px 0 6px;letter-spacing:-.5px;}
+.vd-status-name.st-failed{color:var(--rdd);}
+.vd-status-name.st-completed{color:var(--gnd);}
+.vd-status-name.st-passed{color:var(--tld);}
+.vd-status-name.st-paid{color:var(--pd);}
+.vd-status-name.st-pending_inspection{color:var(--bld);}
+.vd-status-name.st-due{color:var(--amd);}
+.vd-status-note{font-size:12px;color:var(--rdd);margin:4px 0 14px;font-weight:600;}
+.vd-change-btn{background:white;color:var(--p);border:2px solid var(--p);padding:14px 26px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;min-height:50px;letter-spacing:.1px;font-family:inherit;box-shadow:0 2px 8px rgba(124,58,237,.12);transition:all var(--t);margin-top:6px;}
+.vd-change-btn:hover{background:var(--p);color:white;box-shadow:0 4px 16px rgba(124,58,237,.3);transform:translateY(-1px);}
+.vd-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.vd-field{background:var(--g50);padding:12px 14px;border-radius:12px;border:1px solid var(--g100);}
+.vd-field-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--g400);font-weight:700;}
+.vd-field-value{font-size:13px;font-weight:700;color:var(--g800);margin-top:4px;line-height:1.3;word-break:break-word;}
+.vd-log{background:var(--g50);border-radius:14px;padding:16px;border:1px solid var(--g100);}
+.vd-log-title{font-size:12px;font-weight:800;color:var(--g600);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;}
+.vd-log-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--g200);}
+.vd-log-item:first-of-type{border-top:none;padding-top:0;}
+.vd-log-year{font-size:14px;font-weight:800;color:var(--g800);min-width:50px;}
+.vd-log-main{flex:1;min-width:0;}
+.vd-log-date{font-size:11px;color:var(--g400);margin-top:3px;}
+.vd-log-reason{font-size:11px;color:var(--rdd);margin-top:4px;font-weight:600;}
+
+/* Mobile tuning for v2 */
+@media(max-width:600px){
+  .v2-row{padding:12px 14px;gap:10px;}
+  .v2-name{font-size:14px;}
+  .v2-pill{padding:10px 12px;min-width:92px;font-size:11px;min-height:46px;}
+  .vd-fields{grid-template-columns:1fr 1fr;gap:8px;}
+  .vd-field{padding:10px 12px;}
+  .vd-field-value{font-size:12px;}
+  .vd-status-name{font-size:20px;}
+  .vd-hero{padding:20px 16px;}
+  .task-section{padding:16px;}
+  .task-item .ti-action{padding:8px 12px;font-size:11px;}
+  .month-progress{padding:18px 16px;}
+  .mp-pct{font-size:26px;}
+  .bulk-toolbar{bottom:12px;padding:8px;border-radius:16px;gap:4px;}
+  .bulk-toolbar button{padding:9px 11px;font-size:11px;min-height:38px;}
+  .bulk-toolbar .bt-count{padding:0 8px;font-size:12px;}
+}
+
 /* ── NOTIFICATION PANEL ── */
 .notif-panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
 .notif-panel.open{display:flex;}
@@ -394,41 +568,24 @@ body.rtl .toast-container{right:auto;left:20px;}
 <div class="nav">
   <button class="nb active" onclick="showPg(1,this)" data-i18n="dashboard">Dashboard</button>
   <button class="nb" onclick="showPg(2,this)" data-i18n="vehicles">Vehicles</button>
-  <button class="nb" onclick="showPg(3,this)" data-i18n="clearanceRecords">Clearance Records</button>
   <button class="nb" onclick="showPg(4,this)" data-i18n="reports">Reports</button>
   <button class="nb admin-only" onclick="showPg(5,this)" data-i18n="settings">Settings</button>
 </div>
 
 <!-- ═══ PAGE 1: DASHBOARD ═══ -->
 <div class="pg active" id="pg-1">
-  <div class="stats-grid" id="dashStats"></div>
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title" data-i18n="upcomingAlerts">Upcoming Alerts</div>
-    </div>
-    <div class="alert-list" id="dashAlerts">
-      <div style="text-align:center;color:var(--g400);padding:20px;font-size:13px" data-i18n="noAlerts">No upcoming alerts</div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title" data-i18n="recentActivity">Recent Activity</div>
-    </div>
-    <div id="dashActivity" style="font-size:13px;color:var(--g600)">
-      <div style="text-align:center;color:var(--g400);padding:20px" data-i18n="noActivity">No recent activity</div>
-    </div>
-  </div>
+  <div id="dashStats"></div>
 </div>
 
 <!-- ═══ PAGE 2: VEHICLES ═══ -->
 <div class="pg" id="pg-2">
   <div class="card-header" style="margin-bottom:16px">
-    <div class="card-title" data-i18n="vehicleManagement">Vehicle Management</div>
+    <div>
+      <div class="card-title" data-i18n="vehicleManagement">Vehicle Management</div>
+      <div style="font-size:12px;color:var(--g400);margin-top:3px;font-weight:600" id="vCount"></div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <div class="view-toggle">
-        <button id="viewListBtn" class="active" onclick="setVehicleView('list')" data-i18n="listView">List</button>
-        <button id="viewCardsBtn" onclick="setVehicleView('cards')" data-i18n="cardView">Cards</button>
-      </div>
+      <button class="btn btn-s btn-sm viewer-hide" onclick="toggleBulkMode()" id="bulkToggleBtn" data-i18n="select">Select</button>
       <button class="btn btn-s btn-sm viewer-hide" onclick="openSupervisorExport()" data-i18n="exportList">Export PDF</button>
       <button class="btn btn-p btn-sm viewer-hide" onclick="openVehicleModal()" data-i18n="addVehicle">+ Add Vehicle</button>
     </div>
@@ -442,12 +599,12 @@ body.rtl .toast-container{right:auto;left:20px;}
     <button class="fbtn" onclick="filterVehicles('failed',this)" data-i18n="status_failed">Failed</button>
     <button class="fbtn" onclick="filterVehicles('paid',this)" data-i18n="status_paid">Paid</button>
     <button class="fbtn" onclick="filterVehicles('completed',this)" data-i18n="status_completed">Completed</button>
-    <select id="vTypeFilter" onchange="renderVehicles()" style="padding:8px 14px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;">
+    <select id="vTypeFilter" onchange="renderVehicles()" style="padding:10px 14px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;min-height:40px;">
       <option value="all" data-i18n="allTypes">All Types</option>
       <option value="small" data-i18n="small">Small</option>
       <option value="large" data-i18n="large">Large</option>
     </select>
-    <select id="vSupervisorFilter" onchange="renderVehicles()" style="padding:8px 14px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;">
+    <select id="vSupervisorFilter" onchange="renderVehicles()" style="padding:10px 14px;border:1.5px solid var(--g200);border-radius:24px;font-size:12px;font-weight:600;min-height:40px;">
       <option value="all" data-i18n="allSupervisors">All Supervisors</option>
     </select>
   </div>
@@ -657,6 +814,66 @@ body.rtl .toast-container{right:auto;left:20px;}
   </div>
 </div>
 
+<!-- Status Action Sheet (bottom sheet) -->
+<div class="sheet-bg" id="statusSheet" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">Vehicle</div>
+    <div class="sheet-sub" id="sheetSub">Plate</div>
+    <button class="sheet-btn sb-pending" onclick="sheetSelectStatus('pending_inspection')">
+      <div class="sb-ico">&#x1F552;</div>
+      <div class="sb-text">
+        <div class="sb-name" data-i18n="status_pending">Pending Inspection</div>
+        <div class="sb-desc" data-i18n="sb_pending_desc">Waiting to be inspected</div>
+      </div>
+      <div class="sb-arrow">&rsaquo;</div>
+    </button>
+    <button class="sheet-btn sb-passed" onclick="sheetSelectStatus('passed')">
+      <div class="sb-ico">&#x2713;</div>
+      <div class="sb-text">
+        <div class="sb-name" data-i18n="status_passed">Passed</div>
+        <div class="sb-desc" data-i18n="sb_passed_desc">Passed the inspection</div>
+      </div>
+      <div class="sb-arrow">&rsaquo;</div>
+    </button>
+    <button class="sheet-btn sb-paid" onclick="sheetSelectStatus('paid')">
+      <div class="sb-ico">&#x1F4B3;</div>
+      <div class="sb-text">
+        <div class="sb-name" data-i18n="status_paid">Paid</div>
+        <div class="sb-desc" data-i18n="sb_paid_desc">Fees paid, awaiting completion</div>
+      </div>
+      <div class="sb-arrow">&rsaquo;</div>
+    </button>
+    <button class="sheet-btn sb-completed" onclick="sheetSelectStatus('completed')">
+      <div class="sb-ico">&#x2605;</div>
+      <div class="sb-text">
+        <div class="sb-name" data-i18n="status_completed">Completed</div>
+        <div class="sb-desc" data-i18n="sb_completed_desc">Cleared for the full year</div>
+      </div>
+      <div class="sb-arrow">&rsaquo;</div>
+    </button>
+    <button class="sheet-btn sb-failed" onclick="sheetSelectStatus('failed')">
+      <div class="sb-ico">&#x2717;</div>
+      <div class="sb-text">
+        <div class="sb-name" data-i18n="status_failed">Failed</div>
+        <div class="sb-desc" data-i18n="sb_failed_desc">Broken, needs repair or follow-up</div>
+      </div>
+      <div class="sb-arrow">&rsaquo;</div>
+    </button>
+    <button class="sheet-cancel" onclick="closeSheet()" data-i18n="cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Bulk action toolbar (fixed bottom) -->
+<div class="bulk-toolbar" id="bulkToolbar">
+  <span class="bt-count" id="bulkCount">0</span>
+  <button class="bt-primary" onclick="bulkAction('completed')" data-i18n="bulkCompleted">Complete</button>
+  <button onclick="bulkAction('paid')" data-i18n="bulkPaid">Paid</button>
+  <button onclick="bulkAction('pending_inspection')" data-i18n="bulkPending">Pending</button>
+  <button onclick="selectAllVisible()" data-i18n="selectAll">All</button>
+  <button class="bt-close" onclick="exitBulkMode()" data-i18n="bulkExit">&#x2715;</button>
+</div>
+
 <!-- Notification Panel -->
 <div class="notif-panel" id="notifPanel">
   <div class="notif-box">
@@ -803,7 +1020,32 @@ var LANG = {
     quickActions:'Quick Actions',
     markCompleted:'Mark Completed',
     markPaid:'Mark as Paid',
-    changeStatus:'Change status'
+    changeStatus:'Change Status',
+    currentStatus:'Current Status',
+    monthlyProgress:'Monthly Progress',
+    done:'done',
+    remaining:'remaining',
+    thisMonthDue:'Due This Month',
+    needsAttention:'Needs Attention',
+    longTermBroken:'Long-term Broken',
+    allClear:'All Clear',
+    allClearDesc:'No vehicles need attention right now.',
+    more:'more',
+    select:'Select',
+    selected:'selected',
+    selectAll:'All',
+    bulkExit:'Cancel',
+    bulkConfirm:'Update status for {n} vehicles?',
+    bulkNoSelection:'No vehicles selected',
+    bulkCompleted:'Completed',
+    bulkPaid:'Paid',
+    bulkPending:'Pending',
+    sb_pending_desc:'Waiting to be inspected',
+    sb_passed_desc:'Passed the inspection',
+    sb_paid_desc:'Fees paid, awaiting completion',
+    sb_completed_desc:'Cleared for the full year',
+    sb_failed_desc:'Broken, needs repair or follow-up',
+    status:'Status'
   },
   ar: {
     appTitle:'\u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
@@ -932,7 +1174,32 @@ var LANG = {
     quickActions:'\u0625\u062C\u0631\u0627\u0621\u0627\u062A \u0633\u0631\u064A\u0639\u0629',
     markCompleted:'\u062A\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
     markPaid:'\u062A\u0633\u062C\u064A\u0644 \u062F\u0641\u0639',
-    changeStatus:'\u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u0629'
+    changeStatus:'\u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u062D\u0627\u0644\u0629',
+    currentStatus:'\u0627\u0644\u062D\u0627\u0644\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629',
+    monthlyProgress:'\u062A\u0642\u062F\u0645 \u0627\u0644\u0634\u0647\u0631',
+    done:'\u0645\u0646\u062C\u0632',
+    remaining:'\u0645\u062A\u0628\u0642\u064A',
+    thisMonthDue:'\u0627\u0644\u0645\u0633\u062A\u062D\u0642 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631',
+    needsAttention:'\u064A\u062D\u062A\u0627\u062C \u0627\u0646\u062A\u0628\u0627\u0647',
+    longTermBroken:'\u0645\u0639\u0637\u0644\u0629 \u0645\u0646\u0630 \u0645\u062F\u0629',
+    allClear:'\u0643\u0644 \u0634\u064A \u062A\u0645\u0627\u0645',
+    allClearDesc:'\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0631\u0643\u0628\u0627\u062A \u062A\u062D\u062A\u0627\u062C \u0627\u0646\u062A\u0628\u0627\u0647 \u0627\u0644\u0622\u0646.',
+    more:'\u0623\u062E\u0631\u0649',
+    select:'\u062A\u062D\u062F\u064A\u062F',
+    selected:'\u0645\u062D\u062F\u062F',
+    selectAll:'\u0627\u0644\u0643\u0644',
+    bulkExit:'\u0625\u0644\u063A\u0627\u0621',
+    bulkConfirm:'\u062A\u062D\u062F\u064A\u062B \u062D\u0627\u0644\u0629 {n} \u0645\u0631\u0643\u0628\u0629\u061F',
+    bulkNoSelection:'\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0631\u0643\u0628\u0627\u062A \u0645\u062D\u062F\u062F\u0629',
+    bulkCompleted:'\u0645\u0643\u062A\u0645\u0644',
+    bulkPaid:'\u0645\u062F\u0641\u0648\u0639',
+    bulkPending:'\u0628\u0627\u0646\u062A\u0638\u0627\u0631',
+    sb_pending_desc:'\u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0641\u062D\u0635',
+    sb_passed_desc:'\u0646\u062C\u062D \u0641\u064A \u0627\u0644\u0641\u062D\u0635',
+    sb_paid_desc:'\u062A\u0645 \u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0648\u0645\u060C \u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0625\u0643\u0645\u0627\u0644',
+    sb_completed_desc:'\u0645\u062E\u0644\u0651\u0635\u0629 \u0644\u0644\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629',
+    sb_failed_desc:'\u0645\u0639\u0637\u0644\u0629\u060C \u062A\u062D\u062A\u0627\u062C \u0625\u0635\u0644\u0627\u062D \u0623\u0648 \u0645\u062A\u0627\u0628\u0639\u0629',
+    status:'\u0627\u0644\u062D\u0627\u0644\u0629'
   }
 };
 
@@ -997,8 +1264,10 @@ var notifications = [];
 var vStatusFilter = 'all';
 var crStatusFilter = 'all';
 var activePgNum = 1;
-var vehicleView = localStorage.getItem('clr_view') || 'list';
 var lastFilteredVehicles = [];
+var bulkMode = false;
+var selectedIds = {};
+var _sheetVehicleId = null;
 
 /* ═══════════════════════════════════════════
    SUPABASE CONFIG
@@ -1346,17 +1615,10 @@ function showPg(n,btn){
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});
   document.getElementById('pg-'+n).classList.add('active');
+  // Leaving vehicles page exits bulk mode automatically
+  if(n!==2&&bulkMode) exitBulkMode();
   if(n===1) renderDashboard();
-  else if(n===2){
-    // Sync view toggle with saved state
-    var cb=document.getElementById('viewCardsBtn');
-    var lb=document.getElementById('viewListBtn');
-    if(cb&&lb){
-      cb.classList.toggle('active',vehicleView==='cards');
-      lb.classList.toggle('active',vehicleView==='list');
-    }
-    renderVehicles();
-  }
+  else if(n===2) renderVehicles();
   else if(n===3) renderRecords();
   else if(n===4) renderReports();
   else if(n===5) renderSettings();
@@ -1366,135 +1628,135 @@ function showPg(n,btn){
    DASHBOARD
 ═══════════════════════════════════════════ */
 function renderDashboard(){
-  var counts={due:0,pending_inspection:0,passed:0,failed:0,paid:0,completed:0};
-  records.forEach(function(r){
-    if(counts.hasOwnProperty(r.status)) counts[r.status]++;
-  });
-  // Also count vehicles that are "due" but have no active record
-  checkDueVehiclesCount(counts);
-
-  var html='';
-  var statuses=[
-    {key:'due',cls:'stat-due',label:'status_due'},
-    {key:'pending_inspection',cls:'stat-pending',label:'status_pending'},
-    {key:'passed',cls:'stat-passed',label:'status_passed'},
-    {key:'failed',cls:'stat-failed',label:'status_failed'},
-    {key:'paid',cls:'stat-paid',label:'status_paid'},
-    {key:'completed',cls:'stat-completed',label:'status_completed'}
-  ];
-  statuses.forEach(function(s){
-    html+='<div class="stat-card '+s.cls+'" onclick="goToFilteredRecords(\''+s.key+'\')">';
-    html+='<div class="stat-num">'+counts[s.key]+'</div>';
-    html+='<div class="stat-label">'+t(s.label)+'</div>';
-    html+='</div>';
-  });
-  document.getElementById('dashStats').innerHTML=html;
-
-  // Alerts
-  renderDashAlerts();
-  renderDashActivity();
-}
-
-function checkDueVehiclesCount(counts){
   var now=new Date();
-  var curMonth=now.getMonth()+1;
   var curYear=now.getFullYear();
+  var curMonth=now.getMonth()+1;
   var nextMonth=curMonth===12?1:curMonth+1;
-  vehicles.forEach(function(v){
+
+  // Officer scoping: only show vehicles assigned to this supervisor
+  var scopedVehicles=vehicles;
+  if(currentProfile&&currentProfile.role==='officer'){
+    scopedVehicles=vehicles.filter(function(v){
+      return !v.assignedTo||v.assignedTo===currentProfile.full_name;
+    });
+  }
+
+  // Task buckets
+  var thisMonth=[];   // due this month or next, not yet completed
+  var needsAttn=[];   // failed or pending_inspection (short-term)
+  var longTerm=[];    // long-term broken
+
+  scopedVehicles.forEach(function(v){
+    var status=getVehicleStatus(v);
     var regM=parseInt(v.registrationMonth);
-    if(regM===curMonth||regM===nextMonth){
-      var hasActive=records.some(function(r){
-        return r.vehicleId===v.id && r.year===curYear && r.status!=='completed';
-      });
-      if(!hasActive){
-        var hasCompleted=records.some(function(r){
-          return r.vehicleId===v.id && r.year===curYear && r.status==='completed';
-        });
-        if(!hasCompleted) counts.due++;
-      }
+
+    if(isLongTermBroken(v)){
+      longTerm.push({v:v,status:status});
+      return;
+    }
+    if(status==='failed'||status==='pending_inspection'){
+      needsAttn.push({v:v,status:status});
+      return;
+    }
+    if((regM===curMonth||regM===nextMonth)&&status==='due'){
+      thisMonth.push({v:v,status:status,current:regM===curMonth});
+      return;
     }
   });
+
+  // Sort by supervisor then plate
+  var bySup=function(a,b){
+    var s=(a.v.assignedTo||'').localeCompare(b.v.assignedTo||'');
+    if(s!==0) return s;
+    return (a.v.plateNumber||'').localeCompare(b.v.plateNumber||'');
+  };
+  thisMonth.sort(bySup);
+  needsAttn.sort(bySup);
+  longTerm.sort(bySup);
+
+  // Monthly progress — completion rate for vehicles due THIS month
+  var monthVehicles=scopedVehicles.filter(function(v){
+    return parseInt(v.registrationMonth)===curMonth;
+  });
+  var monthDone=0;
+  monthVehicles.forEach(function(v){
+    var s=getVehicleStatus(v);
+    if(s==='completed'||s==='paid') monthDone++;
+  });
+  var monthPct=monthVehicles.length?Math.round((monthDone/monthVehicles.length)*100):0;
+
+  var html='';
+
+  // Monthly progress card
+  html+='<div class="month-progress">';
+  html+='<div class="mp-head">';
+  html+='<div><div class="mp-title">'+t('monthlyProgress')+'</div>';
+  html+='<div class="mp-title-sub">'+monthName(curMonth)+' '+curYear+'</div></div>';
+  html+='<div class="mp-pct">'+monthPct+'%</div>';
+  html+='</div>';
+  html+='<div class="mp-bar"><div class="mp-bar-fill" style="width:'+monthPct+'%"></div></div>';
+  html+='<div class="mp-numbers"><span>&#x2713; <b>'+monthDone+'</b> '+t('done')+'</span><span><b>'+(monthVehicles.length-monthDone)+'</b> '+t('remaining')+'</span></div>';
+  html+='</div>';
+
+  // This month due
+  html+=renderTaskSection('ts-week','\u2600',t('thisMonthDue'),thisMonth);
+  // Needs attention (failed / pending)
+  html+=renderTaskSection('ts-attn','\u26A0',t('needsAttention'),needsAttn);
+  // Long-term broken
+  html+=renderTaskSection('ts-long','\u26E0',t('longTermBroken'),longTerm);
+
+  // If everything is empty, show an all-clear message
+  if(!thisMonth.length&&!needsAttn.length&&!longTerm.length){
+    html+='<div class="task-section ts-ok" style="text-align:center;padding:32px 20px">';
+    html+='<div class="ts-icon" style="margin:0 auto 12px">\u2713</div>';
+    html+='<div style="font-size:16px;font-weight:800;color:var(--g800);margin-bottom:4px">'+t('allClear')+'</div>';
+    html+='<div style="font-size:12px;color:var(--g400)">'+t('allClearDesc')+'</div>';
+    html+='</div>';
+  }
+
+  document.getElementById('dashStats').innerHTML=html;
+}
+
+function renderTaskSection(cls,icon,title,items){
+  var html='<div class="task-section '+cls+'">';
+  html+='<div class="task-section-head">';
+  html+='<div class="task-section-title"><div class="ts-icon">'+icon+'</div>'+esc(title)+'</div>';
+  html+='<div class="task-section-count">'+items.length+'</div>';
+  html+='</div>';
+  if(!items.length){
+    html+='<div class="task-empty">'+t('allClear')+'</div>';
+  } else {
+    var show=items.slice(0,8);
+    show.forEach(function(it){
+      var v=it.v;
+      var meta=(v.assignedTo||'-')+' \u00B7 '+monthName(v.registrationMonth);
+      html+='<div class="task-item" onclick="viewVehicle(\''+v.id+'\')">';
+      html+='<div class="ti-info">';
+      html+='<div class="ti-name">'+esc(v.name)+' \u00B7 '+esc(v.plateNumber||'-')+'</div>';
+      html+='<div class="ti-meta">'+esc(meta)+'</div>';
+      html+='</div>';
+      html+='<button class="ti-action viewer-hide" onclick="event.stopPropagation();openStatusSheet(\''+v.id+'\')">'+t('changeStatus')+'</button>';
+      html+='</div>';
+    });
+    if(items.length>8){
+      html+='<div style="text-align:center;font-size:11px;color:var(--g400);margin-top:10px;font-weight:600">+'+(items.length-8)+' '+t('more')+'</div>';
+    }
+  }
+  html+='</div>';
+  return html;
 }
 
 function goToFilteredRecords(status){
   crStatusFilter=status;
-  var btns=document.querySelectorAll('#pg-3 .fbtn');
-  btns.forEach(function(b){b.classList.remove('active');});
-  showPg(3,document.querySelectorAll('.nb')[2]);
-}
-
-function renderDashAlerts(){
-  var now=new Date();
-  var curMonth=now.getMonth()+1;
-  var nextMonth=curMonth===12?1:curMonth+1;
-  var alerts=[];
-  vehicles.forEach(function(v){
-    var regM=parseInt(v.registrationMonth);
-    var curYear=now.getFullYear();
-    if(regM===curMonth||regM===nextMonth){
-      var hasActive=records.some(function(r){
-        return r.vehicleId===v.id && r.year===curYear && r.status!=='completed';
-      });
-      var hasCompleted=records.some(function(r){
-        return r.vehicleId===v.id && r.year===curYear && r.status==='completed';
-      });
-      if(!hasActive&&!hasCompleted){
-        alerts.push({vehicle:v,isCurrent:regM===curMonth});
-      }
-    }
+  vStatusFilter=status;
+  // Jump to Vehicles page with filter applied
+  var nbs=document.querySelectorAll('.nb');
+  if(nbs.length>=2) showPg(2,nbs[1]);
+  // Activate matching filter button
+  var buttons=document.querySelectorAll('#pg-2 .fbtn');
+  buttons.forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('onclick').indexOf("'"+status+"'")>-1);
   });
-  // Also show failed vehicles
-  records.forEach(function(r){
-    if(r.status==='failed'){
-      var v=vehicles.find(function(x){return x.id===r.vehicleId;});
-      if(v) alerts.push({vehicle:v,isFailed:true,record:r});
-    }
-  });
-
-  var el=document.getElementById('dashAlerts');
-  if(!alerts.length){
-    el.innerHTML='<div style="text-align:center;color:var(--g400);padding:20px;font-size:13px">'+t('noAlerts')+'</div>';
-    return;
-  }
-  var html='';
-  alerts.forEach(function(a){
-    if(a.isFailed){
-      html+='<div class="alert-item" style="background:var(--rdb);border-color:var(--rd)">';
-      html+='<div class="alert-icon">\u26A0\uFE0F</div>';
-      html+='<div class="alert-text"><span class="alert-plate">'+esc(a.vehicle.plateNumber)+'</span> - '+esc(a.vehicle.name)+' <br><small style="color:var(--rd)">'+t('status_failed')+': '+esc(a.record.failureReason)+'</small></div>';
-      html+='</div>';
-    } else {
-      html+='<div class="alert-item">';
-      html+='<div class="alert-icon">\uD83D\uDD14</div>';
-      html+='<div class="alert-text"><span class="alert-plate">'+esc(a.vehicle.plateNumber)+'</span> - '+esc(a.vehicle.name)+' <br><small>'+(a.isCurrent?t('dueAlert'):t('dueAlertNext'))+'</small></div>';
-      html+='<button class="btn btn-am btn-sm viewer-hide" onclick="quickStartClearance(\''+a.vehicle.id+'\')">'+t('startInspection')+'</button>';
-      html+='</div>';
-    }
-  });
-  el.innerHTML=html;
-}
-
-function renderDashActivity(){
-  // Show last 10 records sorted by updatedAt
-  var sorted=records.slice().sort(function(a,b){return(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'');});
-  var recent=sorted.slice(0,10);
-  var el=document.getElementById('dashActivity');
-  if(!recent.length){
-    el.innerHTML='<div style="text-align:center;color:var(--g400);padding:20px">'+t('noActivity')+'</div>';
-    return;
-  }
-  var html='<div style="display:flex;flex-direction:column;gap:8px">';
-  recent.forEach(function(r){
-    var v=vehicles.find(function(x){return x.id===r.vehicleId;});
-    var vName=v?v.name+' ('+v.plateNumber+')':'Unknown';
-    html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--g50);border-radius:var(--rxs)">';
-    html+=statusBadge(r.status);
-    html+='<span style="flex:1">'+esc(vName)+'</span>';
-    html+='<span style="font-size:11px;color:var(--g400)">'+fmtD(r.updatedAt||r.createdAt)+'</span>';
-    html+='</div>';
-  });
-  html+='</div>';
-  el.innerHTML=html;
 }
 
 /* ═══════════════════════════════════════════
@@ -1576,6 +1838,164 @@ async function ackNotif(id){
 }
 
 /* ═══════════════════════════════════════════
+   STATUS ACTION SHEET & BULK MODE
+═══════════════════════════════════════════ */
+
+/* Find or create this year's record for a vehicle */
+function getOrCreateCurrentRecord(vehicleId){
+  var curYear=new Date().getFullYear();
+  var rec=records.find(function(r){return r.vehicleId===vehicleId&&r.year===curYear;});
+  if(rec) return rec;
+  var now=new Date().toISOString();
+  rec={
+    id:'rec_'+vehicleId+'_'+curYear,
+    vehicleId:vehicleId,year:curYear,
+    status:'pending_inspection',inspectionDate:now.slice(0,10),
+    inspectionResult:'pending',failureReason:'',failureHistory:[],
+    inspectionFee:{amount:0,paid:false,paidDate:''},
+    registrationFee:{amount:0,paid:false,paidDate:''},
+    insuranceFee:{amount:0,paid:false,paidDate:''},
+    totalCost:0,registrationCompletedDate:'',insuranceCompletedDate:'',completedDate:'',
+    createdBy:currentProfile?currentProfile.full_name:'',createdAt:now,updatedAt:now
+  };
+  records.push(rec);
+  return rec;
+}
+
+/* Apply a new status to a record (mutates it). Does NOT sync. */
+function applyStatusToRecord(r,newStatus,reason){
+  var now=new Date().toISOString();
+  r.status=newStatus;
+  r.updatedAt=now;
+  if(newStatus==='passed'){
+    r.inspectionResult='passed';r.failureReason='';
+  } else if(newStatus==='pending_inspection'){
+    r.inspectionResult='pending';r.failureReason='';
+  } else if(newStatus==='paid'){
+    r.inspectionResult='passed';r.failureReason='';
+    if(!r.inspectionFee) r.inspectionFee={amount:0,paid:true,paidDate:now};
+    else {r.inspectionFee.paid=true;r.inspectionFee.paidDate=now;}
+    if(!r.registrationFee) r.registrationFee={amount:0,paid:true,paidDate:now};
+    else {r.registrationFee.paid=true;r.registrationFee.paidDate=now;}
+    if(!r.insuranceFee) r.insuranceFee={amount:0,paid:true,paidDate:now};
+    else {r.insuranceFee.paid=true;r.insuranceFee.paidDate=now;}
+  } else if(newStatus==='completed'){
+    r.inspectionResult='passed';r.failureReason='';
+    r.completedDate=now;
+    r.registrationCompletedDate=now;
+    r.insuranceCompletedDate=now;
+    if(r.inspectionFee) r.inspectionFee.paid=true;
+    if(r.registrationFee) r.registrationFee.paid=true;
+    if(r.insuranceFee) r.insuranceFee.paid=true;
+  } else if(newStatus==='failed'){
+    if(!r.failureHistory) r.failureHistory=[];
+    if(r.failureReason&&r.status==='failed'){
+      r.failureHistory.push({date:r.updatedAt||now,reason:r.failureReason,resolvedDate:''});
+    }
+    r.inspectionResult='failed';
+    r.failureReason=reason||r.failureReason||'-';
+  }
+}
+
+/* Open the bottom-sheet action modal for a vehicle */
+function openStatusSheet(vehicleId){
+  if(currentProfile&&currentProfile.role==='viewer') return;
+  _sheetVehicleId=vehicleId;
+  var v=vehicles.find(function(x){return x.id===vehicleId;});
+  if(!v) return;
+  document.getElementById('sheetTitle').textContent=v.name;
+  document.getElementById('sheetSub').textContent=(v.plateNumber||'-')+(v.assignedTo?' \u00B7 '+v.assignedTo:'');
+  document.getElementById('statusSheet').classList.add('open');
+}
+
+function closeSheet(){
+  document.getElementById('statusSheet').classList.remove('open');
+  _sheetVehicleId=null;
+}
+
+/* User picks a status in the action sheet */
+function sheetSelectStatus(newStatus){
+  var vid=_sheetVehicleId;
+  if(!vid) return;
+  closeSheet();
+  var rec=getOrCreateCurrentRecord(vid);
+  if(newStatus==='failed'){
+    // Route to reason modal; re-use existing quick fail flow
+    openQuickFailModal(rec.id,vid);
+    return;
+  }
+  applyStatusToRecord(rec,newStatus);
+  syncRecords();
+  showToast(t('statusUpdated'));
+  renderVehicles();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ── Bulk select mode ── */
+function toggleBulkMode(){
+  if(bulkMode) exitBulkMode();
+  else enterBulkMode();
+}
+
+function enterBulkMode(){
+  bulkMode=true;
+  selectedIds={};
+  document.body.classList.add('bulk-mode');
+  var btn=document.getElementById('bulkToggleBtn');
+  if(btn) btn.textContent=t('bulkExit');
+  renderVehicles();
+}
+
+function exitBulkMode(){
+  bulkMode=false;
+  selectedIds={};
+  document.body.classList.remove('bulk-mode');
+  var btn=document.getElementById('bulkToggleBtn');
+  if(btn) btn.textContent=t('select');
+  renderVehicles();
+}
+
+function handleRowClick(e,id){
+  if(bulkMode){
+    if(selectedIds[id]) delete selectedIds[id];
+    else selectedIds[id]=true;
+    renderVehicles();
+    return;
+  }
+  viewVehicle(id);
+}
+
+function selectAllVisible(){
+  lastFilteredVehicles.forEach(function(v){selectedIds[v.id]=true;});
+  renderVehicles();
+}
+
+function updateBulkCount(){
+  var el=document.getElementById('bulkCount');
+  if(!el) return;
+  var n=Object.keys(selectedIds).length;
+  el.textContent=n+' '+t('selected');
+}
+
+function bulkAction(newStatus){
+  var ids=Object.keys(selectedIds);
+  if(!ids.length){
+    showToast(t('bulkNoSelection'),'warning');
+    return;
+  }
+  var confirmMsg=t('bulkConfirm').replace('{n}',ids.length);
+  if(!confirm(confirmMsg)) return;
+  ids.forEach(function(vid){
+    var rec=getOrCreateCurrentRecord(vid);
+    applyStatusToRecord(rec,newStatus);
+  });
+  syncRecords();
+  showToast(t('statusUpdated'));
+  exitBulkMode();
+  if(activePgNum===1) renderDashboard();
+}
+
+/* ═══════════════════════════════════════════
    VEHICLES
 ═══════════════════════════════════════════ */
 function buildSupervisorDropdown(){
@@ -1604,14 +2024,6 @@ function filterVehicles(status,btn){
   vStatusFilter=status;
   document.querySelectorAll('#pg-2 .fbtn').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
-  renderVehicles();
-}
-
-function setVehicleView(mode){
-  vehicleView=mode;
-  localStorage.setItem('clr_view',mode);
-  document.getElementById('viewCardsBtn').classList.toggle('active',mode==='cards');
-  document.getElementById('viewListBtn').classList.toggle('active',mode==='list');
   renderVehicles();
 }
 
@@ -1651,61 +2063,42 @@ function renderVehicles(){
   });
   lastFilteredVehicles=filtered;
 
+  // Update count indicator
+  var countEl=document.getElementById('vCount');
+  if(countEl) countEl.textContent=filtered.length+' '+t('vehicles').toLowerCase();
+
   if(!filtered.length){
     wrap.innerHTML='<div style="text-align:center;color:var(--g400);padding:40px;font-size:14px">'+t('noVehicles')+'</div>';
+    updateBulkCount();
     return;
   }
 
-  var html='';
-  if(vehicleView==='list'){
-    html+='<div class="v-list">';
-    html+='<div class="v-list-head">';
-    html+='<div>'+t('vehicleName')+'</div>';
-    html+='<div>'+t('plateNumber')+'</div>';
-    html+='<div>'+t('supervisor')+'</div>';
-    html+='<div>'+t('registrationMonth')+'</div>';
-    html+='<div>'+t('status')+'</div>';
-    html+='<div></div>';
+  var html='<div class="v2-list">';
+  filtered.forEach(function(v){
+    var status=getVehicleStatus(v);
+    var cls='v2-row vs-'+status;
+    if(isLongTermBroken(v)) cls='v2-row vs-longterm';
+    if(selectedIds[v.id]) cls+=' selected';
+    var statusKey='status_'+status.replace('pending_inspection','pending');
+    var metaParts=[];
+    if(v.assignedTo) metaParts.push('<span>&#x1F464; '+esc(v.assignedTo)+'</span>');
+    metaParts.push('<span>&#x1F4C5; '+monthName(v.registrationMonth)+'</span>');
+    if(v.driverName) metaParts.push('<span>&#x1F527; '+esc(v.driverName)+'</span>');
+    html+='<div class="'+cls+'" data-id="'+v.id+'" onclick="handleRowClick(event,\''+v.id+'\')">';
+    html+='<div class="v2-check"></div>';
+    html+='<div class="v2-info">';
+    html+='<div class="v2-name">'+esc(v.name)+'</div>';
+    html+='<div class="v2-plate">'+esc(v.plateNumber||'-')+'</div>';
+    html+='<div class="v2-meta">'+metaParts.join('')+'</div>';
     html+='</div>';
-    filtered.forEach(function(v){
-      var status=getVehicleStatus(v);
-      var cls='v-list-row vs-'+status;
-      if(isLongTermBroken(v)) cls='v-list-row vs-longterm';
-      var meta='<span>'+esc(v.assignedTo||'-')+'</span><span>'+monthName(v.registrationMonth)+'</span>';
-      html+='<div class="'+cls+'" onclick="viewVehicle(\''+v.id+'\')">';
-      html+='<div class="v-list-cell primary">'+esc(v.name)+'</div>';
-      html+='<div class="v-list-cell c-plate">'+esc(v.plateNumber||'-')+'</div>';
-      html+='<div class="v-list-cell c-sup">'+esc(v.assignedTo||'-')+'</div>';
-      html+='<div class="v-list-cell c-month">'+monthName(v.registrationMonth)+'</div>';
-      html+='<div class="v-list-cell c-status">'+statusBadge(status)+'</div>';
-      html+='<div class="v-list-cell c-meta">'+meta+'</div>';
-      html+='<div class="v-list-chevron">\u203A</div>';
-      html+='</div>';
-    });
+    html+='<button class="v2-pill" onclick="event.stopPropagation();openStatusSheet(\''+v.id+'\')">'+t(statusKey)+'</button>';
     html+='</div>';
-  } else {
-    html+='<div class="v-grid">';
-    filtered.forEach(function(v){
-      var status=getVehicleStatus(v);
-      var cls='v-card vs-'+status;
-      if(isLongTermBroken(v)) cls='v-card vs-longterm';
-      html+='<div class="'+cls+'" onclick="viewVehicle(\''+v.id+'\')">';
-      html+='<div class="v-card-head">';
-      html+='<div><div class="v-card-name">'+esc(v.name)+'</div><div class="v-card-plate">'+esc(v.plateNumber)+'</div></div>';
-      html+=statusBadge(status);
-      html+='</div>';
-      html+='<div class="v-card-info">';
-      html+='<span>'+t('vehicleType')+': '+t(v.type)+'</span>';
-      html+='<span>'+t('registrationMonth')+': '+monthName(v.registrationMonth)+'</span>';
-      html+='<span>'+t('supervisor')+': '+esc(v.assignedTo||'-')+'</span>';
-      html+='<span>'+t('driverName')+': '+esc(v.driverName||'-')+'</span>';
-      html+='</div>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
+  });
+  html+='</div>';
   wrap.innerHTML=html;
+  updateBulkCount();
 }
+
 
 function getVehicleStatus(v){
   var curYear=new Date().getFullYear();
@@ -2043,27 +2436,11 @@ function viewVehicle(id){
   var v=vehicles.find(function(x){return x.id===id;});
   if(!v) return;
   var title=document.getElementById('vDetailTitle');
-  title.textContent=v.name+' - '+v.plateNumber;
+  title.textContent=v.name+' \u00B7 '+(v.plateNumber||'-');
 
-  var html='<div class="form-grid" style="font-size:13px;gap:10px">';
-  var fields=[
-    ['vehicleName',v.name],['plateNumber',v.plateNumber],['doorNumber',v.doorNumber],
-    ['vehicleType',t(v.type)],['registrationMonth',monthName(v.registrationMonth)],['location',v.location],
-    ['chassisNumber',v.chassisNumber],['yearOfManufacture',v.yearOfManufacture],['color',v.color],
-    ['driverName',v.driverName],['supervisor',v.assignedTo],['insurancePolicyNo',v.insurancePolicyNumber],['insuranceExpiry',fmtD(v.insuranceExpiryDate)]
-  ];
-  fields.forEach(function(f){
-    html+='<div><span style="font-size:10px;text-transform:uppercase;color:var(--g400);letter-spacing:.3px">'+t(f[0])+'</span><div style="margin-top:2px;font-weight:bold">'+esc(f[1]||'-')+'</div></div>';
-  });
-  if(v.notes){
-    html+='<div class="fg-full"><span style="font-size:10px;text-transform:uppercase;color:var(--g400)">'+t('notes')+'</span><div style="margin-top:2px">'+esc(v.notes)+'</div></div>';
-  }
-  html+='</div>';
-
-  // Clearance history — aggressive render-time dedup using object
-  // identity (not id matching) because the buggy old import created
-  // records that share the same id. Keep only the highest-priority
-  // record per year; everything else is pruned and the DB is synced.
+  // Clearance history — render-time dedup using object identity to
+  // protect against legacy duplicate-id records. Keep only the highest
+  // priority record per year; persist cleanup if we pruned anything.
   var vAll=records.filter(function(r){return r.vehicleId===id;});
   var bestByYear={};
   vAll.forEach(function(r){
@@ -2074,12 +2451,9 @@ function viewVehicle(id){
     var pOld=cur?(STATUS_PRIORITY[cur.status]||0):-1;
     if(!cur||pNew>pOld) bestByYear[yr]=r;
   });
-  // Build the keep-list by object identity
   var keepObjs=[];
   Object.keys(bestByYear).forEach(function(y){keepObjs.push(bestByYear[y]);});
   var removedCount=0;
-  // Filter out every record for this vehicle that isn't in the keep set
-  // (identity comparison), leaving records for other vehicles untouched.
   var newRecords=[];
   records.forEach(function(r){
     if(r.vehicleId!==id){ newRecords.push(r); return; }
@@ -2087,7 +2461,6 @@ function viewVehicle(id){
     removedCount++;
   });
   if(removedCount>0){
-    // Regenerate canonical ids on the survivors to prevent future collisions
     Object.keys(bestByYear).forEach(function(y){
       var b=bestByYear[y];
       b.id='rec_'+id+'_'+y;
@@ -2097,89 +2470,77 @@ function viewVehicle(id){
     records=newRecords;
     syncRecords();
   }
+
+  var curYear=new Date().getFullYear();
+  var currentStatus=getVehicleStatus(v);
+  if(isLongTermBroken(v)) currentStatus='longterm';
+  var statusKey=currentStatus==='longterm'?'longTermBroken':('status_'+currentStatus.replace('pending_inspection','pending'));
+  var heroClass=currentStatus==='longterm'?'st-failed':'st-'+currentStatus;
+
+  var html='';
+
+  // Hero — current status + big change button
+  html+='<div class="vd-hero '+heroClass+'">';
+  html+='<div class="vd-status-label">'+t('currentStatus')+'</div>';
+  html+='<div class="vd-status-name '+heroClass+'">'+t(statusKey)+'</div>';
+  var activeRec=bestByYear[curYear]||null;
+  if(activeRec&&activeRec.status==='failed'&&activeRec.failureReason){
+    html+='<div class="vd-status-note">'+esc(activeRec.failureReason)+'</div>';
+  }
+  if(!currentProfile||currentProfile.role!=='viewer'){
+    html+='<button class="vd-change-btn" onclick="closeModal(\'vehicleDetailModal\');openStatusSheet(\''+id+'\')">\u270E '+t('changeStatus')+'</button>';
+  }
+  html+='</div>';
+
+  // Essential fields (compact 2-col grid)
+  var fields=[
+    ['plateNumber',v.plateNumber],
+    ['registrationMonth',monthName(v.registrationMonth)],
+    ['supervisor',v.assignedTo],
+    ['driverName',v.driverName],
+    ['vehicleType',t(v.type)],
+    ['chassisNumber',v.chassisNumber],
+    ['doorNumber',v.doorNumber],
+    ['location',v.location]
+  ];
+  html+='<div class="vd-fields">';
+  fields.forEach(function(f){
+    if(!f[1]) return;
+    html+='<div class="vd-field">';
+    html+='<div class="vd-field-label">'+t(f[0])+'</div>';
+    html+='<div class="vd-field-value">'+esc(f[1])+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  if(v.notes){
+    html+='<div class="vd-field" style="margin-bottom:18px">';
+    html+='<div class="vd-field-label">'+t('notes')+'</div>';
+    html+='<div class="vd-field-value" style="font-weight:500">'+esc(v.notes)+'</div>';
+    html+='</div>';
+  }
+
+  // Clearance log — simple per-year history
   var vRecords=Object.keys(bestByYear).map(function(y){return bestByYear[y];})
     .sort(function(a,b){return b.year-a.year;});
   if(vRecords.length){
-    html+='<div style="margin-top:20px">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
-    html+='<div class="card-title">'+t('clearanceHistory')+'</div>';
-    if(removedCount>0){
-      html+='<span style="font-size:11px;color:var(--gn);font-weight:600">'+(currentLang==='ar'?('\u062A\u0645 \u062D\u0630\u0641 '+removedCount+' \u0645\u0643\u0631\u0631'):('Cleaned '+removedCount+' duplicates'))+'</span>';
-    }
-    html+='</div>';
-    html+='<div class="timeline">';
+    html+='<div class="vd-log">';
+    html+='<div class="vd-log-title">'+t('clearanceHistory')+'</div>';
     vRecords.forEach(function(r){
-      var cls='tl-item';
-      if(r.status==='completed') cls+=' tl-completed';
-      else if(r.status==='failed') cls+=' tl-failed';
-      else if(r.status==='passed') cls+=' tl-passed';
-      html+='<div class="'+cls+'">';
-      html+='<div class="tl-date">'+r.year+' \u00B7 '+fmtD(r.updatedAt||r.createdAt)+'</div>';
-      html+='<div class="tl-text">'+statusBadge(r.status);
-      if(r.failureReason) html+=' <span style="color:var(--rd);font-size:12px">'+esc(r.failureReason)+'</span>';
-      var total=(r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0);
-      if(total>0) html+=' <span style="font-size:12px;color:var(--g600)">| '+t('totalCost')+': '+fmtN(total)+' BD</span>';
+      html+='<div class="vd-log-item">';
+      html+='<div class="vd-log-year">'+r.year+'</div>';
+      html+='<div class="vd-log-main">';
+      html+=statusBadge(r.status);
+      html+='<div class="vd-log-date">'+fmtD(r.updatedAt||r.createdAt)+'</div>';
+      if(r.failureReason) html+='<div class="vd-log-reason">\u26A0 '+esc(r.failureReason)+'</div>';
       html+='</div>';
-      // Inline per-record status change dropdown — always visible for
-      // non-viewer roles. Uses JS role check instead of CSS class so
-      // the select renders as a normal block element.
-      if(!currentProfile||currentProfile.role!=='viewer'){
-        html+='<div class="tl-actions">';
-        html+='<select class="tl-status-sel" onchange="changeRecordStatus(\''+r.id+'\',\''+id+'\',this.value);this.value=\'\'">';
-        html+='<option value="">\u270E '+t('changeStatus')+'...</option>';
-        html+='<option value="pending_inspection">'+t('status_pending')+'</option>';
-        html+='<option value="passed">'+t('status_passed')+'</option>';
-        html+='<option value="paid">'+t('status_paid')+'</option>';
-        html+='<option value="completed">'+t('status_completed')+'</option>';
-        html+='<option value="failed">'+t('status_failed')+'</option>';
-        html+='</select>';
-        html+='</div>';
-      }
-      // Failure history
-      if(r.failureHistory&&r.failureHistory.length){
-        html+='<div style="margin-top:6px;padding:8px;background:var(--rdb);border-radius:6px;font-size:11px">';
-        html+='<b>'+t('failureHistory')+':</b>';
-        r.failureHistory.forEach(function(fh){
-          html+='<div style="margin-top:4px">\u2022 '+fmtD(fh.date)+' - '+esc(fh.reason);
-          if(fh.resolvedDate) html+=' ('+t('resolvedDate')+': '+fmtD(fh.resolvedDate)+')';
-          html+='</div>';
-        });
-        html+='</div>';
-      }
       html+='</div>';
     });
-    html+='</div></div>';
+    html+='</div>';
   }
 
-  // Quick status actions for the active clearance record this year
-  var curYear=new Date().getFullYear();
-  var activeRec=bestByYear[curYear]||null;
-  html+='<div class="quick-actions viewer-hide">';
-  html+='<div class="quick-actions-title">'+t('quickActions')+'</div>';
-  html+='<div class="quick-actions-row">';
-  if(!activeRec){
-    html+='<button class="btn btn-am btn-sm" onclick="quickStartClearance(\''+id+'\');refreshDetail(\''+id+'\')">'+t('startInspection')+'</button>';
-  } else {
-    if(activeRec.status!=='completed'){
-      html+='<button class="btn btn-g btn-sm" onclick="quickMarkCompleted(\''+activeRec.id+'\',\''+id+'\')">'+t('markCompleted')+'</button>';
-    }
-    if(activeRec.status==='failed'||activeRec.status==='pending_inspection'){
-      html+='<button class="btn btn-b btn-sm" onclick="quickMarkPassed(\''+activeRec.id+'\',\''+id+'\')">'+t('markPassed')+'</button>';
-    }
-    if(activeRec.status==='passed'||activeRec.status==='pending_inspection'){
-      html+='<button class="btn btn-p btn-sm" onclick="quickMarkPaid(\''+activeRec.id+'\',\''+id+'\')">'+t('markPaid')+'</button>';
-    }
-    if(activeRec.status!=='failed'){
-      html+='<button class="btn btn-d btn-sm" onclick="openQuickFailModal(\''+activeRec.id+'\',\''+id+'\')">'+t('markFailed')+'</button>';
-    }
-    if(activeRec.status==='failed'){
-      html+='<button class="btn btn-b btn-sm" onclick="quickReInspect(\''+activeRec.id+'\',\''+id+'\')">'+t('reInspect')+'</button>';
-    }
-  }
-  html+='</div></div>';
-
-  // Edit button (no delete — prevents accidental deletion)
-  html+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap" class="viewer-hide">';
+  // Edit button (no delete)
+  html+='<div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap" class="viewer-hide">';
   html+='<button class="btn btn-s" onclick="openVehicleModal(\''+id+'\');closeModal(\'vehicleDetailModal\')">'+t('editVehicle')+'</button>';
   html+='</div>';
 
