@@ -3,42 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Al Haidariya — Import Vehicles</title>
+<title>Al Haidariya — Import & Clean Vehicles</title>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="import-data.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:Tahoma,sans-serif;background:linear-gradient(135deg,#4E3A6B,#6A5288,#8B6FAD);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-.wrap{max-width:600px;width:100%;}
+body{font-family:'Tajawal',Tahoma,sans-serif;background:linear-gradient(135deg,#1e1b4b,#4c1d95,#7c3aed);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.wrap{max-width:620px;width:100%;}
 .box{background:white;border-radius:20px;padding:32px 28px;box-shadow:0 32px 80px rgba(0,0,0,.35);}
-h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
-.sub{font-size:13px;color:#9990B0;margin-bottom:24px;}
+h1{font-size:20px;color:#4c1d95;margin-bottom:4px;}
+.sub{font-size:13px;color:#64748b;margin-bottom:24px;}
 .stat{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
-.stat-card{flex:1;min-width:120px;background:#F0EBF8;border-radius:12px;padding:14px;text-align:center;}
-.stat-num{font-size:28px;font-weight:bold;color:#6A5288;}
-.stat-label{font-size:11px;color:#9990B0;margin-top:4px;}
+.stat-card{flex:1;min-width:120px;background:#f5f3ff;border-radius:12px;padding:14px;text-align:center;}
+.stat-num{font-size:28px;font-weight:bold;color:#6d28d9;}
+.stat-label{font-size:11px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
 .sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:20px;}
-.sup-card{background:#F8F7FA;border-radius:8px;padding:10px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
-.sup-card b{color:#6A5288;}
-.btn{display:block;width:100%;padding:15px;border:none;border-radius:12px;font-family:Tahoma;font-size:16px;font-weight:bold;cursor:pointer;transition:all .2s;}
-.btn-p{background:#6A5288;color:white;}
-.btn-p:hover:not(:disabled){background:#4E3A6B;}
-.btn-p:disabled{opacity:.5;cursor:not-allowed;}
-.progress{background:#F0EBF8;border-radius:10px;padding:14px;margin-top:16px;font-size:13px;color:#4E3A6B;line-height:1.8;display:none;}
-.bar-bg{background:#E4DAF2;border-radius:6px;height:8px;margin-top:8px;overflow:hidden;}
-.bar-fill{background:#6A5288;height:100%;border-radius:6px;transition:width .3s;}
-.err{background:#FCEBEB;border-radius:8px;padding:10px 12px;font-size:12px;color:#E24B4A;margin-top:12px;display:none;}
-.done{background:#E1F5EE;border-radius:12px;padding:24px;text-align:center;margin-top:16px;display:none;}
-.done h2{color:#1D9E75;font-size:20px;margin-bottom:8px;}
-.done p{font-size:13px;color:#5C5472;}
-.done a{display:block;background:#6A5288;color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;text-align:center;}
+.sup-card{background:#f8fafc;border-radius:8px;padding:10px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
+.sup-card b{color:#6d28d9;}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:bold;cursor:pointer;transition:all .2s;margin-top:10px;}
+.btn-p{background:linear-gradient(135deg,#6d28d9,#7c3aed);color:white;box-shadow:0 4px 14px rgba(124,58,237,.4);}
+.btn-p:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.5);}
+.btn-d{background:linear-gradient(135deg,#dc2626,#ef4444);color:white;box-shadow:0 4px 14px rgba(239,68,68,.4);}
+.btn-d:hover:not(:disabled){transform:translateY(-1px);}
+.btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 14px rgba(16,185,129,.4);}
+.btn-g:hover:not(:disabled){transform:translateY(-1px);}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.progress{background:#f5f3ff;border-radius:10px;padding:14px;margin-top:16px;font-size:13px;color:#4c1d95;line-height:1.8;display:none;}
+.bar-bg{background:#e4e4e7;border-radius:6px;height:8px;margin-top:8px;overflow:hidden;}
+.bar-fill{background:linear-gradient(90deg,#6d28d9,#7c3aed);height:100%;border-radius:6px;transition:width .3s;}
+.err{background:#fef2f2;border-radius:8px;padding:10px 12px;font-size:12px;color:#dc2626;margin-top:12px;display:none;}
+.done{background:#ecfdf5;border-radius:12px;padding:24px;text-align:center;margin-top:16px;display:none;border:1px solid #10b981;}
+.done h2{color:#059669;font-size:20px;margin-bottom:8px;}
+.done p{font-size:13px;color:#64748b;line-height:1.6;}
+.done a{display:block;background:linear-gradient(135deg,#6d28d9,#7c3aed);color:white;border-radius:10px;padding:14px;font-size:15px;font-weight:bold;text-decoration:none;margin-top:16px;text-align:center;}
+.section{border-top:1px solid #e4e4e7;margin-top:20px;padding-top:20px;}
+.section-title{font-size:14px;font-weight:bold;color:#4c1d95;margin-bottom:6px;}
+.section-desc{font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.6;}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="box">
-  <h1>Import Vehicle Data</h1>
-  <p class="sub">Import 894 vehicles from the department Excel file into the clearance system.</p>
+  <h1>Import &amp; Clean Vehicle Data</h1>
+  <p class="sub">Import vehicles from the department Excel and clean duplicates in the live database.</p>
 
   <div class="stat" id="stats">
     <div class="stat-card"><div class="stat-num" id="sVehicles">-</div><div class="stat-label">Vehicles</div></div>
@@ -54,12 +61,28 @@ h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
   </div>
   <div class="err" id="errBox"></div>
   <div class="done" id="doneBox">
-    <h2>&#x2713; Import Complete!</h2>
+    <h2>&#x2713; Done!</h2>
     <p id="doneMsg"></p>
     <a href="clearance.html">Open Clearance System &rarr;</a>
   </div>
 
-  <button class="btn btn-p" id="importBtn" onclick="runImport()">Import All Vehicles &rarr;</button>
+  <div class="section">
+    <div class="section-title">Option 1: Fresh Import (Replace Everything)</div>
+    <div class="section-desc">Deletes all vehicles &amp; records from the database, then imports 903 vehicles cleanly from Sheet1. Use this if the database is messy with duplicates.</div>
+    <button class="btn btn-d" id="resetBtn" onclick="runReset()">Wipe &amp; Re-import All &rarr;</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Option 2: Clean Duplicates Only</div>
+    <div class="section-desc">Keeps existing vehicles. Removes duplicate vehicles (same plate+chassis) and collapses duplicate records so each vehicle has at most one record per year. Prefers <b>Completed</b> over <b>Failed</b>.</div>
+    <button class="btn btn-g" id="cleanBtn" onclick="runClean()">Clean Duplicates Only &rarr;</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Option 3: Merge Import (Skip Existing)</div>
+    <div class="section-desc">Keeps existing vehicles. Only adds vehicles that don't already exist (matched by plate+chassis).</div>
+    <button class="btn btn-p" id="importBtn" onclick="runImport()">Merge Import New Vehicles &rarr;</button>
+  </div>
 </div>
 </div>
 
@@ -67,34 +90,43 @@ h1{font-size:20px;color:#6A5288;margin-bottom:4px;}
 var SUPA_URL  = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
 var SUPA_ANON = 'sb_publishable_VIKiuYavPl_81tzk2xveOQ_9gK_kWMU';
 
+// Priority for resolving conflicting records (higher wins)
+var STATUS_PRIORITY = { completed:4, paid:3, pending_inspection:2, failed:1 };
+
 window.addEventListener('DOMContentLoaded', function(){
   if(typeof IMPORT_VEHICLES === 'undefined'){
-    document.getElementById('errBox').textContent = 'import-data.js not loaded. Make sure the file exists.';
-    document.getElementById('errBox').style.display = 'block';
-    document.getElementById('importBtn').disabled = true;
+    showErr('import-data.js not loaded. Make sure the file exists.');
+    disableAll();
     return;
   }
-
-  // Show stats
   document.getElementById('sVehicles').textContent = IMPORT_VEHICLES.length;
   document.getElementById('sRecords').textContent = IMPORT_RECORDS.length;
 
-  // Count supervisors
   var sups = {};
   IMPORT_VEHICLES.forEach(function(v){
     var s = v.assignedTo || '(unassigned)';
     sups[s] = (sups[s]||0) + 1;
   });
-  var supNames = Object.keys(sups).sort(function(a,b){ return sups[b]-sups[a]; });
-  document.getElementById('sSupervisors').textContent = supNames.length;
+  var names = Object.keys(sups).sort(function(a,b){ return sups[b]-sups[a]; });
+  document.getElementById('sSupervisors').textContent = names.length;
 
   var html = '';
-  supNames.forEach(function(s){
+  names.forEach(function(s){
     html += '<div class="sup-card"><span>' + s + '</span><b>' + sups[s] + '</b></div>';
   });
   document.getElementById('supGrid').innerHTML = html;
 });
 
+function showErr(msg){
+  var el = document.getElementById('errBox');
+  el.textContent = 'Error: ' + msg;
+  el.style.display = 'block';
+}
+function disableAll(){
+  ['resetBtn','cleanBtn','importBtn'].forEach(function(id){
+    var b = document.getElementById(id); if(b) b.disabled = true;
+  });
+}
 function setProgress(text, pct){
   var el = document.getElementById('progress');
   el.style.display = 'block';
@@ -102,101 +134,192 @@ function setProgress(text, pct){
   document.getElementById('progBar').style.width = pct + '%';
 }
 
-async function runImport(){
-  var btn = document.getElementById('importBtn');
-  var errEl = document.getElementById('errBox');
-  errEl.style.display = 'none';
-  btn.textContent = 'Importing...';
-  btn.disabled = true;
+async function signInAdmin(){
+  if(typeof supabase === 'undefined') throw new Error('Supabase SDK not loaded. Please refresh.');
+  var supa = supabase.createClient(SUPA_URL, SUPA_ANON);
+  var auth = await supa.auth.signInWithPassword({
+    email: 'm.khalid@alhaidariya.com',
+    password: 'Clearance@2026'
+  });
+  if(auth.error) throw new Error('Login failed: ' + auth.error.message + '. Set up the admin account first via clearance_setup.html');
+  return supa;
+}
 
-  try{
-    if(typeof supabase === 'undefined') throw new Error('Supabase SDK not loaded. Please refresh.');
-    if(typeof IMPORT_VEHICLES === 'undefined') throw new Error('Import data not loaded.');
-
-    // Sign in first
-    setProgress('Signing in...', 5);
-    var supa = supabase.createClient(SUPA_URL, SUPA_ANON);
-    var auth = await supa.auth.signInWithPassword({
-      email: 'm.khalid@alhaidariya.com',
-      password: 'Clearance@2026'
+async function loadExisting(supa){
+  var out = { vehicles: [], records: [], notifications: [] };
+  var res = await supa.from('app_data').select('key,value');
+  if(res.data){
+    res.data.forEach(function(row){
+      if(row.key === 'clearance_vehicles') out.vehicles = row.value || [];
+      if(row.key === 'clearance_records')  out.records  = row.value || [];
+      if(row.key === 'clearance_notifications') out.notifications = row.value || [];
     });
-    if(auth.error) throw new Error('Login failed: ' + auth.error.message + '. Set up the admin account first via clearance_setup.html');
+  }
+  return out;
+}
 
-    setProgress('Loading existing data...', 10);
-    // Load existing data
-    var existingVehicles = [];
-    var existingRecords = [];
-    var existingNotifications = [];
-    var res = await supa.from('app_data').select('key,value');
-    if(res.data){
-      res.data.forEach(function(row){
-        if(row.key === 'clearance_vehicles') existingVehicles = row.value || [];
-        if(row.key === 'clearance_records') existingRecords = row.value || [];
-        if(row.key === 'clearance_notifications') existingNotifications = row.value || [];
-      });
+async function saveData(supa, vehicles, records){
+  var now = new Date().toISOString();
+  var vRes = await supa.from('app_data').upsert({
+    key:'clearance_vehicles', value: vehicles, updated_at: now
+  }, {onConflict:'key'});
+  if(vRes.error) throw new Error('Vehicle upload failed: ' + vRes.error.message);
+  var rRes = await supa.from('app_data').upsert({
+    key:'clearance_records', value: records, updated_at: now
+  }, {onConflict:'key'});
+  if(rRes.error) throw new Error('Records upload failed: ' + rRes.error.message);
+}
+
+function dedupeVehicles(vehicles){
+  var seen = {};
+  var idRemap = {};
+  var out = [];
+  vehicles.forEach(function(v){
+    var plate = (v.plateNumber||'').toString().trim().toUpperCase();
+    var chassis = (v.chassisNumber||'').toString().trim().toUpperCase();
+    if(!plate || plate === 'NOT REGISTERED'){
+      out.push(v); return;
     }
+    var key = plate + '||' + chassis;
+    if(seen[key]){
+      idRemap[v.id] = seen[key];
+      return;
+    }
+    seen[key] = v.id;
+    out.push(v);
+  });
+  return { vehicles: out, idRemap: idRemap };
+}
 
-    setProgress('Merging vehicles (existing: ' + existingVehicles.length + ')...', 20);
-    // Deduplicate by plateNumber + chassisNumber
+function dedupeRecords(records, idRemap){
+  var byKey = {};
+  records.forEach(function(r){
+    if(!r || !r.vehicleId) return;
+    var vid = idRemap[r.vehicleId] || r.vehicleId;
+    var key = vid + '||' + r.year;
+    var prev = byKey[key];
+    var pNew = STATUS_PRIORITY[r.status] || 0;
+    var pOld = prev ? (STATUS_PRIORITY[prev.status] || 0) : -1;
+    if(!prev || pNew > pOld){
+      var copy = JSON.parse(JSON.stringify(r));
+      copy.vehicleId = vid;
+      copy.id = 'rec_' + vid + '_' + r.year;
+      byKey[key] = copy;
+    }
+  });
+  return Object.keys(byKey).map(function(k){ return byKey[k]; });
+}
+
+async function runReset(){
+  if(!confirm('This will DELETE all existing vehicles and records, then import 903 fresh vehicles from the Excel file. Continue?')) return;
+  var btns = ['resetBtn','cleanBtn','importBtn'];
+  btns.forEach(function(id){ document.getElementById(id).disabled = true; });
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('doneBox').style.display = 'none';
+  try{
+    setProgress('Signing in...', 5);
+    var supa = await signInAdmin();
+
+    setProgress('Uploading ' + IMPORT_VEHICLES.length + ' vehicles...', 40);
+    await saveData(supa, IMPORT_VEHICLES, IMPORT_RECORDS);
+
+    setProgress('Done!', 100);
+    await supa.auth.signOut();
+
+    document.getElementById('doneMsg').textContent =
+      IMPORT_VEHICLES.length + ' vehicles imported, ' + IMPORT_RECORDS.length + ' clearance records created. All previous data was replaced.';
+    document.getElementById('doneBox').style.display = 'block';
+  }catch(e){
+    showErr(e.message || e);
+    btns.forEach(function(id){ document.getElementById(id).disabled = false; });
+  }
+}
+
+async function runClean(){
+  if(!confirm('This will clean duplicates in the live database (keeping your current data). Continue?')) return;
+  var btns = ['resetBtn','cleanBtn','importBtn'];
+  btns.forEach(function(id){ document.getElementById(id).disabled = true; });
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('doneBox').style.display = 'none';
+  try{
+    setProgress('Signing in...', 5);
+    var supa = await signInAdmin();
+
+    setProgress('Loading existing data...', 15);
+    var cur = await loadExisting(supa);
+    var vBefore = cur.vehicles.length;
+    var rBefore = cur.records.length;
+
+    setProgress('Deduplicating vehicles...', 40);
+    var res = dedupeVehicles(cur.vehicles);
+
+    setProgress('Deduplicating records...', 60);
+    var cleanedRecs = dedupeRecords(cur.records, res.idRemap);
+
+    setProgress('Uploading cleaned data...', 80);
+    await saveData(supa, res.vehicles, cleanedRecs);
+
+    setProgress('Done!', 100);
+    await supa.auth.signOut();
+
+    var vRemoved = vBefore - res.vehicles.length;
+    var rRemoved = rBefore - cleanedRecs.length;
+    document.getElementById('doneMsg').textContent =
+      'Cleanup done. Removed ' + vRemoved + ' duplicate vehicle(s) and ' + rRemoved + ' duplicate/conflicting record(s). ' +
+      'Now: ' + res.vehicles.length + ' vehicles, ' + cleanedRecs.length + ' records.';
+    document.getElementById('doneBox').style.display = 'block';
+  }catch(e){
+    showErr(e.message || e);
+    btns.forEach(function(id){ document.getElementById(id).disabled = false; });
+  }
+}
+
+async function runImport(){
+  var btns = ['resetBtn','cleanBtn','importBtn'];
+  btns.forEach(function(id){ document.getElementById(id).disabled = true; });
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('doneBox').style.display = 'none';
+  try{
+    setProgress('Signing in...', 5);
+    var supa = await signInAdmin();
+
+    setProgress('Loading existing data...', 15);
+    var cur = await loadExisting(supa);
     var existingKeys = {};
-    existingVehicles.forEach(function(v){
-      existingKeys[v.plateNumber + '||' + v.chassisNumber] = true;
+    cur.vehicles.forEach(function(v){
+      var k = (v.plateNumber||'').toUpperCase() + '||' + (v.chassisNumber||'').toUpperCase();
+      existingKeys[k] = true;
     });
 
+    setProgress('Merging vehicles...', 35);
     var newVehicles = [];
-    var newRecords = [];
     IMPORT_VEHICLES.forEach(function(v){
-      var key = v.plateNumber + '||' + v.chassisNumber;
-      if(!existingKeys[key]){
-        newVehicles.push(v);
-        existingKeys[key] = true;
-      }
+      var k = (v.plateNumber||'').toUpperCase() + '||' + (v.chassisNumber||'').toUpperCase();
+      if(!existingKeys[k]){ newVehicles.push(v); existingKeys[k] = true; }
     });
-    // Only add records for vehicles that were imported
     var importedIds = {};
     newVehicles.forEach(function(v){ importedIds[v.id] = true; });
+    var newRecords = [];
     IMPORT_RECORDS.forEach(function(r){
       if(importedIds[r.vehicleId]) newRecords.push(r);
     });
 
-    var allVehicles = existingVehicles.concat(newVehicles);
-    var allRecords = existingRecords.concat(newRecords);
+    var allVehicles = cur.vehicles.concat(newVehicles);
+    var allRecords = cur.records.concat(newRecords);
 
-    setProgress('Uploading vehicles (' + allVehicles.length + ' total)...', 40);
-    // Upload vehicles
-    var vRes = await supa.from('app_data').upsert({
-      key: 'clearance_vehicles',
-      value: allVehicles,
-      updated_at: new Date().toISOString()
-    }, {onConflict: 'key'});
-    if(vRes.error) throw new Error('Vehicle upload failed: ' + vRes.error.message);
-
-    setProgress('Uploading records (' + allRecords.length + ' total)...', 70);
-    // Upload records
-    var rRes = await supa.from('app_data').upsert({
-      key: 'clearance_records',
-      value: allRecords,
-      updated_at: new Date().toISOString()
-    }, {onConflict: 'key'});
-    if(rRes.error) throw new Error('Records upload failed: ' + rRes.error.message);
+    setProgress('Uploading ' + allVehicles.length + ' vehicles...', 65);
+    await saveData(supa, allVehicles, allRecords);
 
     setProgress('Done!', 100);
-
-    // Sign out
     await supa.auth.signOut();
 
-    // Show success
     document.getElementById('doneMsg').textContent =
-      newVehicles.length + ' vehicles imported, ' + newRecords.length + ' clearance records created. ' +
-      (existingVehicles.length > 0 ? existingVehicles.length + ' existing vehicles preserved.' : '');
+      newVehicles.length + ' new vehicles added, ' + newRecords.length + ' new records. ' +
+      cur.vehicles.length + ' existing vehicles preserved.';
     document.getElementById('doneBox').style.display = 'block';
-    btn.style.display = 'none';
-
   }catch(e){
-    errEl.textContent = 'Error: ' + (e.message || e);
-    errEl.style.display = 'block';
-    btn.textContent = 'Retry Import \u2192';
-    btn.disabled = false;
+    showErr(e.message || e);
+    btns.forEach(function(id){ document.getElementById(id).disabled = false; });
   }
 }
 </script>
