@@ -7,6 +7,8 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -371,6 +373,9 @@ body.rtl .sheet-btn{text-align:right;}
 .task-section.ts-long .task-section-count{background:#1e0a0a;color:#fca5a5;}
 .task-section.ts-ok .ts-icon{background:var(--gnb);color:var(--gnd);}
 .task-section.ts-ok .task-section-count{background:var(--gnb);color:var(--gnd);}
+.task-section.ts-expire{border-left:4px solid #f97316;}
+.task-section.ts-expire .ts-icon{background:#fff7ed;color:#ea580c;}
+.task-section.ts-expire .task-section-count{background:#fff7ed;color:#ea580c;}
 .task-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--g100);cursor:pointer;transition:all var(--t);}
 .task-item:first-of-type{border-top:none;padding-top:4px;}
 .task-item:hover{background:var(--g50);margin-inline:-18px;padding-inline:18px;border-radius:10px;}
@@ -452,6 +457,17 @@ body.rtl .sheet-btn{text-align:right;}
 
 /* ═══ INSPECTION REPORT ═══ */
 .insp-modal{max-width:820px!important;}
+.insp-report-no{font-size:12px;font-weight:700;color:var(--p);background:#f3f0fa;border:1px dashed var(--p);padding:8px 12px;border-radius:10px;margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.insp-report-no .rno-label{color:var(--g500);font-size:10px;font-weight:600;letter-spacing:.5px;}
+.insp-report-no .rno-val{font-family:monospace;font-size:14px;color:var(--g800);}
+.insp-phase-tabs{display:flex;gap:6px;background:var(--g100);padding:4px;border-radius:12px;margin-bottom:12px;}
+.insp-phase-tabs .phase-tab{flex:1;padding:10px 14px;border:none;background:transparent;border-radius:9px;font-size:12px;font-weight:700;color:var(--g600);cursor:pointer;font-family:inherit;min-height:44px;transition:all var(--t);}
+.insp-phase-tabs .phase-tab.active{background:white;color:var(--p);box-shadow:0 2px 6px rgba(0,0,0,.08);}
+.insp-phase-tabs .phase-tab.done::after{content:' ✓';color:var(--gn);}
+.insp-ci-banner{background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
+.insp-ci-banner.done{background:#ecfdf5;border-color:#86efac;color:#065f46;}
+.dmap-marker.t-new{outline:3px solid #fde047;outline-offset:1px;}
+.dmap-marker.orig{opacity:.55;}
 .insp-section{background:var(--g50);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--g100);}
 .insp-section-title{font-size:13px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .insp-section-title::before{content:'';display:inline-block;width:4px;height:18px;background:var(--p);border-radius:2px;}
@@ -724,6 +740,7 @@ body.rtl .toast-container{right:auto;left:20px;}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="exportFullExcel()" data-i18n="exportFullExcel">Export Full Excel</button>
       <button class="btn btn-s" onclick="exportPDF()" data-i18n="exportPDF">Export PDF</button>
+      <button class="btn btn-s" onclick="exportInspectionsExcel()" data-i18n="exportInspections">Export All Inspections</button>
     </div>
   </div>
   <div class="card admin-only" style="border:2px dashed var(--p);background:var(--pb)">
@@ -965,6 +982,16 @@ body.rtl .toast-container{right:auto;left:20px;}
 <div class="modal-bg" id="inspectionModal">
   <div class="modal insp-modal">
     <h2 data-i18n="inspectionReportTitle">Vehicle / Equipment Condition Report</h2>
+    <div id="inspReportNoBanner" class="insp-report-no"></div>
+    <div class="insp-phase-tabs">
+      <button type="button" class="phase-tab active" id="phaseTabOut" onclick="switchInspPhase('out')">
+        <span data-i18n="inspPhaseOut">Check-Out (Hand Over)</span>
+      </button>
+      <button type="button" class="phase-tab" id="phaseTabIn" onclick="switchInspPhase('in')">
+        <span data-i18n="inspPhaseIn">Check-In (Return)</span>
+      </button>
+    </div>
+    <div id="inspCheckInBanner" class="insp-ci-banner" style="display:none"></div>
     <input type="hidden" id="inspId">
     <input type="hidden" id="inspVehicleId">
 
@@ -1165,9 +1192,11 @@ body.rtl .toast-container{right:auto;left:20px;}
       </div>
     </div>
 
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap">
       <button class="btn btn-s" onclick="closeModal('inspectionModal')" data-i18n="cancel">Cancel</button>
       <button class="btn btn-s" onclick="inspectionPDF()" data-i18n="exportPDF">Export PDF</button>
+      <button class="btn btn-s" onclick="inspectionPDFArabic()" data-i18n="arabicPdf">Generate PDF (Arabic/Mobile)</button>
+      <button class="btn btn-s" id="btnCompleteCheckIn" onclick="completeCheckIn()" style="background:#ea580c;color:white" data-i18n="inspCompleteCheckIn">Complete Check-In</button>
       <button class="btn btn-p" onclick="saveInspection()" data-i18n="save">Save</button>
     </div>
   </div>
@@ -1498,7 +1527,37 @@ var LANG = {
     inspItemAC:'A/C',
     inspItemWipersIndicators:'Wipers / Indicators',
     inspItemSpareTyre:'Spare Tyre',
-    inspItemJack:'Jack'
+    inspItemJack:'Jack',
+    inspPhase:'Phase',
+    inspPhaseOut:'Check-Out (Hand Over)',
+    inspPhaseIn:'Check-In (Return)',
+    inspStartCheckIn:'Start Check-In',
+    inspCheckInLocked:'Check-Out is locked. Any new damages below will be charged to the driver.',
+    inspCheckInDone:'Check-In Completed',
+    inspNewDamages:'New Damages (driver liable)',
+    inspOriginalDamages:'Original Damages (from Check-Out)',
+    inspCompleteCheckIn:'Complete Check-In',
+    inspCheckOutDate:'Check-Out Date',
+    inspCheckInDate:'Check-In Date',
+    inspReturnKm:'Return KM / Hours',
+    inspReturnFuel:'Return Fuel',
+    inspReturnNotes:'Return Notes',
+    inspReturnSig:'Return Signature',
+    inspReturnInspector:'Return Inspector Signature',
+    reportNo:'Report No.',
+    scanHint:'Scan to open report',
+    expiringRegistration:'Registration Expiring Soon',
+    expiringSoon:'Expiring Soon',
+    daysLeft:'days left',
+    daysOverdue:'days overdue',
+    monthEnd:'End of',
+    noExpiring:'No vehicles expiring in the next 30 days.',
+    viewAll:'View All',
+    exportInspections:'Export All Inspections',
+    inspectionsExported:'All inspections exported.',
+    noInspectionsToExport:'No inspection reports to export.',
+    arabicPdf:'Generate PDF (Arabic/Mobile)',
+    generatingPdf:'Generating PDF…'
   },
   ar: {
     appTitle:'\u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
@@ -1746,7 +1805,37 @@ var LANG = {
     inspItemAC:'المكيف',
     inspItemWipersIndicators:'الأشارات / الإضاءة',
     inspItemSpareTyre:'الإطار الاحتياطي',
-    inspItemJack:'الجاك'
+    inspItemJack:'الجاك',
+    inspPhase:'المرحلة',
+    inspPhaseOut:'التسليم (استلام السائق)',
+    inspPhaseIn:'الإرجاع (رجوع السيارة)',
+    inspStartCheckIn:'بدء الإرجاع',
+    inspCheckInLocked:'تم إقفال التسليم. أي ضرر جديد أدناه على مسؤولية السائق.',
+    inspCheckInDone:'تم إتمام الإرجاع',
+    inspNewDamages:'أضرار جديدة (مسؤولية السائق)',
+    inspOriginalDamages:'الأضرار الأصلية (من التسليم)',
+    inspCompleteCheckIn:'إتمام الإرجاع',
+    inspCheckOutDate:'تاريخ التسليم',
+    inspCheckInDate:'تاريخ الإرجاع',
+    inspReturnKm:'العداد عند الإرجاع',
+    inspReturnFuel:'الوقود عند الإرجاع',
+    inspReturnNotes:'ملاحظات الإرجاع',
+    inspReturnSig:'توقيع الإرجاع',
+    inspReturnInspector:'توقيع مفتش الإرجاع',
+    reportNo:'رقم التقرير',
+    scanHint:'امسح لفتح التقرير',
+    expiringRegistration:'تسجيلات قاربت على الانتهاء',
+    expiringSoon:'قريب الانتهاء',
+    daysLeft:'يوم متبقي',
+    daysOverdue:'يوم متأخر',
+    monthEnd:'نهاية',
+    noExpiring:'لا توجد مركبات قاربت على انتهاء التسجيل خلال 30 يوم.',
+    viewAll:'عرض الكل',
+    exportInspections:'تصدير كل تقارير الفحص',
+    inspectionsExported:'تم تصدير كل التقارير.',
+    noInspectionsToExport:'لا توجد تقارير فحص للتصدير.',
+    arabicPdf:'تصدير PDF (عربي/موبايل)',
+    generatingPdf:'جاري إنشاء الملف…'
   }
 };
 
@@ -2200,10 +2289,28 @@ function renderDashboard(){
   var thisMonth=[];   // due this month or next, not yet completed
   var needsAttn=[];   // failed or pending_inspection (short-term)
   var longTerm=[];    // long-term broken
+  var expiring=[];    // registration expiring within 30 days
+
+  // Days-until-end-of-month for each vehicle's registrationMonth
+  function daysUntilMonthEnd(month, yr){
+    if(!month) return 9999;
+    var d=new Date(yr, month, 0); // last day of that month
+    var diffMs=d - now;
+    return Math.round(diffMs/(1000*60*60*24));
+  }
 
   scopedVehicles.forEach(function(v){
     var status=getVehicleStatus(v);
     var regM=parseInt(v.registrationMonth);
+
+    // Expiry computation — for this year if month>=current, else next year
+    if(regM>=1&&regM<=12){
+      var yr = regM>=curMonth ? curYear : curYear+1;
+      var days = daysUntilMonthEnd(regM, yr);
+      if(days<=30 && status!=='completed' && status!=='paid'){
+        expiring.push({v:v,status:status,days:days,yr:yr});
+      }
+    }
 
     if(isLongTermBroken(v)){
       longTerm.push({v:v,status:status});
@@ -2218,6 +2325,9 @@ function renderDashboard(){
       return;
     }
   });
+
+  // Sort expiring by days ascending (most urgent first)
+  expiring.sort(function(a,b){ return a.days-b.days; });
 
   // Sort by supervisor then plate
   var bySup=function(a,b){
@@ -2253,6 +2363,8 @@ function renderDashboard(){
   html+='<div class="mp-numbers"><span>&#x2713; <b>'+monthDone+'</b> '+t('done')+'</span><span><b>'+(monthVehicles.length-monthDone)+'</b> '+t('remaining')+'</span></div>';
   html+='</div>';
 
+  // Registration expiring soon (within 30 days)
+  html+=renderExpiringSection(expiring);
   // This month due
   html+=renderTaskSection('ts-week','\u2600',t('thisMonthDue'),thisMonth);
   // Needs attention (failed / pending)
@@ -2270,6 +2382,44 @@ function renderDashboard(){
   }
 
   document.getElementById('dashStats').innerHTML=html;
+}
+
+function renderExpiringSection(items){
+  var html='<div class="task-section ts-expire">';
+  html+='<div class="task-section-head">';
+  html+='<div class="task-section-title"><div class="ts-icon">\u23F0</div>'+esc(t('expiringRegistration'))+'</div>';
+  html+='<div class="task-section-count">'+items.length+'</div>';
+  html+='</div>';
+  if(!items.length){
+    html+='<div class="task-empty">'+t('noExpiring')+'</div>';
+  } else {
+    var show=items.slice(0,8);
+    show.forEach(function(it){
+      var v=it.v;
+      var urgent=it.days<=7;
+      var overdue=it.days<0;
+      var daysLabel;
+      if(overdue){
+        daysLabel='<span style="color:#dc2626;font-weight:800">'+Math.abs(it.days)+' '+t('daysOverdue')+'</span>';
+      } else if(urgent){
+        daysLabel='<span style="color:#ea580c;font-weight:800">'+it.days+' '+t('daysLeft')+'</span>';
+      } else {
+        daysLabel='<span style="color:#0369a1;font-weight:700">'+it.days+' '+t('daysLeft')+'</span>';
+      }
+      html+='<div class="task-item" onclick="viewVehicle(\''+v.id+'\')">';
+      html+='<div class="ti-info">';
+      html+='<div class="ti-name">'+esc(v.name)+' \u00B7 '+esc(v.plateNumber||'-')+'</div>';
+      html+='<div class="ti-meta">'+esc(v.assignedTo||'-')+' \u00B7 '+t('monthEnd')+' '+esc(monthName(v.registrationMonth))+' \u00B7 '+daysLabel+'</div>';
+      html+='</div>';
+      html+='<button class="ti-action viewer-hide" onclick="event.stopPropagation();openStatusSheet(\''+v.id+'\')">'+t('changeStatus')+'</button>';
+      html+='</div>';
+    });
+    if(items.length>8){
+      html+='<div style="text-align:center;font-size:11px;color:var(--g400);margin-top:10px;font-weight:600">+'+(items.length-8)+' '+t('more')+'</div>';
+    }
+  }
+  html+='</div>';
+  return html;
 }
 
 function renderTaskSection(cls,icon,title,items){
@@ -3223,18 +3373,33 @@ function viewVehicle(id){
     html+='<div style="font-size:12px;color:var(--g400);padding:10px 0">'+t('noInspections')+'</div>';
   } else {
     vInsps.forEach(function(r){
+      var ci=r.checkIn||{};
+      var phaseTag = ci.done
+        ? '<span style="background:#ecfdf5;color:#065f46;border:1px solid #86efac;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;margin-inline-start:6px">'+t('inspCheckInDone')+'</span>'
+        : '<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;margin-inline-start:6px">'+t('inspPhaseOut')+'</span>';
       html+='<div class="insp-hist-item">';
       html+='<div class="insp-hist-info">';
-      html+='<div class="insp-hist-date">'+esc(r.date||'-')+' \u00B7 '+esc(r.empName||'-')+'</div>';
+      html+='<div class="insp-hist-date">';
+      if(r.reportNo) html+='<span style="font-family:monospace;color:var(--p);font-size:11px;margin-inline-end:6px">'+esc(r.reportNo)+'</span>';
+      html+=esc(r.date||'-')+' \u00B7 '+esc(r.empName||'-')+phaseTag;
+      html+='</div>';
       var metaBits=[];
       if(r.km) metaBits.push(r.km+' km/hr');
       if(r.fuel) metaBits.push('Fuel '+r.fuel);
-      if(r.damages&&r.damages.length) metaBits.push(r.damages.length+' '+t('damages'));
-      if(r.photos&&r.photos.length) metaBits.push(r.photos.length+' '+t('photos'));
+      var totalDamages=(r.damages?r.damages.length:0)+((ci.damages&&ci.damages.length)||0);
+      if(totalDamages) metaBits.push(totalDamages+' '+t('damages'));
+      var totalPhotos=(r.photos?r.photos.length:0)+((ci.photos&&ci.photos.length)||0);
+      if(totalPhotos) metaBits.push(totalPhotos+' '+t('photos'));
+      if(ci.damages&&ci.damages.length){
+        metaBits.push('<span style="color:#ea580c;font-weight:700">+'+ci.damages.length+' '+t('inspNewDamages')+'</span>');
+      }
       html+='<div class="insp-hist-meta">'+metaBits.join(' \u00B7 ')+'</div>';
       html+='</div>';
       html+='<div class="insp-hist-actions">';
       html+='<button onclick="openInspection(\''+id+'\',\''+r.id+'\')">'+t('view')+'</button>';
+      if(!ci.done && (r.driverSig||r.empName) && (!currentProfile||currentProfile.role!=='viewer')){
+        html+='<button onclick="openInspectionCheckIn(\''+id+'\',\''+r.id+'\')" style="background:#fff7ed;color:#9a3412;border-color:#fdba74">'+t('inspStartCheckIn')+'</button>';
+      }
       if(!currentProfile||currentProfile.role!=='viewer'){
         html+='<button onclick="deleteInspection(\''+r.id+'\')" style="color:var(--rd)">\u2715</button>';
       }
@@ -3638,6 +3803,119 @@ function exportFullExcel(){
   showToast(t('exportDone'));
 }
 
+/* Export all inspection reports as an Excel workbook with 2 sheets:
+   1) Inspections — one row per report (summary metrics)
+   2) Damages — one row per damage marker (detailed for accounting) */
+function exportInspectionsExcel(){
+  if(!inspections||!inspections.length){
+    alert(t('noInspectionsToExport'));
+    return;
+  }
+  // Sheet 1: one row per report
+  var summary=inspections.slice().sort(function(a,b){
+    return (b.date||'').localeCompare(a.date||'');
+  }).map(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;})||{};
+    var ci=r.checkIn||{};
+    var outDmg=(r.damages||[]).length;
+    var inDmg=(ci.damages||[]).length;
+    return{
+      'Report No':r.reportNo||'',
+      'Vehicle':r.vehicleName||v.name||'',
+      'Plate':r.plateNumber||v.plateNumber||'',
+      'Door':r.doorNumber||v.doorNumber||'',
+      'Type':r.vehicleType||v.type||'',
+      'Supervisor':v.assignedTo||'',
+      'Check-Out Date':r.date||'',
+      'Check-Out Time':r.time||'',
+      'Employee':r.empName||'',
+      'Emp No':r.empNo||'',
+      'Driver Mobile':r.driverMobile||'',
+      'Sup Mobile':r.supMobile||'',
+      'Out KM/Hrs':r.km||'',
+      'Out Fuel':r.fuel||'',
+      'Out Notes':r.outNotes||'',
+      'Out Damages':outDmg,
+      'Out Photos':(r.photos||[]).length,
+      'Driver Signed':r.driverSig?'YES':'NO',
+      'Inspector Signed':r.inspectorSig?'YES':'NO',
+      'Check-In Status':ci.done?'COMPLETED':(ci.km||ci.driverSig?'STARTED':'NOT STARTED'),
+      'Check-In Date':ci.date||'',
+      'Check-In Time':ci.time||'',
+      'Return KM/Hrs':ci.km||'',
+      'Return Fuel':ci.fuel||'',
+      'Return Notes':ci.notes||'',
+      'NEW Damages (driver liable)':inDmg,
+      'In Photos':(ci.photos||[]).length,
+      'Completed By':ci.completedBy||'',
+      'Completed At':ci.completedAt||'',
+      'Created By':r.createdBy||'',
+      'Created At':r.createdAt||'',
+      'Updated At':r.updatedAt||''
+    };
+  });
+  var ws1=XLSX.utils.json_to_sheet(summary);
+  ws1['!cols']=[
+    {wch:16},{wch:24},{wch:14},{wch:10},{wch:10},{wch:18},{wch:12},{wch:10},
+    {wch:20},{wch:10},{wch:14},{wch:14},{wch:12},{wch:10},{wch:30},{wch:11},
+    {wch:11},{wch:12},{wch:15},{wch:18},{wch:12},{wch:10},{wch:12},{wch:10},
+    {wch:30},{wch:22},{wch:10},{wch:18},{wch:20},{wch:18},{wch:20},{wch:20}
+  ];
+
+  // Sheet 2: one row per damage
+  var damageRows=[];
+  inspections.forEach(function(r){
+    var v=vehicles.find(function(x){return x.id===r.vehicleId;})||{};
+    (r.damages||[]).forEach(function(d,i){
+      damageRows.push({
+        'Report No':r.reportNo||'',
+        'Date':r.date||'',
+        'Vehicle':r.vehicleName||v.name||'',
+        'Plate':r.plateNumber||v.plateNumber||'',
+        'Supervisor':v.assignedTo||'',
+        'Phase':'OUT',
+        '#':i+1,
+        'Type':d.type||'',
+        'Notes':d.notes||'',
+        'X%':Math.round(d.x||0),
+        'Y%':Math.round(d.y||0),
+        'Added At':d.addedAt||'',
+        'Driver Liable':'NO'
+      });
+    });
+    var ci=r.checkIn||{};
+    (ci.damages||[]).forEach(function(d,i){
+      damageRows.push({
+        'Report No':r.reportNo||'',
+        'Date':ci.date||r.date||'',
+        'Vehicle':r.vehicleName||v.name||'',
+        'Plate':r.plateNumber||v.plateNumber||'',
+        'Supervisor':v.assignedTo||'',
+        'Phase':'IN (NEW)',
+        '#':(r.damages||[]).length+i+1,
+        'Type':d.type||'',
+        'Notes':d.notes||'',
+        'X%':Math.round(d.x||0),
+        'Y%':Math.round(d.y||0),
+        'Added At':d.addedAt||'',
+        'Driver Liable':'YES'
+      });
+    });
+  });
+  var ws2=XLSX.utils.json_to_sheet(damageRows.length?damageRows:[{'Report No':'(none)'}]);
+  ws2['!cols']=[
+    {wch:16},{wch:12},{wch:24},{wch:14},{wch:18},{wch:12},{wch:6},{wch:12},
+    {wch:30},{wch:8},{wch:8},{wch:20},{wch:14}
+  ];
+
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws1,'Inspections');
+  XLSX.utils.book_append_sheet(wb,ws2,'Damages');
+  var today=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'inspections_'+today+'.xlsx');
+  showToast(t('inspectionsExported'));
+}
+
 /* Re-import an edited Excel file. Matches by __VEHICLE_ID__ (preferred)
    or by Plate+Chassis. Updates fields in place; syncs once at the end. */
 function importUpdateExcel(file){
@@ -3795,8 +4073,38 @@ var INSP_CHECKLIST=[
 
 /* Runtime state for the currently-open inspection modal */
 var _currentInspection=null;
-var _dmapPending=null;  // {x,y} waiting for type picker
-var _sigState={};       // per-canvas: {drawing, lastX, lastY}
+var _currentPhase='out';   // 'out' or 'in'
+var _dmapPending=null;     // {x,y} waiting for type picker
+var _sigState={};          // per-canvas: {drawing, lastX, lastY}
+
+/* Ensure the report has a check-in sub-object (backward compat) */
+function ensureCheckInStruct(rep){
+  if(!rep.checkIn){
+    rep.checkIn={
+      done:false,
+      date:'',time:'',km:'',fuel:'1/2',
+      damages:[],photos:[],
+      driverSig:'',inspectorSig:'',
+      notes:'',
+      completedBy:'',completedAt:''
+    };
+  }
+  return rep;
+}
+
+/* Auto-generate a report number like INSP-2026-001 */
+function nextReportNo(){
+  var yr=new Date().getFullYear();
+  var prefix='INSP-'+yr+'-';
+  var max=0;
+  inspections.forEach(function(r){
+    if(r.reportNo&&r.reportNo.indexOf(prefix)===0){
+      var n=parseInt(r.reportNo.slice(prefix.length),10);
+      if(!isNaN(n)&&n>max) max=n;
+    }
+  });
+  return prefix+String(max+1).padStart(3,'0');
+}
 
 /* Open the inspection modal for a vehicle.
    reportId=null → new report; otherwise load existing. */
@@ -3812,6 +4120,7 @@ function openInspection(vehicleId,reportId){
     var now=new Date();
     rep={
       id:'insp_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      reportNo:nextReportNo(),
       vehicleId:vehicleId,
       vehicleName:v.name,
       plateNumber:v.plateNumber,
@@ -3830,34 +4139,155 @@ function openInspection(vehicleId,reportId){
       createdAt:now.toISOString(),updatedAt:now.toISOString()
     };
   }
+  // Backward compat
+  if(!rep.reportNo) rep.reportNo=nextReportNo();
+  ensureCheckInStruct(rep);
   _currentInspection=rep;
+  // Start on check-out unless check-out is complete and check-in in progress
+  var hasCheckOutSigned = !!(rep.driverSig || rep.inspectorSig || rep.empName);
+  _currentPhase = (hasCheckOutSigned && !rep.checkIn.done) ? 'in' : 'out';
+  // If brand-new report, always start on out
+  if(!reportId) _currentPhase='out';
 
-  // Populate header fields
+  // Show report number banner
+  var rb=document.getElementById('inspReportNoBanner');
+  if(rb) rb.innerHTML='<span><span class="rno-label">'+t('reportNo')+'</span> <span class="rno-val">'+esc(rep.reportNo)+'</span></span>';
+
   document.getElementById('inspId').value=rep.id;
   document.getElementById('inspVehicleId').value=vehicleId;
-  document.getElementById('inspDate').value=rep.date||'';
-  document.getElementById('inspTime').value=rep.time||'';
-  document.getElementById('inspEmpName').value=rep.empName||'';
-  document.getElementById('inspEmpNo').value=rep.empNo||'';
-  document.getElementById('inspDriverMobile').value=rep.driverMobile||'';
-  document.getElementById('inspSupMobile').value=rep.supMobile||'';
-  document.getElementById('inspKm').value=rep.km||'';
-  document.getElementById('inspFuel').value=rep.fuel||'1/2';
-  document.getElementById('inspOutNotes').value=rep.outNotes||'';
-  document.getElementById('inspInNotes').value=rep.inNotes||'';
 
   renderInspChecklist();
+  populateInspFormFromPhase();
   renderDamageMarkers();
   renderDamageList();
   renderInspPhotos();
 
   document.getElementById('inspectionModal').classList.add('open');
 
-  // Initialize signatures AFTER modal becomes visible so canvas is laid out
   setTimeout(function(){
-    initSigCanvas('sigDriver',rep.driverSig);
-    initSigCanvas('sigInspector',rep.inspectorSig);
+    if(_currentPhase==='out'){
+      initSigCanvas('sigDriver',rep.driverSig);
+      initSigCanvas('sigInspector',rep.inspectorSig);
+    } else {
+      initSigCanvas('sigDriver',rep.checkIn.driverSig);
+      initSigCanvas('sigInspector',rep.checkIn.inspectorSig);
+    }
   },60);
+}
+
+/* Open inspection modal forced to check-in phase */
+function openInspectionCheckIn(vehicleId,reportId){
+  openInspection(vehicleId,reportId);
+  setTimeout(function(){
+    if(_currentPhase!=='in') switchInspPhase('in');
+  },100);
+}
+
+/* Populate the form fields based on current phase */
+function populateInspFormFromPhase(){
+  var rep=_currentInspection; if(!rep) return;
+  var outTab=document.getElementById('phaseTabOut');
+  var inTab=document.getElementById('phaseTabIn');
+  if(outTab&&inTab){
+    outTab.classList.toggle('active',_currentPhase==='out');
+    inTab.classList.toggle('active',_currentPhase==='in');
+    outTab.classList.toggle('done', !!(rep.driverSig||rep.inspectorSig||rep.empName));
+    inTab.classList.toggle('done', !!rep.checkIn.done);
+  }
+  var banner=document.getElementById('inspCheckInBanner');
+  if(_currentPhase==='in'){
+    if(rep.checkIn.done){
+      banner.className='insp-ci-banner done';
+      banner.textContent=t('inspCheckInDone')+' — '+(rep.checkIn.date||'-');
+    } else {
+      banner.className='insp-ci-banner';
+      banner.textContent=t('inspCheckInLocked');
+    }
+    banner.style.display='block';
+  } else {
+    banner.style.display='none';
+  }
+  // Show Complete Check-In button only in check-in phase and when not yet done
+  var btnCCI=document.getElementById('btnCompleteCheckIn');
+  if(btnCCI){
+    btnCCI.style.display=(_currentPhase==='in'&&!rep.checkIn.done)?'inline-flex':'none';
+  }
+
+  if(_currentPhase==='out'){
+    document.getElementById('inspDate').value=rep.date||'';
+    document.getElementById('inspTime').value=rep.time||'';
+    document.getElementById('inspEmpName').value=rep.empName||'';
+    document.getElementById('inspEmpNo').value=rep.empNo||'';
+    document.getElementById('inspDriverMobile').value=rep.driverMobile||'';
+    document.getElementById('inspSupMobile').value=rep.supMobile||'';
+    document.getElementById('inspKm').value=rep.km||'';
+    document.getElementById('inspFuel').value=rep.fuel||'1/2';
+    document.getElementById('inspOutNotes').value=rep.outNotes||'';
+    document.getElementById('inspInNotes').value=rep.inNotes||'';
+  } else {
+    var ci=rep.checkIn;
+    document.getElementById('inspDate').value=ci.date||new Date().toISOString().slice(0,10);
+    document.getElementById('inspTime').value=ci.time||new Date().toTimeString().slice(0,5);
+    document.getElementById('inspEmpName').value=rep.empName||'';
+    document.getElementById('inspEmpNo').value=rep.empNo||'';
+    document.getElementById('inspDriverMobile').value=rep.driverMobile||'';
+    document.getElementById('inspSupMobile').value=rep.supMobile||'';
+    document.getElementById('inspKm').value=ci.km||'';
+    document.getElementById('inspFuel').value=ci.fuel||'1/2';
+    document.getElementById('inspOutNotes').value=rep.outNotes||'';
+    document.getElementById('inspInNotes').value=ci.notes||'';
+  }
+}
+
+/* Switch between check-out and check-in phases (saves current phase data first) */
+function switchInspPhase(phase){
+  if(!_currentInspection) return;
+  if(phase===_currentPhase) return;
+  // Capture current phase into the report
+  captureCurrentPhaseToRep();
+  _currentPhase=phase;
+  populateInspFormFromPhase();
+  renderDamageMarkers();
+  renderDamageList();
+  renderInspPhotos();
+  setTimeout(function(){
+    var rep=_currentInspection;
+    if(_currentPhase==='out'){
+      initSigCanvas('sigDriver',rep.driverSig);
+      initSigCanvas('sigInspector',rep.inspectorSig);
+    } else {
+      initSigCanvas('sigDriver',rep.checkIn.driverSig);
+      initSigCanvas('sigInspector',rep.checkIn.inspectorSig);
+    }
+  },60);
+}
+
+/* Read the form into the current phase's slot on _currentInspection */
+function captureCurrentPhaseToRep(){
+  var rep=_currentInspection; if(!rep) return;
+  var dateV=document.getElementById('inspDate').value;
+  var timeV=document.getElementById('inspTime').value;
+  var kmV=document.getElementById('inspKm').value;
+  var fuelV=document.getElementById('inspFuel').value;
+  if(_currentPhase==='out'){
+    rep.date=dateV; rep.time=timeV;
+    rep.empName=document.getElementById('inspEmpName').value.trim();
+    rep.empNo=document.getElementById('inspEmpNo').value.trim();
+    rep.driverMobile=document.getElementById('inspDriverMobile').value.trim();
+    rep.supMobile=document.getElementById('inspSupMobile').value.trim();
+    rep.km=kmV; rep.fuel=fuelV;
+    rep.outNotes=document.getElementById('inspOutNotes').value.trim();
+    rep.inNotes=document.getElementById('inspInNotes').value.trim();
+    rep.driverSig=getSigDataUrl('sigDriver');
+    rep.inspectorSig=getSigDataUrl('sigInspector');
+  } else {
+    var ci=rep.checkIn;
+    ci.date=dateV; ci.time=timeV;
+    ci.km=kmV; ci.fuel=fuelV;
+    ci.notes=document.getElementById('inspInNotes').value.trim();
+    ci.driverSig=getSigDataUrl('sigDriver');
+    ci.inspectorSig=getSigDataUrl('sigInspector');
+  }
 }
 
 function renderInspChecklist(){
@@ -3910,11 +4340,17 @@ function dmapClick(ev){
 
 function addDamageMarker(type){
   if(!_currentInspection||!_dmapPending) return;
-  _currentInspection.damages.push({
+  var newDamage={
     x:_dmapPending.x,y:_dmapPending.y,
     type:type,notes:'',photo:'',
     addedAt:new Date().toISOString()
-  });
+  };
+  if(_currentPhase==='in'){
+    // Check-in: new damages go to checkIn.damages array (driver liable)
+    _currentInspection.checkIn.damages.push(newDamage);
+  } else {
+    _currentInspection.damages.push(newDamage);
+  }
   _dmapPending=null;
   document.getElementById('dmapPicker').classList.remove('open');
   renderDamageMarkers();
@@ -3926,9 +4362,15 @@ function cancelDamagePicker(){
   document.getElementById('dmapPicker').classList.remove('open');
 }
 
-function removeDamage(idx){
+function removeDamage(origin,idx){
   if(!_currentInspection) return;
-  _currentInspection.damages.splice(idx,1);
+  // In check-in phase, you cannot remove original damages — only new ones
+  if(_currentPhase==='in'&&origin==='orig') return;
+  if(origin==='orig'){
+    _currentInspection.damages.splice(idx,1);
+  } else {
+    _currentInspection.checkIn.damages.splice(idx,1);
+  }
   renderDamageMarkers();
   renderDamageList();
 }
@@ -3936,32 +4378,68 @@ function removeDamage(idx){
 function renderDamageMarkers(){
   var wrap=document.getElementById('dmapWrap');
   if(!wrap) return;
-  // Remove existing markers
   Array.prototype.slice.call(wrap.querySelectorAll('.dmap-marker')).forEach(function(m){m.remove();});
   if(!_currentInspection) return;
-  _currentInspection.damages.forEach(function(d,i){
+  var rep=_currentInspection;
+  // Always show original damages (numbered 1..N)
+  (rep.damages||[]).forEach(function(d,i){
     var m=document.createElement('div');
-    m.className='dmap-marker t-'+d.type;
+    var cls='dmap-marker t-'+d.type;
+    if(_currentPhase==='in') cls+=' orig';
+    m.className=cls;
     m.style.left=d.x+'%';
     m.style.top=d.y+'%';
     m.textContent=(i+1);
-    m.title=d.type;
+    m.title=d.type+(_currentPhase==='in'?' (original)':'');
     wrap.appendChild(m);
   });
+  // In check-in phase, also show new damages (numbered N+1..)
+  if(_currentPhase==='in'){
+    var base=(rep.damages||[]).length;
+    (rep.checkIn.damages||[]).forEach(function(d,i){
+      var m=document.createElement('div');
+      m.className='dmap-marker t-'+d.type+' t-new';
+      m.style.left=d.x+'%';
+      m.style.top=d.y+'%';
+      m.textContent=(base+i+1);
+      m.title=d.type+' (new)';
+      wrap.appendChild(m);
+    });
+  }
 }
 
 function renderDamageList(){
   var host=document.getElementById('dmapList');
   if(!host||!_currentInspection) return;
-  if(!_currentInspection.damages.length){ host.innerHTML=''; return; }
+  var rep=_currentInspection;
+  var origCount=(rep.damages||[]).length;
+  var newCount=_currentPhase==='in'?(rep.checkIn.damages||[]).length:0;
+  if(!origCount&&!newCount){ host.innerHTML=''; return; }
   var html='';
-  _currentInspection.damages.forEach(function(d,i){
-    var typeLabel=t('dm'+d.type.charAt(0).toUpperCase()+d.type.slice(1));
-    html+='<div class="dmap-list-item">';
-    html+='<span class="dli-txt"><b>#'+(i+1)+'</b> \u00B7 '+typeLabel+'</span>';
-    html+='<button type="button" onclick="removeDamage('+i+')">\u2715</button>';
-    html+='</div>';
-  });
+  if(origCount){
+    if(_currentPhase==='in'){
+      html+='<div style="font-size:11px;color:var(--g500);margin:4px 0 6px;font-weight:700">'+t('inspOriginalDamages')+'</div>';
+    }
+    (rep.damages||[]).forEach(function(d,i){
+      var typeLabel=t('dm'+d.type.charAt(0).toUpperCase()+d.type.slice(1));
+      html+='<div class="dmap-list-item"'+(_currentPhase==='in'?' style="background:#f1f5f9;border-color:#cbd5e1;color:#475569"':'')+'>';
+      html+='<span class="dli-txt"><b>#'+(i+1)+'</b> \u00B7 '+typeLabel+'</span>';
+      if(_currentPhase!=='in'){
+        html+='<button type="button" onclick="removeDamage(\'orig\','+i+')">\u2715</button>';
+      }
+      html+='</div>';
+    });
+  }
+  if(newCount){
+    html+='<div style="font-size:11px;color:#9a3412;margin:10px 0 6px;font-weight:700">'+t('inspNewDamages')+'</div>';
+    (rep.checkIn.damages||[]).forEach(function(d,i){
+      var typeLabel=t('dm'+d.type.charAt(0).toUpperCase()+d.type.slice(1));
+      html+='<div class="dmap-list-item" style="background:#fff7ed;border-color:#fdba74">';
+      html+='<span class="dli-txt"><b>#'+(origCount+i+1)+'</b> \u00B7 '+typeLabel+'</span>';
+      html+='<button type="button" onclick="removeDamage(\'new\','+i+')">\u2715</button>';
+      html+='</div>';
+    });
+  }
   host.innerHTML=html;
 }
 
@@ -3983,7 +4461,12 @@ function addInspPhoto(files){
         var ctx=canvas.getContext('2d');
         ctx.drawImage(img,0,0,w,h);
         var dataUrl=canvas.toDataURL('image/jpeg',0.7);
-        _currentInspection.photos.push({data:dataUrl,addedAt:new Date().toISOString()});
+        var photoObj={data:dataUrl,addedAt:new Date().toISOString()};
+        if(_currentPhase==='in'){
+          _currentInspection.checkIn.photos.push(photoObj);
+        } else {
+          _currentInspection.photos.push(photoObj);
+        }
         renderInspPhotos();
       };
       img.src=e.target.result;
@@ -3997,18 +4480,40 @@ function renderInspPhotos(){
   var host=document.getElementById('inspPhotoGrid');
   if(!host||!_currentInspection) return;
   var html='';
-  _currentInspection.photos.forEach(function(p,i){
+  var rep=_currentInspection;
+  var outPhotos=rep.photos||[];
+  var inPhotos=(rep.checkIn&&rep.checkIn.photos)||[];
+  // Check-out photos (always shown)
+  outPhotos.forEach(function(p,i){
     html+='<div class="photo-thumb">';
     html+='<img src="'+p.data+'" alt="photo">';
-    html+='<button type="button" onclick="removeInspPhoto('+i+')">\u2715</button>';
+    if(_currentPhase==='out'){
+      html+='<button type="button" onclick="removeInspPhoto(\'out\','+i+')">\u2715</button>';
+    } else {
+      html+='<span style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);color:white;font-size:9px;padding:2px 5px;border-radius:4px">OUT</span>';
+    }
     html+='</div>';
   });
+  // Check-in photos (only in check-in phase)
+  if(_currentPhase==='in'){
+    inPhotos.forEach(function(p,i){
+      html+='<div class="photo-thumb" style="outline:2px solid #fdba74">';
+      html+='<img src="'+p.data+'" alt="photo">';
+      html+='<button type="button" onclick="removeInspPhoto(\'in\','+i+')">\u2715</button>';
+      html+='<span style="position:absolute;bottom:2px;left:2px;background:#ea580c;color:white;font-size:9px;padding:2px 5px;border-radius:4px">IN</span>';
+      html+='</div>';
+    });
+  }
   host.innerHTML=html;
 }
 
-function removeInspPhoto(i){
+function removeInspPhoto(origin,i){
   if(!_currentInspection) return;
-  _currentInspection.photos.splice(i,1);
+  if(origin==='in'){
+    _currentInspection.checkIn.photos.splice(i,1);
+  } else {
+    _currentInspection.photos.splice(i,1);
+  }
   renderInspPhotos();
 }
 
@@ -4089,21 +4594,11 @@ function getSigDataUrl(id){
 function saveInspection(){
   if(!_currentInspection) return;
   var rep=_currentInspection;
-  rep.date=document.getElementById('inspDate').value;
-  rep.time=document.getElementById('inspTime').value;
-  rep.empName=document.getElementById('inspEmpName').value.trim();
-  rep.empNo=document.getElementById('inspEmpNo').value.trim();
-  rep.driverMobile=document.getElementById('inspDriverMobile').value.trim();
-  rep.supMobile=document.getElementById('inspSupMobile').value.trim();
-  rep.km=document.getElementById('inspKm').value;
-  rep.fuel=document.getElementById('inspFuel').value;
-  rep.outNotes=document.getElementById('inspOutNotes').value.trim();
-  rep.inNotes=document.getElementById('inspInNotes').value.trim();
-  rep.driverSig=getSigDataUrl('sigDriver');
-  rep.inspectorSig=getSigDataUrl('sigInspector');
+  captureCurrentPhaseToRep();
   rep.updatedAt=new Date().toISOString();
 
   if(!rep.empName){ alert(t('inspEmpNameRequired')); return; }
+  if(!rep.reportNo) rep.reportNo=nextReportNo();
 
   // Upsert by id
   var idx=inspections.findIndex(function(x){return x.id===rep.id;});
@@ -4115,6 +4610,37 @@ function saveInspection(){
   _currentInspection=null;
 
   // Refresh detail view if open
+  var vid=document.getElementById('inspVehicleId').value;
+  if(document.getElementById('vehicleDetailModal').classList.contains('open')&&vid) viewVehicle(vid);
+}
+
+/* Mark check-in as completed and save */
+function completeCheckIn(){
+  if(!_currentInspection) return;
+  if(_currentPhase!=='in'){
+    switchInspPhase('in');
+    setTimeout(completeCheckIn,100);
+    return;
+  }
+  captureCurrentPhaseToRep();
+  var rep=_currentInspection;
+  var ci=rep.checkIn;
+  if(!ci.date){ alert(t('inspCheckInDate')); return; }
+  if(!ci.driverSig||ci.driverSig.length<500){
+    alert(t('inspDriverSig')+' ❗');
+    return;
+  }
+  ci.done=true;
+  ci.completedBy=currentProfile?currentProfile.full_name:'';
+  ci.completedAt=new Date().toISOString();
+  rep.updatedAt=new Date().toISOString();
+  if(!rep.reportNo) rep.reportNo=nextReportNo();
+  var idx=inspections.findIndex(function(x){return x.id===rep.id;});
+  if(idx>=0) inspections[idx]=rep; else inspections.push(rep);
+  syncInspections();
+  closeModal('inspectionModal');
+  showToast(t('inspCheckInDone'));
+  _currentInspection=null;
   var vid=document.getElementById('inspVehicleId').value;
   if(document.getElementById('vehicleDetailModal').classList.contains('open')&&vid) viewVehicle(vid);
 }
@@ -4276,6 +4802,17 @@ function renderDamageDiagramCanvas(damages, scale){
   (damages||[]).forEach(function(d, i){
     var cx = (d.x/100) * W;
     var cy = (d.y/100) * H;
+    var isNew = d._origin === 'in';
+    // New-damage yellow outer ring (driver-liable)
+    if(isNew){
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, Math.PI*2);
+      ctx.fillStyle = '#fde047';
+      ctx.fill();
+      ctx.strokeStyle = '#ca8a04';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
     // Shadow
     ctx.beginPath();
     ctx.arc(cx, cy, 17, 0, Math.PI*2);
@@ -4300,24 +4837,260 @@ function renderDamageDiagramCanvas(damages, scale){
   return canvas.toDataURL('image/png');
 }
 
+/* ── Arabic/bilingual PDF via html2canvas ── */
+function inspectionPDFArabic(){
+  if(!_currentInspection){ alert(t('inspNoReport')); return; }
+  if(typeof html2canvas==='undefined'){
+    alert('html2canvas not loaded yet. Please retry in a second.');
+    return;
+  }
+  var rep=_currentInspection;
+  captureCurrentPhaseToRep();
+  if(!rep.reportNo) rep.reportNo=nextReportNo();
+  ensureCheckInStruct(rep);
+
+  showToast(t('generatingPdf'));
+
+  var reportUrl='https://mohamed-hiring.github.io/alhaidariya/clearance.html?inspection='+encodeURIComponent(rep.reportNo||rep.id);
+
+  makeQrDataUrl(reportUrl,200).then(function(qrUrl){
+    var combined=(rep.damages||[]).map(function(d){return Object.assign({},d,{_origin:'out'});})
+      .concat(((rep.checkIn&&rep.checkIn.damages)||[]).map(function(d){return Object.assign({},d,{_origin:'in'});}));
+    var diagImg = renderDamageDiagramCanvas(combined, 2);
+    var ci=rep.checkIn||{damages:[],photos:[]};
+    var isAr=currentLang==='ar';
+    var host=document.createElement('div');
+    host.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:white;font-family:Tahoma,Arial,sans-serif;color:#1e293b;padding:24px;direction:'+(isAr?'rtl':'ltr')+';';
+
+    // Helper for checklist row
+    function chkRowsHtml(){
+      var rows='';
+      INSP_CHECKLIST.forEach(function(grp){
+        rows+='<div style="margin-top:10px;font-size:12px;font-weight:800;color:#6A5288;text-transform:uppercase">'+esc(t(grp.group))+'</div>';
+        rows+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+        grp.items.forEach(function(it){
+          var val=rep.checklist[it.k]||'-';
+          var valColor=val==='ok'?'#16a34a':(val==='dam'?'#dc2626':'#64748b');
+          rows+='<tr><td style="padding:4px 6px;border-bottom:1px solid #e2e8f0">'+esc(t(it.l))+'</td>';
+          rows+='<td style="padding:4px 6px;border-bottom:1px solid #e2e8f0;text-align:center;color:'+valColor+';font-weight:700;width:60px">'+val.toUpperCase()+'</td></tr>';
+        });
+        rows+='</table>';
+      });
+      return rows;
+    }
+    function damageRowsHtml(){
+      var out='';
+      var outD=rep.damages||[];
+      var inD=ci.damages||[];
+      if(!outD.length&&!inD.length) return '<div style="color:#64748b;font-size:11px">—</div>';
+      outD.forEach(function(d,i){
+        out+='<div style="padding:6px 10px;background:#f1f5f9;border-radius:6px;margin-bottom:4px;font-size:11px">#'+(i+1)+' · '+t('dm'+d.type.charAt(0).toUpperCase()+d.type.slice(1))+(d.notes?' — '+esc(d.notes):'')+'</div>';
+      });
+      inD.forEach(function(d,i){
+        out+='<div style="padding:6px 10px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:6px;margin-bottom:4px;font-size:11px;font-weight:700">#'+(outD.length+i+1)+' ['+t('inspNewDamages')+'] '+t('dm'+d.type.charAt(0).toUpperCase()+d.type.slice(1))+(d.notes?' — '+esc(d.notes):'')+'</div>';
+      });
+      return out;
+    }
+    function sigImg(data){
+      if(!data) return '<div style="color:#94a3b8;font-size:10px;text-align:center;padding:20px">—</div>';
+      return '<img src="'+data+'" style="max-width:100%;max-height:80px;display:block;margin:0 auto">';
+    }
+
+    var html='';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #6A5288;padding-bottom:10px;margin-bottom:14px">';
+    html+='<div>';
+    html+='<div style="font-size:20px;font-weight:900;color:#6A5288">'+esc(t('inspectionReportTitle'))+'</div>';
+    html+='<div style="font-size:12px;color:#64748b;margin-top:4px">'+esc(t('appSub'))+'</div>';
+    html+='</div>';
+    html+='<div style="text-align:center">';
+    if(qrUrl) html+='<img src="'+qrUrl+'" style="width:80px;height:80px">';
+    html+='<div style="font-size:9px;color:#64748b;margin-top:2px">'+esc(t('scanHint'))+'</div>';
+    html+='</div>';
+    html+='</div>';
+
+    // Report no + status
+    html+='<div style="display:flex;gap:12px;margin-bottom:14px">';
+    html+='<div style="flex:1;background:#f3f0fa;border:2px dashed #6A5288;border-radius:10px;padding:10px 14px">';
+    html+='<div style="font-size:10px;color:#64748b;font-weight:600">'+esc(t('reportNo'))+'</div>';
+    html+='<div style="font-size:18px;font-weight:800;color:#6A5288;font-family:monospace">'+esc(rep.reportNo||'-')+'</div>';
+    html+='</div>';
+    html+='<div style="flex:1;background:'+(ci.done?'#ecfdf5':'#fef3c7')+';border-radius:10px;padding:10px 14px">';
+    html+='<div style="font-size:10px;color:#64748b;font-weight:600">'+esc(t('inspPhase'))+'</div>';
+    html+='<div style="font-size:14px;font-weight:800;color:'+(ci.done?'#065f46':'#92400e')+'">'+esc(ci.done?t('inspCheckInDone'):t('inspPhaseOut'))+'</div>';
+    html+='</div>';
+    html+='</div>';
+
+    // Vehicle info grid
+    function infoRow(label,val){
+      return '<tr><td style="padding:5px 8px;color:#64748b;font-size:11px;width:35%">'+esc(label)+'</td><td style="padding:5px 8px;font-size:12px;font-weight:700;color:#1e293b">'+esc(val||'-')+'</td></tr>';
+    }
+    html+='<div style="background:#f8fafc;border-radius:10px;padding:10px;margin-bottom:12px">';
+    html+='<div style="font-size:12px;font-weight:800;color:#6A5288;margin-bottom:6px">'+esc(t('vehicleDetails'))+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse">';
+    html+=infoRow(t('vehicleName'),rep.vehicleName);
+    html+=infoRow(t('plateNumber'),rep.plateNumber);
+    html+=infoRow(t('doorNumber'),rep.doorNumber);
+    html+=infoRow(t('vehicleType'),rep.vehicleType);
+    html+='</table>';
+    html+='</div>';
+
+    // Check-out info
+    html+='<div style="background:#f8fafc;border-radius:10px;padding:10px;margin-bottom:12px">';
+    html+='<div style="font-size:12px;font-weight:800;color:#6A5288;margin-bottom:6px">'+esc(t('inspPhaseOut'))+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse">';
+    html+=infoRow(t('inspDate')+' / '+t('inspTime'),(rep.date||'-')+' '+(rep.time||''));
+    html+=infoRow(t('inspEmpName'),rep.empName+' ('+rep.empNo+')');
+    html+=infoRow(t('inspDriverMobile'),rep.driverMobile);
+    html+=infoRow(t('inspKmHours')+' / '+t('inspFuel'),(rep.km||'-')+' · '+(rep.fuel||'-'));
+    if(rep.outNotes) html+=infoRow(t('notes'),rep.outNotes);
+    html+='</table>';
+    html+='</div>';
+
+    // Check-in info (if applicable)
+    if(ci.done||ci.km||ci.notes||(ci.damages&&ci.damages.length)){
+      html+='<div style="background:#fff7ed;border-radius:10px;padding:10px;margin-bottom:12px;border:1px solid #fdba74">';
+      html+='<div style="font-size:12px;font-weight:800;color:#9a3412;margin-bottom:6px">'+esc(t('inspPhaseIn'))+'</div>';
+      html+='<table style="width:100%;border-collapse:collapse">';
+      html+=infoRow(t('inspCheckInDate'),(ci.date||'-')+' '+(ci.time||''));
+      html+=infoRow(t('inspReturnKm')+' / '+t('inspReturnFuel'),(ci.km||'-')+' · '+(ci.fuel||'-'));
+      if(ci.notes) html+=infoRow(t('inspReturnNotes'),ci.notes);
+      html+='</table>';
+      html+='</div>';
+    }
+
+    // Checklist
+    html+='<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px">';
+    html+='<div style="font-size:12px;font-weight:800;color:#6A5288;margin-bottom:4px">'+esc(t('inspChecklist'))+'</div>';
+    html+=chkRowsHtml();
+    html+='</div>';
+
+    // Page break for diagram
+    html+='<div style="page-break-before:always;padding-top:10px"></div>';
+
+    // Damage diagram
+    html+='<div style="text-align:center;margin-bottom:10px">';
+    html+='<div style="font-size:18px;font-weight:900;color:#6A5288;margin-bottom:4px">BODY GENERAL APPEARANCE</div>';
+    html+='<div style="font-size:11px;color:#64748b">'+esc(rep.vehicleName||'-')+' · '+esc(rep.plateNumber||'-')+' · '+esc(rep.reportNo||'-')+'</div>';
+    html+='<img src="'+diagImg+'" style="max-width:480px;width:100%;margin:10px auto;display:block">';
+    html+='</div>';
+
+    // Damages list
+    html+='<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px">';
+    html+='<div style="font-size:13px;font-weight:800;color:#6A5288;margin-bottom:6px">'+esc(t('inspDamageMap'))+'</div>';
+    html+=damageRowsHtml();
+    html+='</div>';
+
+    // Signatures (out + in)
+    html+='<div style="display:flex;gap:10px;margin-bottom:12px">';
+    html+='<div style="flex:1;border:2px dashed #cbd5e1;border-radius:10px;padding:10px">';
+    html+='<div style="font-size:10px;color:#64748b;font-weight:700">'+esc(t('inspPhaseOut'))+' · '+esc(t('inspDriverSig'))+'</div>';
+    html+=sigImg(rep.driverSig);
+    html+='</div>';
+    html+='<div style="flex:1;border:2px dashed #cbd5e1;border-radius:10px;padding:10px">';
+    html+='<div style="font-size:10px;color:#64748b;font-weight:700">'+esc(t('inspPhaseOut'))+' · '+esc(t('inspInspectorSig'))+'</div>';
+    html+=sigImg(rep.inspectorSig);
+    html+='</div>';
+    html+='</div>';
+    if(ci.driverSig||ci.inspectorSig){
+      html+='<div style="display:flex;gap:10px;margin-bottom:12px">';
+      html+='<div style="flex:1;border:2px dashed #fdba74;border-radius:10px;padding:10px;background:#fff7ed">';
+      html+='<div style="font-size:10px;color:#9a3412;font-weight:700">'+esc(t('inspPhaseIn'))+' · '+esc(t('inspDriverSig'))+'</div>';
+      html+=sigImg(ci.driverSig);
+      html+='</div>';
+      html+='<div style="flex:1;border:2px dashed #fdba74;border-radius:10px;padding:10px;background:#fff7ed">';
+      html+='<div style="font-size:10px;color:#9a3412;font-weight:700">'+esc(t('inspPhaseIn'))+' · '+esc(t('inspInspectorSig'))+'</div>';
+      html+=sigImg(ci.inspectorSig);
+      html+='</div>';
+      html+='</div>';
+    }
+
+    // Footer
+    html+='<div style="text-align:center;font-size:9px;color:#94a3b8;margin-top:14px;border-top:1px solid #e2e8f0;padding-top:8px">Al Haidariya Heavy Equipment · '+new Date().toLocaleString()+'</div>';
+
+    host.innerHTML=html;
+    document.body.appendChild(host);
+
+    html2canvas(host,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
+      document.body.removeChild(host);
+      var doc=new jspdf.jsPDF('portrait','mm','a4');
+      var pageW=210, pageH=297;
+      var imgW=pageW;
+      var imgH=canvas.height*imgW/canvas.width;
+      // Paginate the tall canvas across multiple A4 pages
+      if(imgH<=pageH){
+        doc.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,imgW,imgH);
+      } else {
+        var pxPerMm=canvas.width/imgW;
+        var pagePxH=pageH*pxPerMm;
+        var yOff=0;
+        var pageNum=0;
+        while(yOff<canvas.height){
+          var pageCv=document.createElement('canvas');
+          pageCv.width=canvas.width;
+          pageCv.height=Math.min(pagePxH,canvas.height-yOff);
+          var pctx=pageCv.getContext('2d');
+          pctx.fillStyle='#ffffff';
+          pctx.fillRect(0,0,pageCv.width,pageCv.height);
+          pctx.drawImage(canvas,0,yOff,canvas.width,pageCv.height,0,0,canvas.width,pageCv.height);
+          if(pageNum>0) doc.addPage();
+          doc.addImage(pageCv.toDataURL('image/jpeg',0.92),'JPEG',0,0,imgW,pageCv.height/pxPerMm);
+          yOff+=pageCv.height;
+          pageNum++;
+        }
+      }
+
+      // Photos on separate pages (out then in)
+      var allPhotos=(rep.photos||[]).map(function(p){return Object.assign({},p,{_phase:'OUT'});})
+        .concat((ci.photos||[]).map(function(p){return Object.assign({},p,{_phase:'IN'});}));
+      allPhotos.forEach(function(p,i){
+        doc.addPage();
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(12);
+        doc.text('Photo '+(i+1)+' of '+allPhotos.length+' ['+p._phase+']',10,14);
+        try{ doc.addImage(p.data,'JPEG',10,20,190,240); }catch(e){}
+      });
+
+      var fname=(rep.reportNo||'inspection')+'_ar_'+(rep.plateNumber||'report').replace(/[^A-Za-z0-9_-]/g,'_')+'.pdf';
+      doc.save(fname);
+    }).catch(function(err){
+      try{ document.body.removeChild(host); }catch(e){}
+      console.error(err);
+      alert('PDF generation failed: '+err.message);
+    });
+  });
+}
+
+/* ── Build a QR code as a PNG data URL (async via qrcode lib) ── */
+function makeQrDataUrl(text, size){
+  return new Promise(function(resolve){
+    try {
+      if(typeof QRCode==='undefined'){ resolve(''); return; }
+      var cv=document.createElement('canvas');
+      QRCode.toCanvas(cv,text,{width:size||160,margin:1},function(err){
+        if(err){ resolve(''); return; }
+        resolve(cv.toDataURL('image/png'));
+      });
+    } catch(e){ resolve(''); }
+  });
+}
+
 /* ── PDF export ── */
 function inspectionPDF(){
   if(!_currentInspection){ alert(t('inspNoReport')); return; }
   var rep=_currentInspection;
-  // Capture latest form state before rendering
-  rep.date=document.getElementById('inspDate').value;
-  rep.time=document.getElementById('inspTime').value;
-  rep.empName=document.getElementById('inspEmpName').value.trim();
-  rep.empNo=document.getElementById('inspEmpNo').value.trim();
-  rep.driverMobile=document.getElementById('inspDriverMobile').value.trim();
-  rep.supMobile=document.getElementById('inspSupMobile').value.trim();
-  rep.km=document.getElementById('inspKm').value;
-  rep.fuel=document.getElementById('inspFuel').value;
-  rep.outNotes=document.getElementById('inspOutNotes').value.trim();
-  rep.inNotes=document.getElementById('inspInNotes').value.trim();
-  rep.driverSig=getSigDataUrl('sigDriver');
-  rep.inspectorSig=getSigDataUrl('sigInspector');
+  // Capture latest form state before rendering (use phase-aware capture)
+  captureCurrentPhaseToRep();
+  if(!rep.reportNo) rep.reportNo=nextReportNo();
+  ensureCheckInStruct(rep);
 
+  var reportUrl='https://mohamed-hiring.github.io/alhaidariya/clearance.html?inspection='+encodeURIComponent(rep.reportNo||rep.id);
+
+  makeQrDataUrl(reportUrl,200).then(function(qrUrl){
+    _buildInspectionPDF(rep, qrUrl);
+  });
+}
+
+function _buildInspectionPDF(rep, qrUrl){
   var doc=new jspdf.jsPDF('portrait','mm','a4');
   var y=15;
   doc.setFont('helvetica','bold');
@@ -4329,6 +5102,22 @@ function inspectionPDF(){
   doc.text('Al Haidariya Heavy Equipment',105,y,{align:'center'});
   y+=8;
 
+  // Report number + QR code strip
+  doc.setDrawColor(180);
+  doc.rect(10,y,190,14);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('Report No: '+(rep.reportNo||'-'),12,y+6);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.text('Status: '+(rep.checkIn&&rep.checkIn.done?'Check-In Completed':'Check-Out'),12,y+11);
+  if(qrUrl){
+    try{ doc.addImage(qrUrl,'PNG',180,y+1,18,18); }catch(e){}
+    doc.setFontSize(6);
+    doc.text('Scan',189,y+21,{align:'center'});
+  }
+  y+=20;
+
   // Header box
   doc.setDrawColor(180);
   doc.rect(10,y,190,28);
@@ -4337,7 +5126,7 @@ function inspectionPDF(){
   doc.text('Plate No.: '+(rep.plateNumber||'-'),12,y+10);
   doc.text('Door No.: '+(rep.doorNumber||'-'),12,y+15);
   doc.text('Type: '+(rep.vehicleType||'-'),12,y+20);
-  doc.text('Date: '+(rep.date||'-')+' '+(rep.time||''),110,y+5);
+  doc.text('Check-Out: '+(rep.date||'-')+' '+(rep.time||''),110,y+5);
   doc.text('Employee: '+(rep.empName||'-')+' ('+(rep.empNo||'-')+')',110,y+10);
   doc.text('Driver Mob: '+(rep.driverMobile||'-'),110,y+15);
   doc.text('KM/Hrs: '+(rep.km||'-')+'  Fuel: '+(rep.fuel||'-'),110,y+20);
@@ -4372,32 +5161,45 @@ function inspectionPDF(){
     y+=2;
   });
 
-  // Damage list
-  if(rep.damages&&rep.damages.length){
+  // Damage list (original + check-in new damages)
+  var ci=rep.checkIn||{damages:[],photos:[]};
+  var allDamages=(rep.damages||[]).concat(ci.damages||[]);
+  if(allDamages.length){
     if(y>250){ doc.addPage(); y=15; }
     doc.setFont('helvetica','bold');
     doc.setFontSize(11);
     doc.text('Damages',10,y); y+=5;
     doc.setFont('helvetica','normal');
     doc.setFontSize(9);
-    rep.damages.forEach(function(d,i){
+    (rep.damages||[]).forEach(function(d,i){
       if(y>280){ doc.addPage(); y=15; }
-      doc.text('#'+(i+1)+' '+d.type.toUpperCase()+(d.notes?' — '+d.notes:''),12,y);
+      doc.text('#'+(i+1)+' [OUT] '+d.type.toUpperCase()+(d.notes?' — '+d.notes:''),12,y);
       y+=4;
     });
+    var base=(rep.damages||[]).length;
+    (ci.damages||[]).forEach(function(d,i){
+      if(y>280){ doc.addPage(); y=15; }
+      doc.setTextColor(234,88,12);
+      doc.text('#'+(base+i+1)+' [IN - NEW] '+d.type.toUpperCase()+(d.notes?' — '+d.notes:''),12,y);
+      y+=4;
+    });
+    doc.setTextColor(0);
     y+=2;
   }
 
   // Damage diagram — always print on its own page so markers are clearly visible
   try {
-    var diagImg = renderDamageDiagramCanvas(rep.damages||[], 2);
+    // Build a combined list with origin tags so we can color them differently
+    var combined=(rep.damages||[]).map(function(d){return Object.assign({},d,{_origin:'out'});});
+    combined=combined.concat((ci.damages||[]).map(function(d){return Object.assign({},d,{_origin:'in'});}));
+    var diagImg = renderDamageDiagramCanvas(combined, 2);
     doc.addPage();
     doc.setFont('helvetica','bold');
     doc.setFontSize(14);
     doc.text('Body General Appearance',105,15,{align:'center'});
     doc.setFont('helvetica','normal');
     doc.setFontSize(9);
-    doc.text('Vehicle: '+(rep.vehicleName||'-')+'   Plate: '+(rep.plateNumber||'-'),105,21,{align:'center'});
+    doc.text('Report: '+(rep.reportNo||'-')+'   Plate: '+(rep.plateNumber||'-'),105,21,{align:'center'});
     // 120mm wide centered → 120 * (760/500) = 182.4mm tall
     var imgW = 120, imgH = 182.4;
     var imgX = (210 - imgW) / 2;
@@ -4422,17 +5224,27 @@ function inspectionPDF(){
       doc.text(it.t, lx+6, ly);
       lx += 30;
     });
+    // In marker legend
+    if((ci.damages||[]).length){
+      doc.setFillColor(253,224,71);
+      doc.circle(lx+2, ly-1, 2.5, 'S');
+      doc.setLineWidth(0.5);
+      doc.text('= NEW (driver liable)', lx+6, ly);
+    }
     // Damage numbered list under legend
-    if(rep.damages && rep.damages.length){
+    if(combined.length){
       var dy = ly + 6;
       doc.setFont('helvetica','bold');
       doc.text('Damage Details:',14,dy); dy+=5;
       doc.setFont('helvetica','normal');
       doc.setFontSize(9);
-      rep.damages.forEach(function(d,i){
+      combined.forEach(function(d,i){
         if(dy>285){ return; }
-        var line = '#'+(i+1)+'  '+d.type.toUpperCase()+(d.notes?' — '+d.notes:'');
+        if(d._origin==='in'){ doc.setTextColor(234,88,12); }
+        var tag=d._origin==='in'?' [NEW]':' [OUT]';
+        var line = '#'+(i+1)+tag+'  '+d.type.toUpperCase()+(d.notes?' — '+d.notes:'');
         doc.text(line,14,dy);
+        doc.setTextColor(0);
         dy += 4.5;
       });
     }
@@ -4450,12 +5262,12 @@ function inspectionPDF(){
     if(rep.inNotes){ doc.text('Check-in:  '+rep.inNotes,12,y); y+=5; }
   }
 
-  // Signatures
+  // Signatures (Check-Out)
   if(y>230){ doc.addPage(); y=15; }
   y+=4;
   doc.setFont('helvetica','bold');
   doc.setFontSize(11);
-  doc.text('Signatures',10,y);
+  doc.text('Check-Out Signatures',10,y);
   y+=4;
   doc.setFont('helvetica','normal');
   doc.setFontSize(9);
@@ -4467,18 +5279,41 @@ function inspectionPDF(){
   try{ if(rep.inspectorSig) doc.addImage(rep.inspectorSig,'PNG',117,y+2,80,26); }catch(e){}
   y+=40;
 
+  // Check-In section (only if check-in is started/completed)
+  if(ci.done || ci.km || ci.notes || (ci.damages&&ci.damages.length) || ci.driverSig){
+    if(y>230){ doc.addPage(); y=15; }
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(11);
+    doc.text('Check-In (Return)',10,y); y+=5;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text('Return Date: '+(ci.date||'-')+' '+(ci.time||''),12,y); y+=5;
+    doc.text('Return KM/Hrs: '+(ci.km||'-')+'  Fuel: '+(ci.fuel||'-'),12,y); y+=5;
+    if(ci.notes){ doc.text('Notes: '+ci.notes,12,y); y+=5; }
+    y+=2;
+    doc.rect(10,y,85,30);
+    doc.rect(115,y,85,30);
+    doc.text('Driver Return Signature',12,y+34);
+    doc.text('Return Inspector Signature',117,y+34);
+    try{ if(ci.driverSig) doc.addImage(ci.driverSig,'PNG',12,y+2,80,26); }catch(e){}
+    try{ if(ci.inspectorSig) doc.addImage(ci.inspectorSig,'PNG',117,y+2,80,26); }catch(e){}
+    y+=40;
+  }
+
   // Photos (each on new page to fit comfortably)
-  if(rep.photos&&rep.photos.length){
-    rep.photos.forEach(function(p,i){
+  var allPhotos=(rep.photos||[]).map(function(p){return Object.assign({},p,{_phase:'OUT'});})
+    .concat((ci.photos||[]).map(function(p){return Object.assign({},p,{_phase:'IN'});}));
+  if(allPhotos.length){
+    allPhotos.forEach(function(p,i){
       doc.addPage();
       doc.setFont('helvetica','bold');
       doc.setFontSize(12);
-      doc.text('Photo '+(i+1)+' of '+rep.photos.length,10,14);
+      doc.text('Photo '+(i+1)+' of '+allPhotos.length+' ['+p._phase+']',10,14);
       try{ doc.addImage(p.data,'JPEG',10,20,190,240); }catch(e){}
     });
   }
 
-  var fname='inspection_'+(rep.plateNumber||'report').replace(/[^A-Za-z0-9_-]/g,'_')+'_'+(rep.date||'').replace(/-/g,'')+'.pdf';
+  var fname=(rep.reportNo||'inspection')+'_'+(rep.plateNumber||'report').replace(/[^A-Za-z0-9_-]/g,'_')+'.pdf';
   doc.save(fname);
 }
 
