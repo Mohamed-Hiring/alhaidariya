@@ -1024,24 +1024,89 @@ body.rtl .toast-container{right:auto;left:20px;}
       <div class="insp-section-title" data-i18n="inspDamageMap">Damage Map</div>
       <p style="font-size:11px;color:var(--g500);margin-bottom:10px" data-i18n="inspDamageHint">Tap on the vehicle diagram to mark damage location and choose type.</p>
       <div class="dmap-wrap" id="dmapWrap">
-        <svg class="dmap-svg" id="dmapSvg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" onclick="dmapClick(event)">
-          <!-- Top view of a generic vehicle -->
-          <rect class="dm-region" x="80" y="40" width="240" height="220" rx="30" ry="30"/>
-          <rect class="dm-region" x="100" y="60" width="200" height="60" rx="8"/>
-          <rect class="dm-region" x="100" y="180" width="200" height="60" rx="8"/>
-          <line x1="200" y1="120" x2="200" y2="180" stroke="#94a3b8" stroke-width="1.5"/>
-          <line x1="100" y1="150" x2="300" y2="150" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
-          <circle class="dm-region" cx="95" cy="85" r="12"/>
-          <circle class="dm-region" cx="305" cy="85" r="12"/>
-          <circle class="dm-region" cx="95" cy="215" r="12"/>
-          <circle class="dm-region" cx="305" cy="215" r="12"/>
-          <text class="dmap-label" x="200" y="32">FRONT</text>
-          <text class="dmap-label" x="200" y="280">REAR</text>
-          <text class="dmap-label" x="60" y="155">L</text>
-          <text class="dmap-label" x="340" y="155">R</text>
-          <text class="dmap-label" x="200" y="95">HOOD</text>
-          <text class="dmap-label" x="200" y="155">CABIN</text>
-          <text class="dmap-label" x="200" y="215">TRUNK</text>
+        <svg class="dmap-svg" id="dmapSvg" viewBox="0 0 500 760" xmlns="http://www.w3.org/2000/svg" onclick="dmapClick(event)">
+          <defs>
+            <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#dbeafe"/>
+              <stop offset="100%" stop-color="#bfdbfe"/>
+            </linearGradient>
+          </defs>
+
+          <!-- FRONT / REAR labels -->
+          <text class="dmap-label" x="250" y="12" font-weight="800" font-size="12">FRONT</text>
+          <text class="dmap-label" x="250" y="752" font-weight="800" font-size="12">REAR</text>
+
+          <!-- Front bumper -->
+          <rect class="dm-region" x="185" y="18" width="130" height="16" rx="5"/>
+          <text class="dmap-label" x="250" y="30" font-size="8" fill="#475569">F. BUMPER</text>
+
+          <!-- Hood (trapezoid, narrow at top, wide at bottom) -->
+          <path class="dm-region" d="M 185 34 L 315 34 L 345 110 L 155 110 Z"/>
+          <text class="dmap-label" x="250" y="78" font-weight="700" font-size="12">HOOD</text>
+
+          <!-- Front-left wheel -->
+          <rect class="dm-region" x="152" y="160" width="26" height="70" rx="6"/>
+          <text class="dmap-label" x="165" y="200" font-size="8" fill="#475569">FL</text>
+          <!-- Front-right wheel -->
+          <rect class="dm-region" x="322" y="160" width="26" height="70" rx="6"/>
+          <text class="dmap-label" x="335" y="200" font-size="8" fill="#475569">FR</text>
+          <!-- Rear-left wheel -->
+          <rect class="dm-region" x="152" y="525" width="26" height="70" rx="6"/>
+          <text class="dmap-label" x="165" y="565" font-size="8" fill="#475569">RL</text>
+          <!-- Rear-right wheel -->
+          <rect class="dm-region" x="322" y="525" width="26" height="70" rx="6"/>
+          <text class="dmap-label" x="335" y="565" font-size="8" fill="#475569">RR</text>
+
+          <!-- Main cabin body (central rounded rect) -->
+          <rect class="dm-region" x="178" y="110" width="144" height="540" rx="14"/>
+
+          <!-- Windshield -->
+          <path class="dm-region" d="M 185 120 L 315 120 L 305 175 L 195 175 Z" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="250" y="152" font-size="9" fill="#1e3a8a">WINDSHIELD</text>
+
+          <!-- Roof (cabin center) -->
+          <rect class="dm-region" x="195" y="175" width="110" height="410" rx="4"/>
+          <text class="dmap-label" x="250" y="383" font-weight="700" font-size="11">ROOF</text>
+          <!-- Center split line -->
+          <line x1="250" y1="175" x2="250" y2="585" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- Rear window -->
+          <path class="dm-region" d="M 195 585 L 305 585 L 315 640 L 185 640 Z" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="250" y="615" font-size="9" fill="#1e3a8a">REAR WINDOW</text>
+
+          <!-- Splayed doors — LEFT side -->
+          <!-- FL DOOR (front-left, splayed outward) -->
+          <rect class="dm-region" x="18" y="150" width="128" height="150" rx="10"/>
+          <rect class="dm-region" x="28" y="160" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="82" y="182" font-size="9" fill="#1e3a8a">WINDOW</text>
+          <text class="dmap-label" x="82" y="248" font-weight="700" font-size="11">FL DOOR</text>
+
+          <!-- RL DOOR (rear-left, splayed outward) -->
+          <rect class="dm-region" x="18" y="455" width="128" height="150" rx="10"/>
+          <rect class="dm-region" x="28" y="465" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="82" y="487" font-size="9" fill="#1e3a8a">WINDOW</text>
+          <text class="dmap-label" x="82" y="553" font-weight="700" font-size="11">RL DOOR</text>
+
+          <!-- Splayed doors — RIGHT side -->
+          <!-- FR DOOR (front-right, splayed outward) -->
+          <rect class="dm-region" x="354" y="150" width="128" height="150" rx="10"/>
+          <rect class="dm-region" x="364" y="160" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="418" y="182" font-size="9" fill="#1e3a8a">WINDOW</text>
+          <text class="dmap-label" x="418" y="248" font-weight="700" font-size="11">FR DOOR</text>
+
+          <!-- RR DOOR (rear-right, splayed outward) -->
+          <rect class="dm-region" x="354" y="455" width="128" height="150" rx="10"/>
+          <rect class="dm-region" x="364" y="465" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
+          <text class="dmap-label" x="418" y="487" font-size="9" fill="#1e3a8a">WINDOW</text>
+          <text class="dmap-label" x="418" y="553" font-weight="700" font-size="11">RR DOOR</text>
+
+          <!-- Trunk (trapezoid, wide at top, narrow at bottom) -->
+          <path class="dm-region" d="M 155 650 L 345 650 L 315 726 L 185 726 Z"/>
+          <text class="dmap-label" x="250" y="692" font-weight="700" font-size="12">TRUNK</text>
+
+          <!-- Rear bumper -->
+          <rect class="dm-region" x="185" y="726" width="130" height="16" rx="5"/>
+          <text class="dmap-label" x="250" y="738" font-size="8" fill="#475569">R. BUMPER</text>
         </svg>
         <div class="dmap-picker" id="dmapPicker">
           <button style="background:#f59e0b" onclick="addDamageMarker('scratch')" data-i18n="dmScratch">Scratch</button>
@@ -4062,6 +4127,179 @@ function deleteInspection(id){
   if(vid&&document.getElementById('vehicleDetailModal').classList.contains('open')) viewVehicle(vid);
 }
 
+/* ── Render damage diagram to canvas (for PDF export) ── */
+function renderDamageDiagramCanvas(damages, scale){
+  scale = scale || 2;
+  var W = 500, H = 760;
+  var canvas = document.createElement('canvas');
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Helpers
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+  function fillStrokeShape(fill){
+    ctx.fillStyle = fill || '#f1f5f9';
+    ctx.fill();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  function part(path, fill){
+    ctx.beginPath();
+    path();
+    fillStrokeShape(fill);
+  }
+  function rectPart(x, y, w, h, r, fill){
+    roundRect(x, y, w, h, r);
+    fillStrokeShape(fill);
+  }
+  function labelText(txt, x, y, size, bold, color){
+    ctx.fillStyle = color || '#334155';
+    ctx.font = (bold?'bold ':'') + size + 'px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(txt, x, y);
+  }
+
+  var GLASS = '#dbeafe';
+  var BODY  = '#f1f5f9';
+
+  // FRONT / REAR labels
+  labelText('FRONT', 250, 12, 12, true, '#1e293b');
+  labelText('REAR',  250, 752, 12, true, '#1e293b');
+
+  // Front bumper
+  rectPart(185, 18, 130, 16, 5, BODY);
+  labelText('F. BUMPER', 250, 30, 8, false, '#475569');
+
+  // Hood (trapezoid)
+  part(function(){
+    ctx.moveTo(185, 34); ctx.lineTo(315, 34);
+    ctx.lineTo(345, 110); ctx.lineTo(155, 110); ctx.closePath();
+  }, BODY);
+  labelText('HOOD', 250, 78, 13, true, '#334155');
+
+  // Wheels
+  rectPart(152, 160, 26, 70, 6, '#cbd5e1');
+  labelText('FL', 165, 200, 8, false, '#475569');
+  rectPart(322, 160, 26, 70, 6, '#cbd5e1');
+  labelText('FR', 335, 200, 8, false, '#475569');
+  rectPart(152, 525, 26, 70, 6, '#cbd5e1');
+  labelText('RL', 165, 565, 8, false, '#475569');
+  rectPart(322, 525, 26, 70, 6, '#cbd5e1');
+  labelText('RR', 335, 565, 8, false, '#475569');
+
+  // Main cabin body
+  rectPart(178, 110, 144, 540, 14, BODY);
+
+  // Windshield
+  part(function(){
+    ctx.moveTo(185, 120); ctx.lineTo(315, 120);
+    ctx.lineTo(305, 175); ctx.lineTo(195, 175); ctx.closePath();
+  }, GLASS);
+  labelText('WINDSHIELD', 250, 152, 9, false, '#1e3a8a');
+
+  // Roof
+  rectPart(195, 175, 110, 410, 4, BODY);
+  labelText('ROOF', 250, 383, 12, true, '#334155');
+
+  // Split line
+  ctx.beginPath();
+  ctx.setLineDash([4,4]);
+  ctx.moveTo(250, 175); ctx.lineTo(250, 585);
+  ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Rear window
+  part(function(){
+    ctx.moveTo(195, 585); ctx.lineTo(305, 585);
+    ctx.lineTo(315, 640); ctx.lineTo(185, 640); ctx.closePath();
+  }, GLASS);
+  labelText('REAR WINDOW', 250, 615, 9, false, '#1e3a8a');
+
+  // FL DOOR
+  rectPart(18, 150, 128, 150, 10, BODY);
+  rectPart(28, 160, 108, 36, 4, GLASS);
+  labelText('WINDOW', 82, 182, 9, false, '#1e3a8a');
+  labelText('FL DOOR', 82, 248, 12, true, '#334155');
+
+  // RL DOOR
+  rectPart(18, 455, 128, 150, 10, BODY);
+  rectPart(28, 465, 108, 36, 4, GLASS);
+  labelText('WINDOW', 82, 487, 9, false, '#1e3a8a');
+  labelText('RL DOOR', 82, 553, 12, true, '#334155');
+
+  // FR DOOR
+  rectPart(354, 150, 128, 150, 10, BODY);
+  rectPart(364, 160, 108, 36, 4, GLASS);
+  labelText('WINDOW', 418, 182, 9, false, '#1e3a8a');
+  labelText('FR DOOR', 418, 248, 12, true, '#334155');
+
+  // RR DOOR
+  rectPart(354, 455, 128, 150, 10, BODY);
+  rectPart(364, 465, 108, 36, 4, GLASS);
+  labelText('WINDOW', 418, 487, 9, false, '#1e3a8a');
+  labelText('RR DOOR', 418, 553, 12, true, '#334155');
+
+  // Trunk (trapezoid)
+  part(function(){
+    ctx.moveTo(155, 650); ctx.lineTo(345, 650);
+    ctx.lineTo(315, 726); ctx.lineTo(185, 726); ctx.closePath();
+  }, BODY);
+  labelText('TRUNK', 250, 692, 13, true, '#334155');
+
+  // Rear bumper
+  rectPart(185, 726, 130, 16, 5, BODY);
+  labelText('R. BUMPER', 250, 738, 8, false, '#475569');
+
+  // Damage markers
+  var colors = {scratch:'#f59e0b', dent:'#ef4444', 'break':'#7f1d1d', other:'#64748b'};
+  (damages||[]).forEach(function(d, i){
+    var cx = (d.x/100) * W;
+    var cy = (d.y/100) * H;
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(cx, cy, 17, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fill();
+    // Circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 16, 0, Math.PI*2);
+    ctx.fillStyle = colors[d.type] || '#64748b';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // Number
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i+1), cx, cy+1);
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
 /* ── PDF export ── */
 function inspectionPDF(){
   if(!_currentInspection){ alert(t('inspNoReport')); return; }
@@ -4149,6 +4387,56 @@ function inspectionPDF(){
     });
     y+=2;
   }
+
+  // Damage diagram — always print on its own page so markers are clearly visible
+  try {
+    var diagImg = renderDamageDiagramCanvas(rep.damages||[], 2);
+    doc.addPage();
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(14);
+    doc.text('Body General Appearance',105,15,{align:'center'});
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.text('Vehicle: '+(rep.vehicleName||'-')+'   Plate: '+(rep.plateNumber||'-'),105,21,{align:'center'});
+    // 120mm wide centered → 120 * (760/500) = 182.4mm tall
+    var imgW = 120, imgH = 182.4;
+    var imgX = (210 - imgW) / 2;
+    var imgY = 26;
+    doc.addImage(diagImg,'PNG',imgX,imgY,imgW,imgH);
+    // Legend below the diagram
+    var ly = imgY + imgH + 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica','bold');
+    doc.text('Legend:',14,ly);
+    doc.setFont('helvetica','normal');
+    var legend = [
+      {t:'Scratch', c:[245,158,11]},
+      {t:'Dent',    c:[239,68,68]},
+      {t:'Break',   c:[127,29,29]},
+      {t:'Other',   c:[100,116,139]}
+    ];
+    var lx = 32;
+    legend.forEach(function(it){
+      doc.setFillColor(it.c[0],it.c[1],it.c[2]);
+      doc.circle(lx+2, ly-1, 2, 'F');
+      doc.text(it.t, lx+6, ly);
+      lx += 30;
+    });
+    // Damage numbered list under legend
+    if(rep.damages && rep.damages.length){
+      var dy = ly + 6;
+      doc.setFont('helvetica','bold');
+      doc.text('Damage Details:',14,dy); dy+=5;
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      rep.damages.forEach(function(d,i){
+        if(dy>285){ return; }
+        var line = '#'+(i+1)+'  '+d.type.toUpperCase()+(d.notes?' — '+d.notes:'');
+        doc.text(line,14,dy);
+        dy += 4.5;
+      });
+    }
+  } catch(e){ console.warn('damage diagram render failed',e); }
 
   // Notes
   if(rep.outNotes||rep.inNotes){
