@@ -279,7 +279,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .v2-row:active{transform:scale(.99);}
 .v2-info{flex:1;min-width:0;padding-inline-start:6px;}
 .v2-name{font-size:15px;font-weight:700;color:var(--g800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px;}
-.v2-plate{font-size:12px;color:var(--g600);font-weight:600;margin-top:3px;letter-spacing:.1px;}
+.v2-ids{font-size:12px;color:var(--g700);font-weight:600;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;letter-spacing:.1px;}
+.v2-ids span{display:inline-flex;align-items:center;gap:4px;}
+.v2-ids .lbl{color:var(--g400);font-weight:500;}
 .v2-meta{font-size:11px;color:var(--g400);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap;}
 .v2-meta span{display:inline-flex;align-items:center;gap:4px;}
 .v2-pill{flex-shrink:0;padding:10px 16px;border-radius:999px;font-size:12px;font-weight:700;border:none;cursor:pointer;min-height:46px;min-width:102px;text-align:center;transition:all var(--t);letter-spacing:.2px;white-space:nowrap;color:white;box-shadow:0 2px 6px rgba(0,0,0,.15);font-family:inherit;}
@@ -305,7 +307,8 @@ body.is-viewer .v2-pill::before{display:none;}
 .v2-row.vs-longterm{background:#1e0a0a;}
 .v2-row.vs-longterm::before{background:#7f1d1d;}
 .v2-row.vs-longterm .v2-name{color:#fff;}
-.v2-row.vs-longterm .v2-plate{color:#fca5a5;}
+.v2-row.vs-longterm .v2-ids{color:#fecaca;}
+.v2-row.vs-longterm .v2-ids .lbl{color:#f87171;}
 .v2-row.vs-longterm .v2-meta{color:#fca5a5;}
 .v2-row.vs-longterm .v2-pill{background:#7f1d1d;color:#fee;}
 
@@ -420,6 +423,13 @@ body.rtl .sheet-btn{text-align:right;}
 .vd-log-main{flex:1;min-width:0;}
 .vd-log-date{font-size:11px;color:var(--g400);margin-top:3px;}
 .vd-log-reason{font-size:11px;color:var(--rdd);margin-top:4px;font-weight:600;}
+.vd-log-fee{font-size:11px;color:var(--g700);margin-top:4px;background:#fef9c3;padding:4px 8px;border-radius:6px;display:inline-block;font-weight:600;}
+.vd-log-fee .lbl{color:var(--g500);font-weight:500;}
+.vd-log-pays{margin-top:6px;display:flex;flex-direction:column;gap:4px;}
+.vd-pay{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--g700);}
+.vd-pay-amt{font-weight:700;color:#047857;}
+.vd-pay-notes{margin-top:3px;color:var(--g600);font-weight:500;}
+.vd-pay-by{margin-top:2px;color:var(--g400);font-size:10px;}
 
 /* Mobile tuning for v2 */
 @media(max-width:600px){
@@ -633,10 +643,16 @@ body.rtl .toast-container{right:auto;left:20px;}
 <div class="pg" id="pg-4">
   <div class="card-header" style="margin-bottom:16px">
     <div class="card-title" data-i18n="reports">Reports</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-s" onclick="exportExcel()" data-i18n="exportExcel">Export Excel</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="exportFullExcel()" data-i18n="exportFullExcel">Export Full Excel</button>
       <button class="btn btn-s" onclick="exportPDF()" data-i18n="exportPDF">Export PDF</button>
     </div>
+  </div>
+  <div class="card admin-only" style="border:2px dashed var(--p);background:var(--pb)">
+    <div class="card-title" data-i18n="updateFromExcel">Update from Excel</div>
+    <p style="font-size:12px;color:var(--g600);margin:8px 0 14px;line-height:1.6" data-i18n="updateFromExcelDesc">Export the full Excel file, edit it (change plate numbers, drivers, statuses, fees, etc.), then re-upload it here to update every matching vehicle at once.</p>
+    <input type="file" id="xlsxUpdateInput" accept=".xlsx,.xls" style="display:none" onchange="importUpdateExcel(this.files[0]);this.value='';">
+    <button class="btn btn-p" onclick="document.getElementById('xlsxUpdateInput').click()" data-i18n="uploadExcel">&#x1F4C4; Upload Excel to Update</button>
   </div>
   <div class="card">
     <div class="card-title" data-i18n="summaryReport">Summary Report</div>
@@ -764,6 +780,59 @@ body.rtl .toast-container{right:auto;left:20px;}
     <div class="modal-actions">
       <button class="btn btn-s" onclick="closeModal('supExportModal')" data-i18n="cancel">Cancel</button>
       <button class="btn btn-p" onclick="exportSupervisorPDF()" data-i18n="downloadPdf">Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Registration Fee Input Modal (shown when status → Passed) -->
+<div class="modal-bg" id="feeInputModal">
+  <div class="modal" style="max-width:460px">
+    <h2 data-i18n="enterFeeTitle">Registration Fee Required</h2>
+    <p style="color:var(--g500);font-size:13px;margin-bottom:14px" data-i18n="enterFeeHelp">Enter the amount that needs to be paid for registration.</p>
+    <div class="fg">
+      <label data-i18n="feeAmount">Fee Amount (KWD)</label>
+      <input type="number" id="feeAmountInput" step="0.001" min="0" placeholder="0.000" inputmode="decimal">
+    </div>
+    <div class="fg">
+      <label data-i18n="feeNotes">Notes (optional)</label>
+      <input type="text" id="feeNotesInput" placeholder="e.g. includes late fees">
+    </div>
+    <input type="hidden" id="feeRecordId">
+    <input type="hidden" id="feeVehicleId">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('feeInputModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-p" onclick="confirmFeeInput()" data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Input Modal (shown when status → Paid) -->
+<div class="modal-bg" id="paymentInputModal">
+  <div class="modal" style="max-width:460px">
+    <h2 data-i18n="enterPaymentTitle">Record Payment</h2>
+    <p style="color:var(--g500);font-size:13px;margin-bottom:14px" data-i18n="enterPaymentHelp">Enter the amount actually paid and any notes (payment method, who paid, etc.)</p>
+    <div class="fg">
+      <label data-i18n="amountPaid">Amount Paid (KWD)</label>
+      <input type="number" id="paidAmountInput" step="0.001" min="0" placeholder="0.000" inputmode="decimal">
+    </div>
+    <div class="fg">
+      <label data-i18n="paymentMethod">Payment Method</label>
+      <select id="paymentMethodInput">
+        <option value="cash" data-i18n="pmCash">Cash</option>
+        <option value="card" data-i18n="pmCard">Card</option>
+        <option value="transfer" data-i18n="pmTransfer">Transfer</option>
+        <option value="other" data-i18n="pmOther">Other</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label data-i18n="paymentNotes">Payment Notes</label>
+      <textarea id="paymentNotesInput" rows="2" placeholder="e.g. Ali transferred the money to the clearance agent"></textarea>
+    </div>
+    <input type="hidden" id="paymentRecordId">
+    <input type="hidden" id="paymentVehicleId">
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeModal('paymentInputModal')" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-p" onclick="confirmPaymentInput()" data-i18n="save">Save</button>
     </div>
   </div>
 </div>
@@ -1045,7 +1114,32 @@ var LANG = {
     sb_paid_desc:'Fees paid, awaiting completion',
     sb_completed_desc:'Cleared for the full year',
     sb_failed_desc:'Broken, needs repair or follow-up',
-    status:'Status'
+    status:'Status',
+    enterFeeTitle:'Registration Fee Required',
+    enterFeeHelp:'Enter the amount that needs to be paid for registration.',
+    feeAmount:'Fee Amount (KWD)',
+    feeNotes:'Notes (optional)',
+    feeAmountRequired:'Please enter a valid fee amount.',
+    enterPaymentTitle:'Record Payment',
+    enterPaymentHelp:'Enter the amount actually paid and any notes (method, who paid, etc.)',
+    amountPaid:'Amount Paid (KWD)',
+    amountPaidRequired:'Please enter a valid amount paid.',
+    paymentMethod:'Payment Method',
+    paymentNotes:'Payment Notes',
+    pmCash:'Cash',
+    pmCard:'Card',
+    pmTransfer:'Bank Transfer',
+    pmOther:'Other',
+    recordedBy:'Recorded by',
+    bulkBlocksFee:'To mark vehicles as Passed or Paid you must enter fee/payment details for each one individually. Bulk update only supports Completed/Pending.',
+    exportFullExcel:'Export Full Excel',
+    exportDone:'Excel file downloaded.',
+    updateFromExcel:'Update from Excel',
+    updateFromExcelDesc:'Export the full Excel file, edit it (change plate numbers, drivers, statuses, fees, etc.), then re-upload it here to update every matching vehicle at once.',
+    uploadExcel:'📄 Upload Excel to Update',
+    importEmpty:'The file is empty.',
+    importDone:'Import complete. Updated: {u}, Added: {a}, Skipped: {n}',
+    importError:'Import failed'
   },
   ar: {
     appTitle:'\u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u062E\u0644\u064A\u0635',
@@ -1199,7 +1293,32 @@ var LANG = {
     sb_paid_desc:'\u062A\u0645 \u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0648\u0645\u060C \u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0625\u0643\u0645\u0627\u0644',
     sb_completed_desc:'\u0645\u062E\u0644\u0651\u0635\u0629 \u0644\u0644\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629',
     sb_failed_desc:'\u0645\u0639\u0637\u0644\u0629\u060C \u062A\u062D\u062A\u0627\u062C \u0625\u0635\u0644\u0627\u062D \u0623\u0648 \u0645\u062A\u0627\u0628\u0639\u0629',
-    status:'\u0627\u0644\u062D\u0627\u0644\u0629'
+    status:'\u0627\u0644\u062D\u0627\u0644\u0629',
+    enterFeeTitle:'رسوم التسجيل مطلوبة',
+    enterFeeHelp:'أدخل المبلغ المطلوب دفعه لرسوم التسجيل.',
+    feeAmount:'مبلغ الرسوم (د.ك)',
+    feeNotes:'ملاحظات (اختياري)',
+    feeAmountRequired:'الرجاء إدخال مبلغ صحيح للرسوم.',
+    enterPaymentTitle:'تسجيل الدفع',
+    enterPaymentHelp:'أدخل المبلغ المدفوع فعلاً وأي ملاحظات (طريقة الدفع، من دفع، إلخ)',
+    amountPaid:'المبلغ المدفوع (د.ك)',
+    amountPaidRequired:'الرجاء إدخال مبلغ صحيح للمدفوع.',
+    paymentMethod:'طريقة الدفع',
+    paymentNotes:'ملاحظات الدفع',
+    pmCash:'كاش',
+    pmCard:'بطاقة',
+    pmTransfer:'تحويل بنكي',
+    pmOther:'أخرى',
+    recordedBy:'سجّل بواسطة',
+    bulkBlocksFee:'لتحديد المركبات كناجحة أو مدفوعة يجب إدخال بيانات الرسوم/الدفع لكل مركبة على حدة. التحديث الجماعي يدعم فقط "مكتمل" و"بانتظار".',
+    exportFullExcel:'تصدير Excel كامل',
+    exportDone:'تم تنزيل ملف Excel.',
+    updateFromExcel:'تحديث من Excel',
+    updateFromExcelDesc:'صدّر الملف الكامل، عدّله (رقم اللوحة، السائق، الحالة، الرسوم…)، ثم ارفعه هنا لتحديث كل المركبات المطابقة دفعة واحدة.',
+    uploadExcel:'📄 رفع ملف Excel للتحديث',
+    importEmpty:'الملف فارغ.',
+    importDone:'اكتمل الاستيراد. تحديث: {u}، إضافة: {a}، تم التخطي: {n}',
+    importError:'فشل الاستيراد'
   }
 };
 
@@ -1924,11 +2043,98 @@ function sheetSelectStatus(newStatus){
     openQuickFailModal(rec.id,vid);
     return;
   }
+  if(newStatus==='passed'){
+    openFeeInputModal(rec.id,vid);
+    return;
+  }
+  if(newStatus==='paid'){
+    openPaymentInputModal(rec.id,vid);
+    return;
+  }
   applyStatusToRecord(rec,newStatus);
   syncRecords();
   showToast(t('statusUpdated'));
   renderVehicles();
   if(activePgNum===1) renderDashboard();
+}
+
+/* Open the registration-fee input modal (required before Passed) */
+function openFeeInputModal(recordId,vehicleId){
+  var r=records.find(function(x){return x.id===recordId;});
+  var preset=r&&r.registrationFee&&r.registrationFee.amount?r.registrationFee.amount:'';
+  var presetNotes=r&&r.registrationFee&&r.registrationFee.notes?r.registrationFee.notes:'';
+  document.getElementById('feeAmountInput').value=preset;
+  document.getElementById('feeNotesInput').value=presetNotes;
+  document.getElementById('feeRecordId').value=recordId;
+  document.getElementById('feeVehicleId').value=vehicleId;
+  document.getElementById('feeInputModal').classList.add('open');
+  setTimeout(function(){document.getElementById('feeAmountInput').focus();},100);
+}
+
+function confirmFeeInput(){
+  var amt=parseFloat(document.getElementById('feeAmountInput').value);
+  if(isNaN(amt)||amt<0){ alert(t('feeAmountRequired')); return; }
+  var notes=document.getElementById('feeNotesInput').value.trim();
+  var recordId=document.getElementById('feeRecordId').value;
+  var vehicleId=document.getElementById('feeVehicleId').value;
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  if(!r.registrationFee) r.registrationFee={amount:0,paid:false,paidDate:''};
+  r.registrationFee.amount=amt;
+  r.registrationFee.notes=notes;
+  applyStatusToRecord(r,'passed');
+  syncRecords();
+  closeModal('feeInputModal');
+  showToast(t('statusUpdated'));
+  renderVehicles();
+  if(activePgNum===1) renderDashboard();
+  if(document.getElementById('vehicleDetailModal').classList.contains('open')) viewVehicle(vehicleId);
+}
+
+/* Open the payment input modal (required before Paid) */
+function openPaymentInputModal(recordId,vehicleId){
+  var r=records.find(function(x){return x.id===recordId;});
+  var preset=r&&r.registrationFee&&r.registrationFee.amount?r.registrationFee.amount:'';
+  document.getElementById('paidAmountInput').value=preset;
+  document.getElementById('paymentMethodInput').value='cash';
+  document.getElementById('paymentNotesInput').value='';
+  document.getElementById('paymentRecordId').value=recordId;
+  document.getElementById('paymentVehicleId').value=vehicleId;
+  document.getElementById('paymentInputModal').classList.add('open');
+  setTimeout(function(){document.getElementById('paidAmountInput').focus();},100);
+}
+
+function confirmPaymentInput(){
+  var amt=parseFloat(document.getElementById('paidAmountInput').value);
+  if(isNaN(amt)||amt<=0){ alert(t('amountPaidRequired')); return; }
+  var method=document.getElementById('paymentMethodInput').value;
+  var notes=document.getElementById('paymentNotesInput').value.trim();
+  var recordId=document.getElementById('paymentRecordId').value;
+  var vehicleId=document.getElementById('paymentVehicleId').value;
+  var r=records.find(function(x){return x.id===recordId;});
+  if(!r) return;
+  var now=new Date().toISOString();
+  if(!r.registrationFee) r.registrationFee={amount:amt,paid:false,paidDate:''};
+  r.registrationFee.paid=true;
+  r.registrationFee.paidDate=now;
+  r.registrationFee.amountPaid=amt;
+  r.registrationFee.paymentMethod=method;
+  r.registrationFee.paymentNotes=notes;
+  if(!r.paymentHistory) r.paymentHistory=[];
+  r.paymentHistory.push({
+    date:now,
+    amount:amt,
+    method:method,
+    notes:notes,
+    recordedBy:currentProfile?currentProfile.full_name:''
+  });
+  applyStatusToRecord(r,'paid');
+  syncRecords();
+  closeModal('paymentInputModal');
+  showToast(t('statusUpdated'));
+  renderVehicles();
+  if(activePgNum===1) renderDashboard();
+  if(document.getElementById('vehicleDetailModal').classList.contains('open')) viewVehicle(vehicleId);
 }
 
 /* ── Bulk select mode ── */
@@ -1981,6 +2187,12 @@ function bulkAction(newStatus){
   var ids=Object.keys(selectedIds);
   if(!ids.length){
     showToast(t('bulkNoSelection'),'warning');
+    return;
+  }
+  // Bulk status changes don't support per-vehicle fee/payment entry.
+  // Block passed/paid in bulk — user must do them one at a time.
+  if(newStatus==='passed'||newStatus==='paid'){
+    alert(t('bulkBlocksFee'));
     return;
   }
   var confirmMsg=t('bulkConfirm').replace('{n}',ids.length);
@@ -2088,7 +2300,10 @@ function renderVehicles(){
     html+='<div class="v2-check"></div>';
     html+='<div class="v2-info">';
     html+='<div class="v2-name">'+esc(v.name)+'</div>';
-    html+='<div class="v2-plate">'+esc(v.plateNumber||'-')+'</div>';
+    var idParts=[];
+    idParts.push('<span><span class="lbl">'+t('plateNumber')+':</span> '+esc(v.plateNumber||'-')+'</span>');
+    if(v.doorNumber) idParts.push('<span><span class="lbl">'+t('doorNumber')+':</span> '+esc(v.doorNumber)+'</span>');
+    html+='<div class="v2-ids">'+idParts.join('')+'</div>';
     html+='<div class="v2-meta">'+metaParts.join('')+'</div>';
     html+='</div>';
     html+='<button class="v2-pill" onclick="event.stopPropagation();openStatusSheet(\''+v.id+'\')">'+t(statusKey)+'</button>';
@@ -2533,6 +2748,25 @@ function viewVehicle(id){
       html+=statusBadge(r.status);
       html+='<div class="vd-log-date">'+fmtD(r.updatedAt||r.createdAt)+'</div>';
       if(r.failureReason) html+='<div class="vd-log-reason">\u26A0 '+esc(r.failureReason)+'</div>';
+      if(r.registrationFee&&r.registrationFee.amount){
+        html+='<div class="vd-log-fee">';
+        html+='<span class="lbl">'+t('feeAmount')+':</span> '+r.registrationFee.amount.toFixed(3)+' KWD';
+        if(r.registrationFee.notes) html+=' \u00B7 '+esc(r.registrationFee.notes);
+        html+='</div>';
+      }
+      if(r.paymentHistory&&r.paymentHistory.length){
+        html+='<div class="vd-log-pays">';
+        r.paymentHistory.forEach(function(p){
+          html+='<div class="vd-pay">';
+          html+='<span class="vd-pay-amt">'+(p.amount||0).toFixed(3)+' KWD</span>';
+          html+=' \u00B7 <span class="vd-pay-meth">'+t('pm'+(p.method?p.method.charAt(0).toUpperCase()+p.method.slice(1):'Cash'))+'</span>';
+          html+=' \u00B7 <span class="vd-pay-date">'+fmtD(p.date)+'</span>';
+          if(p.notes) html+='<div class="vd-pay-notes">'+esc(p.notes)+'</div>';
+          if(p.recordedBy) html+='<div class="vd-pay-by">'+t('recordedBy')+': '+esc(p.recordedBy)+'</div>';
+          html+='</div>';
+        });
+        html+='</div>';
+      }
       html+='</div>';
       html+='</div>';
     });
@@ -2877,26 +3111,167 @@ function renderReports(){
 }
 
 function exportExcel(){
+  exportFullExcel();
+}
+
+/* Full Excel export — every vehicle field + current-year clearance state.
+   The header row includes __VEHICLE_ID__ (hidden ID) so the user can edit
+   the file and re-upload it to update vehicles without re-keying IDs. */
+function exportFullExcel(){
   var curYear=new Date().getFullYear();
-  var data=records.filter(function(r){return r.year===curYear;}).map(function(r){
-    var v=vehicles.find(function(x){return x.id===r.vehicleId;})||{};
+  var data=vehicles.map(function(v){
+    var rec=records.find(function(r){return r.vehicleId===v.id&&r.year===curYear;});
+    var lastPay=rec&&rec.paymentHistory&&rec.paymentHistory.length?rec.paymentHistory[rec.paymentHistory.length-1]:null;
     return{
-      'Vehicle':v.name||'','Plate':v.plateNumber||'','Type':v.type||'',
-      'Status':r.status,'Year':r.year,
-      'Inspection Fee':(r.inspectionFee?r.inspectionFee.amount:0),
-      'Inspection Paid':(r.inspectionFee&&r.inspectionFee.paid?'Yes':'No'),
-      'Registration Fee':(r.registrationFee?r.registrationFee.amount:0),
-      'Registration Paid':(r.registrationFee&&r.registrationFee.paid?'Yes':'No'),
-      'Insurance Fee':(r.insuranceFee?r.insuranceFee.amount:0),
-      'Insurance Paid':(r.insuranceFee&&r.insuranceFee.paid?'Yes':'No'),
-      'Total':((r.inspectionFee?r.inspectionFee.amount:0)+(r.registrationFee?r.registrationFee.amount:0)+(r.insuranceFee?r.insuranceFee.amount:0)),
-      'Failure Reason':r.failureReason||''
+      '__VEHICLE_ID__':v.id,
+      'Name':v.name||'',
+      'Plate Number':v.plateNumber||'',
+      'Door Number':v.doorNumber||'',
+      'Chassis Number':v.chassisNumber||'',
+      'Type':v.type||'',
+      'Registration Month':monthName(v.registrationMonth),
+      'Year of Manufacture':v.yearOfManufacture||'',
+      'Color':v.color||'',
+      'Driver':v.driverName||'',
+      'Supervisor':v.assignedTo||'',
+      'Location':v.location||'',
+      'Insurance Policy':v.insurancePolicyNumber||'',
+      'Insurance Expiry':v.insuranceExpiryDate||'',
+      'Notes':v.notes||'',
+      'Current Status':rec?rec.status:'',
+      'Inspection Date':rec?rec.inspectionDate||'':'',
+      'Failure Reason':rec?rec.failureReason||'':'',
+      'Registration Fee (KWD)':rec&&rec.registrationFee?rec.registrationFee.amount||0:0,
+      'Fee Notes':rec&&rec.registrationFee?rec.registrationFee.notes||'':'',
+      'Amount Paid (KWD)':lastPay?lastPay.amount||0:0,
+      'Payment Method':lastPay?lastPay.method||'':'',
+      'Payment Notes':lastPay?lastPay.notes||'':'',
+      'Payment Date':lastPay?lastPay.date||'':'',
+      'Recorded By':lastPay?lastPay.recordedBy||'':'',
+      'Created At':v.createdAt||'',
+      'Updated At':v.updatedAt||''
     };
   });
   var ws=XLSX.utils.json_to_sheet(data);
+  // Set column widths for readability
+  ws['!cols']=[
+    {wch:16},{wch:32},{wch:14},{wch:14},{wch:22},{wch:8},{wch:18},{wch:10},
+    {wch:12},{wch:18},{wch:18},{wch:14},{wch:16},{wch:14},{wch:30},
+    {wch:16},{wch:12},{wch:30},{wch:14},{wch:24},{wch:14},{wch:14},{wch:30},{wch:14},{wch:18},
+    {wch:22},{wch:22}
+  ];
   var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Clearance Report');
-  XLSX.writeFile(wb,'clearance_report_'+curYear+'.xlsx');
+  XLSX.utils.book_append_sheet(wb,ws,'Vehicles');
+  var today=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'clearance_full_'+today+'.xlsx');
+  showToast(t('exportDone'));
+}
+
+/* Re-import an edited Excel file. Matches by __VEHICLE_ID__ (preferred)
+   or by Plate+Chassis. Updates fields in place; syncs once at the end. */
+function importUpdateExcel(file){
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=new Uint8Array(e.target.result);
+      var wb=XLSX.read(data,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length){ alert(t('importEmpty')); return; }
+      var updated=0, added=0, notFound=0;
+      rows.forEach(function(row){
+        var id=row['__VEHICLE_ID__']||row['Vehicle ID']||'';
+        var plate=(row['Plate Number']||'').toString().trim();
+        var chassis=(row['Chassis Number']||'').toString().trim();
+        var v=null;
+        if(id) v=vehicles.find(function(x){return x.id===id;});
+        if(!v&&plate) v=vehicles.find(function(x){return(x.plateNumber||'').toString().trim()===plate&&(!chassis||(x.chassisNumber||'').toString().trim()===chassis);});
+        var now=new Date().toISOString();
+        if(!v){
+          // Only add new if there's a name+plate; otherwise skip
+          if(!row['Name']||!plate){ notFound++; return; }
+          v={
+            id:genId(),
+            name:(row['Name']||'').toString().trim(),
+            plateNumber:plate,
+            doorNumber:(row['Door Number']||'').toString().trim(),
+            chassisNumber:chassis,
+            type:(row['Type']||'small').toString().trim(),
+            registrationMonth:parseMonthName(row['Registration Month']),
+            yearOfManufacture:parseInt(row['Year of Manufacture'])||0,
+            color:(row['Color']||'').toString().trim(),
+            driverName:(row['Driver']||'').toString().trim(),
+            assignedTo:(row['Supervisor']||'').toString().trim(),
+            location:(row['Location']||'Alhaidariya').toString().trim(),
+            insurancePolicyNumber:(row['Insurance Policy']||'').toString().trim(),
+            insuranceExpiryDate:(row['Insurance Expiry']||'').toString().trim(),
+            notes:(row['Notes']||'').toString().trim(),
+            currentStatus:'',
+            createdAt:now,updatedAt:now
+          };
+          vehicles.push(v);
+          added++;
+        } else {
+          // Update in place — only overwrite if the row supplies a value.
+          if(row['Name']!==undefined&&row['Name']!=='') v.name=row['Name'].toString().trim();
+          if(row['Plate Number']!==undefined&&row['Plate Number']!=='') v.plateNumber=plate;
+          if(row['Door Number']!==undefined) v.doorNumber=row['Door Number'].toString().trim();
+          if(row['Chassis Number']!==undefined) v.chassisNumber=chassis;
+          if(row['Type']!==undefined&&row['Type']!=='') v.type=row['Type'].toString().trim();
+          if(row['Registration Month']!==undefined&&row['Registration Month']!==''){
+            var m=parseMonthName(row['Registration Month']); if(m) v.registrationMonth=m;
+          }
+          if(row['Year of Manufacture']!==undefined&&row['Year of Manufacture']!==''){
+            var y=parseInt(row['Year of Manufacture']); if(y) v.yearOfManufacture=y;
+          }
+          if(row['Color']!==undefined) v.color=row['Color'].toString().trim();
+          if(row['Driver']!==undefined) v.driverName=row['Driver'].toString().trim();
+          if(row['Supervisor']!==undefined) v.assignedTo=row['Supervisor'].toString().trim();
+          if(row['Location']!==undefined&&row['Location']!=='') v.location=row['Location'].toString().trim();
+          if(row['Insurance Policy']!==undefined) v.insurancePolicyNumber=row['Insurance Policy'].toString().trim();
+          if(row['Insurance Expiry']!==undefined) v.insuranceExpiryDate=row['Insurance Expiry'].toString().trim();
+          if(row['Notes']!==undefined) v.notes=row['Notes'].toString().trim();
+          v.updatedAt=now;
+          updated++;
+        }
+        // Update or create current-year clearance record if status column was provided
+        var newStatus=(row['Current Status']||'').toString().trim().toLowerCase().replace(/ /g,'_');
+        var validStatuses=['pending_inspection','passed','paid','completed','failed'];
+        if(newStatus&&validStatuses.indexOf(newStatus)!==-1){
+          var rec=getOrCreateCurrentRecord(v.id);
+          applyStatusToRecord(rec,newStatus,(row['Failure Reason']||'').toString().trim());
+          var feeAmt=parseFloat(row['Registration Fee (KWD)']);
+          if(!isNaN(feeAmt)&&feeAmt>=0){
+            if(!rec.registrationFee) rec.registrationFee={amount:0,paid:false,paidDate:''};
+            rec.registrationFee.amount=feeAmt;
+            if(row['Fee Notes']!==undefined) rec.registrationFee.notes=row['Fee Notes'].toString().trim();
+          }
+        }
+      });
+      syncVehicles();
+      syncRecords();
+      var msg=t('importDone').replace('{u}',updated).replace('{a}',added).replace('{n}',notFound);
+      alert(msg);
+      renderVehicles();
+      if(activePgNum===1) renderDashboard();
+    }catch(err){
+      alert(t('importError')+': '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseMonthName(s){
+  if(!s) return 0;
+  s=(''+s).toLowerCase().trim();
+  var months=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  var idx=months.indexOf(s);
+  if(idx!==-1) return idx+1;
+  var n=parseInt(s);
+  if(n>=1&&n<=12) return n;
+  return 0;
 }
 
 function exportPDF(){
