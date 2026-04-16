@@ -600,9 +600,13 @@ body.rtl .sheet-btn:hover{transform:translateX(-4px);}
 /* Damage map */
 .dmap-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden;}
 .dmap-svg{width:100%;height:auto;cursor:crosshair;touch-action:none;}
-.dmap-svg .dm-region{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5;transition:fill var(--t);}
-.dmap-svg .dm-region:hover{fill:#e0e7ff;}
+.dmap-svg .hot:hover{filter:brightness(1.06) drop-shadow(0 0 4px rgba(106,82,136,.35));}
+.dmap-svg .view-divider{stroke:#e7dff3;stroke-width:1;}
+.dmap-svg .view-title{font-size:10px;font-weight:800;fill:#6A5288;}
+[data-theme="dark"] .dmap-svg .view-divider{stroke:#2f2547;}
+[data-theme="dark"] .dmap-svg .view-title{fill:#c7b3e8;}
 .dmap-label{font-size:10px;fill:#64748b;font-weight:600;pointer-events:none;text-anchor:middle;}
+[data-theme="dark"] .dmap-label{fill:#a89eb6;}
 .dmap-marker{position:absolute;width:28px;height:28px;margin-left:-14px;margin-top:-14px;border-radius:50%;background:var(--rd);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);border:2px solid white;transition:transform var(--t);}
 .dmap-marker:hover{transform:scale(1.15);}
 .dmap-marker.t-scratch{background:#f59e0b;}
@@ -626,6 +630,17 @@ body.rtl .sheet-btn:hover{transform:translateX(-4px);}
 .photo-thumb:hover{transform:scale(1.04);box-shadow:var(--shm);border-color:var(--p);}
 .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .photo-thumb button{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:white;border:none;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:13px;font-family:inherit;}
+
+/* Vehicle Attachments */
+.attach-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.attach-slot{background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;}
+.attach-label{font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px;}
+.attach-preview{min-height:90px;max-height:160px;background:var(--surface);border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--text-muted);font-size:11px;}
+.attach-preview img{max-width:100%;max-height:160px;object-fit:contain;cursor:zoom-in;}
+.attach-preview:empty::before{content:"No image";font-size:11px;color:var(--text-muted);}
+.attach-btn{font-size:12px !important;padding:8px 10px !important;}
+.attach-rm{font-size:11px !important;padding:6px 10px !important;background:var(--surface) !important;color:#c53030 !important;border:1px solid #fecaca !important;display:none;}
+.attach-slot.has-file .attach-rm{display:block;}
 
 /* Signatures */
 .sig-wrap{background:var(--surface);border:2px dashed var(--border-strong);border-radius:10px;padding:8px;transition:border-color var(--t);}
@@ -974,6 +989,36 @@ body.rtl .toast-container{right:auto;left:20px;}
       <div class="fg"><label data-i18n="insurancePolicyNo">Insurance Policy No.</label><input id="vInsPolicy" type="text"></div>
       <div class="fg"><label data-i18n="insuranceExpiry">Insurance Expiry</label><input id="vInsExpiry" type="date"></div>
       <div class="fg fg-full"><label data-i18n="notes">Notes</label><textarea id="vNotes" rows="2"></textarea></div>
+      <div class="fg fg-full">
+        <label data-i18n="paymentBalance">Payment Balance</label>
+        <input id="vPaymentBalance" type="text" placeholder="0.00">
+      </div>
+      <div class="fg fg-full" style="border-top:1px solid var(--g200);padding-top:12px;margin-top:4px">
+        <label style="font-weight:700;color:var(--brand);margin-bottom:8px;display:block" data-i18n="attachments">Attachments</label>
+        <div class="attach-grid">
+          <div class="attach-slot" data-kind="ownership">
+            <div class="attach-label" data-i18n="ownershipDoc">Ownership Certificate</div>
+            <div class="attach-preview" id="vOwnershipPreview"></div>
+            <input type="file" id="vOwnershipFile" accept="image/*" onchange="handleVehicleAttachUpload(this,'ownership')" style="display:none">
+            <button type="button" class="btn btn-s attach-btn" onclick="document.getElementById('vOwnershipFile').click()" data-i18n="uploadImage">Upload Image</button>
+            <button type="button" class="btn btn-s attach-rm" onclick="removeVehicleAttach('ownership')" data-i18n="remove">Remove</button>
+          </div>
+          <div class="attach-slot" data-kind="insurance">
+            <div class="attach-label" data-i18n="insuranceDoc">Insurance Certificate</div>
+            <div class="attach-preview" id="vInsurancePreview"></div>
+            <input type="file" id="vInsuranceFile" accept="image/*" onchange="handleVehicleAttachUpload(this,'insurance')" style="display:none">
+            <button type="button" class="btn btn-s attach-btn" onclick="document.getElementById('vInsuranceFile').click()" data-i18n="uploadImage">Upload Image</button>
+            <button type="button" class="btn btn-s attach-rm" onclick="removeVehicleAttach('insurance')" data-i18n="remove">Remove</button>
+          </div>
+          <div class="attach-slot" data-kind="payment">
+            <div class="attach-label" data-i18n="paymentReceipt">Payment Receipt</div>
+            <div class="attach-preview" id="vPaymentPreview"></div>
+            <input type="file" id="vPaymentFile" accept="image/*" onchange="handleVehicleAttachUpload(this,'payment')" style="display:none">
+            <button type="button" class="btn btn-s attach-btn" onclick="document.getElementById('vPaymentFile').click()" data-i18n="uploadImage">Upload Image</button>
+            <button type="button" class="btn btn-s attach-rm" onclick="removeVehicleAttach('payment')" data-i18n="remove">Remove</button>
+          </div>
+        </div>
+      </div>
     </div>
     <input type="hidden" id="vEditId">
     <div class="modal-actions">
@@ -1209,89 +1254,236 @@ body.rtl .toast-container{right:auto;left:20px;}
       <div class="insp-section-title" data-i18n="inspDamageMap">Damage Map</div>
       <p style="font-size:11px;color:var(--g500);margin-bottom:10px" data-i18n="inspDamageHint">Tap on the vehicle diagram to mark damage location and choose type.</p>
       <div class="dmap-wrap" id="dmapWrap">
-        <svg class="dmap-svg" id="dmapSvg" viewBox="0 0 500 760" xmlns="http://www.w3.org/2000/svg" onclick="dmapClick(event)">
+        <svg class="dmap-svg" id="dmapSvg" viewBox="0 0 500 920" xmlns="http://www.w3.org/2000/svg" onclick="dmapClick(event)">
           <defs>
             <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#dbeafe"/>
-              <stop offset="100%" stop-color="#bfdbfe"/>
+              <stop offset="0%" stop-color="#cfe0f5"/>
+              <stop offset="100%" stop-color="#a8c4e8"/>
             </linearGradient>
+            <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fbfaff"/>
+              <stop offset="100%" stop-color="#e9e3f1"/>
+            </linearGradient>
+            <linearGradient id="roofGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#e8e2f0"/>
+              <stop offset="50%" stop-color="#f4f0f9"/>
+              <stop offset="100%" stop-color="#e8e2f0"/>
+            </linearGradient>
+            <linearGradient id="bumperGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d4d0dc"/>
+              <stop offset="100%" stop-color="#a09ab0"/>
+            </linearGradient>
+            <linearGradient id="tireGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#3a3544"/>
+              <stop offset="100%" stop-color="#14121a"/>
+            </linearGradient>
+            <radialGradient id="headGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="70%" stop-color="#fff3b0"/>
+              <stop offset="100%" stop-color="#f3c94b"/>
+            </radialGradient>
+            <radialGradient id="tailGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fecaca"/>
+              <stop offset="100%" stop-color="#b91c1c"/>
+            </radialGradient>
           </defs>
 
-          <!-- FRONT / REAR labels -->
-          <text class="dmap-label" x="250" y="12" font-weight="800" font-size="12">FRONT</text>
-          <text class="dmap-label" x="250" y="752" font-weight="800" font-size="12">REAR</text>
+          <!-- ═══════ SECTION 1 — TOP VIEW ═══════ -->
+          <text class="view-title" x="250" y="16" text-anchor="middle">▲ TOP VIEW (bird's eye) ▼</text>
 
-          <!-- Front bumper -->
-          <rect class="dm-region" x="185" y="18" width="130" height="16" rx="5"/>
-          <text class="dmap-label" x="250" y="30" font-size="8" fill="#475569">F. BUMPER</text>
+          <g class="hot" transform="translate(130,30)">
+            <!-- Wheels visible at corners (under body edges) -->
+            <rect x="-10" y="72" width="24" height="56" rx="6" fill="url(#tireGrad)"/>
+            <rect x="226" y="72" width="24" height="56" rx="6" fill="url(#tireGrad)"/>
+            <rect x="-10" y="334" width="24" height="56" rx="6" fill="url(#tireGrad)"/>
+            <rect x="226" y="334" width="24" height="56" rx="6" fill="url(#tireGrad)"/>
 
-          <!-- Hood (trapezoid, narrow at top, wide at bottom) -->
-          <path class="dm-region" d="M 185 34 L 315 34 L 345 110 L 155 110 Z"/>
-          <text class="dmap-label" x="250" y="78" font-weight="700" font-size="12">HOOD</text>
+            <!-- Main body (rounded corners front & rear) -->
+            <path d="M 20 35 Q 20 0 60 0 L 180 0 Q 220 0 220 35 L 220 425 Q 220 460 180 460 L 60 460 Q 20 460 20 425 Z"
+                  fill="url(#bodyGrad)" stroke="#6A5288" stroke-width="2"/>
 
-          <!-- Front-left wheel -->
-          <rect class="dm-region" x="152" y="160" width="26" height="70" rx="6"/>
-          <text class="dmap-label" x="165" y="200" font-size="8" fill="#475569">FL</text>
-          <!-- Front-right wheel -->
-          <rect class="dm-region" x="322" y="160" width="26" height="70" rx="6"/>
-          <text class="dmap-label" x="335" y="200" font-size="8" fill="#475569">FR</text>
-          <!-- Rear-left wheel -->
-          <rect class="dm-region" x="152" y="525" width="26" height="70" rx="6"/>
-          <text class="dmap-label" x="165" y="565" font-size="8" fill="#475569">RL</text>
-          <!-- Rear-right wheel -->
-          <rect class="dm-region" x="322" y="525" width="26" height="70" rx="6"/>
-          <text class="dmap-label" x="335" y="565" font-size="8" fill="#475569">RR</text>
+            <!-- Front bumper strip -->
+            <path d="M 28 10 L 212 10 L 220 28 L 20 28 Z" fill="url(#bumperGrad)" opacity=".85"/>
+            <text class="dmap-label" x="120" y="22" font-size="7" font-weight="700">F. BUMPER</text>
 
-          <!-- Main cabin body (central rounded rect) -->
-          <rect class="dm-region" x="178" y="110" width="144" height="540" rx="14"/>
+            <!-- Headlights -->
+            <ellipse cx="45" cy="16" rx="14" ry="9" fill="url(#headGrad)" stroke="#d4af37" stroke-width="1.5"/>
+            <ellipse cx="195" cy="16" rx="14" ry="9" fill="url(#headGrad)" stroke="#d4af37" stroke-width="1.5"/>
 
-          <!-- Windshield -->
-          <path class="dm-region" d="M 185 120 L 315 120 L 305 175 L 195 175 Z" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="250" y="152" font-size="9" fill="#1e3a8a">WINDSHIELD</text>
+            <!-- Hood -->
+            <path d="M 30 30 L 210 30 L 206 96 L 34 96 Z" fill="#efe9f5" stroke="#6A5288" stroke-width="1"/>
+            <text class="dmap-label" x="120" y="68" font-size="13" font-weight="700" fill="#6A5288">HOOD</text>
 
-          <!-- Roof (cabin center) -->
-          <rect class="dm-region" x="195" y="175" width="110" height="410" rx="4"/>
-          <text class="dmap-label" x="250" y="383" font-weight="700" font-size="11">ROOF</text>
-          <!-- Center split line -->
-          <line x1="250" y1="175" x2="250" y2="585" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+            <!-- Windshield with side curve -->
+            <path d="M 34 98 L 206 98 Q 214 132 206 166 L 34 166 Q 26 132 34 98 Z"
+                  fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1.3"/>
+            <text class="dmap-label" x="120" y="136" font-size="10" font-weight="700" fill="#1e3a8a">WINDSHIELD</text>
+            <!-- Wipers -->
+            <line x1="80" y1="162" x2="72" y2="108" stroke="#6A5288" stroke-width="1.2"/>
+            <line x1="160" y1="162" x2="168" y2="108" stroke="#6A5288" stroke-width="1.2"/>
 
-          <!-- Rear window -->
-          <path class="dm-region" d="M 195 585 L 305 585 L 315 640 L 185 640 Z" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="250" y="615" font-size="9" fill="#1e3a8a">REAR WINDOW</text>
+            <!-- Side mirrors -->
+            <ellipse cx="8" cy="140" rx="12" ry="8" fill="#d4d0dc" stroke="#6A5288" stroke-width="1.2"/>
+            <ellipse cx="232" cy="140" rx="12" ry="8" fill="#d4d0dc" stroke="#6A5288" stroke-width="1.2"/>
 
-          <!-- Splayed doors — LEFT side -->
-          <!-- FL DOOR (front-left, splayed outward) -->
-          <rect class="dm-region" x="18" y="150" width="128" height="150" rx="10"/>
-          <rect class="dm-region" x="28" y="160" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="82" y="182" font-size="9" fill="#1e3a8a">WINDOW</text>
-          <text class="dmap-label" x="82" y="248" font-weight="700" font-size="11">FL DOOR</text>
+            <!-- Roof -->
+            <rect x="34" y="166" width="172" height="150" rx="8" fill="url(#roofGrad)" stroke="#6A5288" stroke-width="1.3"/>
+            <text class="dmap-label" x="120" y="232" font-size="13" font-weight="700" fill="#6A5288">ROOF</text>
+            <!-- Center spine -->
+            <line x1="120" y1="172" x2="120" y2="310" stroke="#c8c0d4" stroke-width="1" stroke-dasharray="4,4"/>
+            <!-- Sunroof outline -->
+            <rect x="78" y="188" width="84" height="54" rx="5" fill="none" stroke="#6A5288" stroke-width="0.9" stroke-dasharray="2,2"/>
+            <text class="dmap-label" x="120" y="256" font-size="7" fill="#9691a4">SUNROOF</text>
 
-          <!-- RL DOOR (rear-left, splayed outward) -->
-          <rect class="dm-region" x="18" y="455" width="128" height="150" rx="10"/>
-          <rect class="dm-region" x="28" y="465" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="82" y="487" font-size="9" fill="#1e3a8a">WINDOW</text>
-          <text class="dmap-label" x="82" y="553" font-weight="700" font-size="11">RL DOOR</text>
+            <!-- Door division lines (between front and rear doors) -->
+            <line x1="22" y1="241" x2="218" y2="241" stroke="#9a8ca8" stroke-width="1.3" stroke-dasharray="4,3"/>
 
-          <!-- Splayed doors — RIGHT side -->
-          <!-- FR DOOR (front-right, splayed outward) -->
-          <rect class="dm-region" x="354" y="150" width="128" height="150" rx="10"/>
-          <rect class="dm-region" x="364" y="160" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="418" y="182" font-size="9" fill="#1e3a8a">WINDOW</text>
-          <text class="dmap-label" x="418" y="248" font-weight="700" font-size="11">FR DOOR</text>
+            <!-- Door handles -->
+            <rect x="17" y="186" width="11" height="3.5" rx="1" fill="#6A5288"/>
+            <rect x="212" y="186" width="11" height="3.5" rx="1" fill="#6A5288"/>
+            <rect x="17" y="282" width="11" height="3.5" rx="1" fill="#6A5288"/>
+            <rect x="212" y="282" width="11" height="3.5" rx="1" fill="#6A5288"/>
 
-          <!-- RR DOOR (rear-right, splayed outward) -->
-          <rect class="dm-region" x="354" y="455" width="128" height="150" rx="10"/>
-          <rect class="dm-region" x="364" y="465" width="108" height="36" rx="4" fill="url(#glassGrad)"/>
-          <text class="dmap-label" x="418" y="487" font-size="9" fill="#1e3a8a">WINDOW</text>
-          <text class="dmap-label" x="418" y="553" font-weight="700" font-size="11">RR DOOR</text>
+            <!-- Door labels -->
+            <text class="dmap-label" x="30" y="212" font-size="9" font-weight="700" fill="#6A5288" text-anchor="start">FL</text>
+            <text class="dmap-label" x="210" y="212" font-size="9" font-weight="700" fill="#6A5288" text-anchor="end">FR</text>
+            <text class="dmap-label" x="30" y="278" font-size="9" font-weight="700" fill="#6A5288" text-anchor="start">RL</text>
+            <text class="dmap-label" x="210" y="278" font-size="9" font-weight="700" fill="#6A5288" text-anchor="end">RR</text>
 
-          <!-- Trunk (trapezoid, wide at top, narrow at bottom) -->
-          <path class="dm-region" d="M 155 650 L 345 650 L 315 726 L 185 726 Z"/>
-          <text class="dmap-label" x="250" y="692" font-weight="700" font-size="12">TRUNK</text>
+            <!-- Rear window -->
+            <path d="M 34 316 L 206 316 Q 214 348 206 378 L 34 378 Q 26 348 34 316 Z"
+                  fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1.3"/>
+            <text class="dmap-label" x="120" y="352" font-size="9" font-weight="700" fill="#1e3a8a">REAR WINDOW</text>
 
-          <!-- Rear bumper -->
-          <rect class="dm-region" x="185" y="726" width="130" height="16" rx="5"/>
-          <text class="dmap-label" x="250" y="738" font-size="8" fill="#475569">R. BUMPER</text>
+            <!-- Trunk -->
+            <path d="M 34 380 L 206 380 L 210 432 L 30 432 Z" fill="#efe9f5" stroke="#6A5288" stroke-width="1"/>
+            <text class="dmap-label" x="120" y="410" font-size="13" font-weight="700" fill="#6A5288">TRUNK</text>
+
+            <!-- Taillights -->
+            <ellipse cx="45" cy="440" rx="14" ry="8" fill="url(#tailGrad)" stroke="#b91c1c" stroke-width="1.3"/>
+            <ellipse cx="195" cy="440" rx="14" ry="8" fill="url(#tailGrad)" stroke="#b91c1c" stroke-width="1.3"/>
+
+            <!-- Rear bumper -->
+            <path d="M 20 432 L 220 432 L 212 450 L 28 450 Z" fill="url(#bumperGrad)" opacity=".85"/>
+            <text class="dmap-label" x="120" y="444" font-size="7" font-weight="700">R. BUMPER</text>
+          </g>
+
+          <!-- ═══════ SECTION 2 — FRONT + REAR VIEWS ═══════ -->
+          <line class="view-divider" x1="30" y1="502" x2="470" y2="502"/>
+          <text class="view-title" x="120" y="518" text-anchor="middle">FRONT VIEW</text>
+          <text class="view-title" x="380" y="518" text-anchor="middle">REAR VIEW</text>
+
+          <!-- FRONT VIEW -->
+          <g class="hot" transform="translate(30,528)">
+            <!-- Body silhouette (cab + bottom) -->
+            <path d="M 12 75 Q 12 16 38 16 L 142 16 Q 168 16 168 75 L 168 100 L 12 100 Z"
+                  fill="url(#bodyGrad)" stroke="#6A5288" stroke-width="1.5"/>
+            <!-- Windshield -->
+            <path d="M 38 22 L 142 22 Q 152 22 158 50 L 22 50 Q 28 22 38 22 Z"
+                  fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <!-- Hood line -->
+            <line x1="25" y1="62" x2="155" y2="62" stroke="#c8c0d4" stroke-width="0.9" stroke-dasharray="2,2"/>
+            <!-- Grille -->
+            <rect x="50" y="76" width="80" height="16" rx="2" fill="#3a3544"/>
+            <line x1="52" y1="80" x2="128" y2="80" stroke="#5a5464" stroke-width="0.5"/>
+            <line x1="52" y1="84" x2="128" y2="84" stroke="#5a5464" stroke-width="0.5"/>
+            <line x1="52" y1="88" x2="128" y2="88" stroke="#5a5464" stroke-width="0.5"/>
+            <!-- Headlights -->
+            <ellipse cx="30" cy="66" rx="13" ry="8" fill="url(#headGrad)" stroke="#d4af37" stroke-width="1.3"/>
+            <ellipse cx="150" cy="66" rx="13" ry="8" fill="url(#headGrad)" stroke="#d4af37" stroke-width="1.3"/>
+            <!-- Side mirrors peeking -->
+            <ellipse cx="10" cy="52" rx="7" ry="4" fill="#d4d0dc" stroke="#6A5288" stroke-width="1"/>
+            <ellipse cx="170" cy="52" rx="7" ry="4" fill="#d4d0dc" stroke="#6A5288" stroke-width="1"/>
+            <!-- License plate -->
+            <rect x="60" y="96" width="60" height="10" rx="1" fill="#fff" stroke="#6A5288" stroke-width="0.8"/>
+            <!-- Bumper -->
+            <rect x="8" y="100" width="164" height="8" rx="2" fill="url(#bumperGrad)"/>
+            <!-- Tires -->
+            <rect x="2" y="96" width="18" height="22" rx="3" fill="url(#tireGrad)"/>
+            <rect x="160" y="96" width="18" height="22" rx="3" fill="url(#tireGrad)"/>
+          </g>
+
+          <!-- REAR VIEW -->
+          <g class="hot" transform="translate(290,528)">
+            <path d="M 12 75 Q 12 16 38 16 L 142 16 Q 168 16 168 75 L 168 100 L 12 100 Z"
+                  fill="url(#bodyGrad)" stroke="#6A5288" stroke-width="1.5"/>
+            <!-- Rear window -->
+            <path d="M 38 22 L 142 22 Q 152 22 158 50 L 22 50 Q 28 22 38 22 Z"
+                  fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <!-- Trunk lid -->
+            <rect x="20" y="52" width="140" height="32" rx="3" fill="#efe9f5" stroke="#6A5288" stroke-width="0.8" stroke-dasharray="2,2"/>
+            <text class="dmap-label" x="90" y="71" font-size="9" font-weight="700" fill="#6A5288">TRUNK</text>
+            <!-- Taillights -->
+            <path d="M 22 60 L 60 60 L 60 82 L 22 82 Z" fill="url(#tailGrad)" stroke="#b91c1c" stroke-width="1.3"/>
+            <path d="M 120 60 L 158 60 L 158 82 L 120 82 Z" fill="url(#tailGrad)" stroke="#b91c1c" stroke-width="1.3"/>
+            <!-- License plate -->
+            <rect x="60" y="84" width="60" height="14" rx="1" fill="#fff" stroke="#6A5288" stroke-width="0.8"/>
+            <!-- Bumper -->
+            <rect x="8" y="100" width="164" height="8" rx="2" fill="url(#bumperGrad)"/>
+            <!-- Tires -->
+            <rect x="2" y="96" width="18" height="22" rx="3" fill="url(#tireGrad)"/>
+            <rect x="160" y="96" width="18" height="22" rx="3" fill="url(#tireGrad)"/>
+          </g>
+
+          <!-- ═══════ SECTION 3 — LEFT + RIGHT SIDE VIEWS ═══════ -->
+          <line class="view-divider" x1="30" y1="678" x2="470" y2="678"/>
+          <text class="view-title" x="120" y="694" text-anchor="middle">LEFT SIDE VIEW</text>
+          <text class="view-title" x="380" y="694" text-anchor="middle">RIGHT SIDE VIEW</text>
+
+          <!-- LEFT SIDE -->
+          <g class="hot" transform="translate(15,706)">
+            <!-- Car side silhouette (classic 4-door profile) -->
+            <path d="M 10 105 L 10 82 Q 14 60 28 55 L 42 50 L 58 22 Q 66 10 84 10 L 164 10 Q 182 10 190 22 L 200 50 L 212 55 Q 222 62 222 85 L 222 105 Z"
+                  fill="url(#bodyGrad)" stroke="#6A5288" stroke-width="1.5"/>
+            <!-- Windshield slant -->
+            <path d="M 58 48 L 84 15 L 124 15 L 124 48 Z" fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <!-- Rear window slant -->
+            <path d="M 128 15 L 164 15 Q 174 18 182 48 L 128 48 Z" fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <!-- Door divider vertical -->
+            <line x1="126" y1="48" x2="126" y2="95" stroke="#9a8ca8" stroke-width="1.3" stroke-dasharray="3,2"/>
+            <!-- Front door -->
+            <text class="dmap-label" x="90" y="78" font-size="9" font-weight="700" fill="#6A5288">FL DOOR</text>
+            <rect x="80" y="62" width="18" height="4" rx="1.5" fill="#6A5288"/>
+            <!-- Rear door -->
+            <text class="dmap-label" x="168" y="78" font-size="9" font-weight="700" fill="#6A5288">RL DOOR</text>
+            <rect x="150" y="62" width="18" height="4" rx="1.5" fill="#6A5288"/>
+            <!-- Side mirror -->
+            <ellipse cx="58" cy="40" rx="6" ry="4" fill="#d4d0dc" stroke="#6A5288" stroke-width="1"/>
+            <!-- Wheel arches -->
+            <path d="M 28 102 Q 46 76 64 102" fill="#d9d4e0" stroke="#6A5288" stroke-width="1.2"/>
+            <path d="M 170 102 Q 188 76 206 102" fill="#d9d4e0" stroke="#6A5288" stroke-width="1.2"/>
+            <!-- FL Wheel -->
+            <circle cx="46" cy="105" r="16" fill="url(#tireGrad)"/>
+            <circle cx="46" cy="105" r="7" fill="#8a8192"/>
+            <!-- RL Wheel -->
+            <circle cx="188" cy="105" r="16" fill="url(#tireGrad)"/>
+            <circle cx="188" cy="105" r="7" fill="#8a8192"/>
+            <!-- Direction indicators -->
+            <text class="dmap-label" x="12" y="6" font-size="8" font-weight="700" fill="#9691a4" text-anchor="start">◄ FRONT</text>
+            <text class="dmap-label" x="220" y="6" font-size="8" font-weight="700" fill="#9691a4" text-anchor="end">REAR ►</text>
+          </g>
+
+          <!-- RIGHT SIDE (mirror of left) -->
+          <g class="hot" transform="translate(270,706)">
+            <path d="M 222 105 L 222 82 Q 218 60 204 55 L 190 50 L 174 22 Q 166 10 148 10 L 68 10 Q 50 10 42 22 L 32 50 L 20 55 Q 10 62 10 85 L 10 105 Z"
+                  fill="url(#bodyGrad)" stroke="#6A5288" stroke-width="1.5"/>
+            <path d="M 174 48 L 148 15 L 108 15 L 108 48 Z" fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <path d="M 104 15 L 68 15 Q 58 18 50 48 L 104 48 Z" fill="url(#glassGrad)" stroke="#6A5288" stroke-width="1"/>
+            <line x1="106" y1="48" x2="106" y2="95" stroke="#9a8ca8" stroke-width="1.3" stroke-dasharray="3,2"/>
+            <text class="dmap-label" x="142" y="78" font-size="9" font-weight="700" fill="#6A5288">FR DOOR</text>
+            <rect x="134" y="62" width="18" height="4" rx="1.5" fill="#6A5288"/>
+            <text class="dmap-label" x="64" y="78" font-size="9" font-weight="700" fill="#6A5288">RR DOOR</text>
+            <rect x="64" y="62" width="18" height="4" rx="1.5" fill="#6A5288"/>
+            <ellipse cx="174" cy="40" rx="6" ry="4" fill="#d4d0dc" stroke="#6A5288" stroke-width="1"/>
+            <path d="M 168 102 Q 186 76 204 102" fill="#d9d4e0" stroke="#6A5288" stroke-width="1.2"/>
+            <path d="M 26 102 Q 44 76 62 102" fill="#d9d4e0" stroke="#6A5288" stroke-width="1.2"/>
+            <circle cx="186" cy="105" r="16" fill="url(#tireGrad)"/>
+            <circle cx="186" cy="105" r="7" fill="#8a8192"/>
+            <circle cx="44" cy="105" r="16" fill="url(#tireGrad)"/>
+            <circle cx="44" cy="105" r="7" fill="#8a8192"/>
+            <text class="dmap-label" x="12" y="6" font-size="8" font-weight="700" fill="#9691a4" text-anchor="start">◄ REAR</text>
+            <text class="dmap-label" x="220" y="6" font-size="8" font-weight="700" fill="#9691a4" text-anchor="end">FRONT ►</text>
+          </g>
         </svg>
         <div class="dmap-picker" id="dmapPicker">
           <button style="background:#f59e0b" onclick="addDamageMarker('scratch')" data-i18n="dmScratch">Scratch</button>
@@ -1474,6 +1666,13 @@ var LANG = {
     insurancePolicyNo:'Insurance Policy No.',
     insuranceExpiry:'Insurance Expiry',
     notes:'Notes',
+    paymentBalance:'Payment Balance',
+    attachments:'Attachments',
+    ownershipDoc:'Ownership Certificate',
+    insuranceDoc:'Insurance Certificate',
+    paymentReceipt:'Payment Receipt',
+    uploadImage:'Upload Image',
+    remove:'Remove',
     save:'Save',
     cancel:'Cancel',
     close:'Close',
@@ -1752,6 +1951,13 @@ var LANG = {
     insurancePolicyNo:'\u0631\u0642\u0645 \u0648\u062B\u064A\u0642\u0629 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
     insuranceExpiry:'\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
     notes:'\u0645\u0644\u0627\u062D\u0638\u0627\u062A',
+    paymentBalance:'\u0631\u0635\u064A\u062F \u0627\u0644\u062F\u0641\u0639',
+    attachments:'\u0627\u0644\u0645\u0631\u0641\u0642\u0627\u062A',
+    ownershipDoc:'\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0644\u0643\u064A\u0629',
+    insuranceDoc:'\u0635\u0648\u0631\u0629 \u0627\u0644\u062A\u0623\u0645\u064A\u0646',
+    paymentReceipt:'\u0625\u064A\u0635\u0627\u0644 \u0627\u0644\u062F\u0641\u0639',
+    uploadImage:'\u0631\u0641\u0639 \u0635\u0648\u0631\u0629',
+    remove:'\u062D\u0630\u0641',
     save:'\u062D\u0641\u0638',
     cancel:'\u0625\u0644\u063A\u0627\u0621',
     close:'\u0625\u063A\u0644\u0627\u0642',
@@ -3095,9 +3301,12 @@ function getVehicleStatus(v){
 }
 
 /* ── Vehicle Modal ── */
+var _vehAttach={ownership:null,insurance:null,payment:null};
+
 function openVehicleModal(id){
   document.getElementById('vEditId').value=id||'';
   var title=document.getElementById('vehicleModalTitle');
+  _vehAttach={ownership:null,insurance:null,payment:null};
   if(id){
     title.textContent=t('editVehicle');
     var v=vehicles.find(function(x){return x.id===id;});
@@ -3115,6 +3324,10 @@ function openVehicleModal(id){
       document.getElementById('vInsPolicy').value=v.insurancePolicyNumber||'';
       document.getElementById('vInsExpiry').value=v.insuranceExpiryDate||'';
       document.getElementById('vNotes').value=v.notes||'';
+      document.getElementById('vPaymentBalance').value=v.paymentBalance||'';
+      _vehAttach.ownership=v.ownershipDoc||null;
+      _vehAttach.insurance=v.insuranceDoc||null;
+      _vehAttach.payment=v.paymentDoc||null;
       buildSupervisorDropdown();
       document.getElementById('vAssignedTo').value=v.assignedTo||'';
     }
@@ -3133,10 +3346,67 @@ function openVehicleModal(id){
     document.getElementById('vInsPolicy').value='';
     document.getElementById('vInsExpiry').value='';
     document.getElementById('vNotes').value='';
+    document.getElementById('vPaymentBalance').value='';
     buildSupervisorDropdown();
     document.getElementById('vAssignedTo').value=currentProfile?currentProfile.full_name:'';
   }
+  renderVehicleAttachPreview('ownership');
+  renderVehicleAttachPreview('insurance');
+  renderVehicleAttachPreview('payment');
   document.getElementById('vehicleModal').classList.add('open');
+}
+
+function renderVehicleAttachPreview(kind){
+  var map={ownership:'vOwnershipPreview',insurance:'vInsurancePreview',payment:'vPaymentPreview'};
+  var el=document.getElementById(map[kind]);
+  if(!el) return;
+  var slot=el.closest('.attach-slot');
+  var data=_vehAttach[kind];
+  if(data){
+    el.innerHTML='<img src="'+data+'" alt="'+kind+'" onclick="showImageFullscreen(\''+kind+'\')">';
+    if(slot) slot.classList.add('has-file');
+  } else {
+    el.innerHTML='';
+    if(slot) slot.classList.remove('has-file');
+  }
+}
+
+function handleVehicleAttachUpload(input,kind){
+  var f=input.files&&input.files[0];
+  if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var maxW=900;
+      var ratio=Math.min(1,maxW/img.width);
+      var w=Math.round(img.width*ratio);
+      var h=Math.round(img.height*ratio);
+      var canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      _vehAttach[kind]=canvas.toDataURL('image/jpeg',0.75);
+      renderVehicleAttachPreview(kind);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+  input.value='';
+}
+
+function removeVehicleAttach(kind){
+  _vehAttach[kind]=null;
+  renderVehicleAttachPreview(kind);
+}
+
+function showImageFullscreen(kindOrData){
+  var src=_vehAttach[kindOrData]||kindOrData;
+  if(!src) return;
+  var bg=document.createElement('div');
+  bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
+  bg.innerHTML='<img src="'+src+'" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">';
+  bg.onclick=function(){document.body.removeChild(bg);};
+  document.body.appendChild(bg);
 }
 
 function saveVehicle(){
@@ -3161,6 +3431,10 @@ function saveVehicle(){
       v.insurancePolicyNumber=document.getElementById('vInsPolicy').value.trim();
       v.insuranceExpiryDate=document.getElementById('vInsExpiry').value;
       v.notes=document.getElementById('vNotes').value.trim();
+      v.paymentBalance=document.getElementById('vPaymentBalance').value.trim();
+      v.ownershipDoc=_vehAttach.ownership||null;
+      v.insuranceDoc=_vehAttach.insurance||null;
+      v.paymentDoc=_vehAttach.payment||null;
       v.updatedAt=now;
     }
   } else {
@@ -3179,6 +3453,10 @@ function saveVehicle(){
       currentStatus:'',
       assignedTo:document.getElementById('vAssignedTo').value||(currentProfile?currentProfile.full_name:''),
       notes:document.getElementById('vNotes').value.trim(),
+      paymentBalance:document.getElementById('vPaymentBalance').value.trim(),
+      ownershipDoc:_vehAttach.ownership||null,
+      insuranceDoc:_vehAttach.insurance||null,
+      paymentDoc:_vehAttach.payment||null,
       createdAt:now,updatedAt:now
     });
   }
@@ -3496,6 +3774,30 @@ function viewVehicle(id){
     html+='<div class="vd-field-label">'+t('notes')+'</div>';
     html+='<div class="vd-field-value" style="font-weight:500">'+esc(v.notes)+'</div>';
     html+='</div>';
+  }
+
+  if(v.paymentBalance){
+    html+='<div class="vd-field" style="margin-bottom:18px">';
+    html+='<div class="vd-field-label">'+t('paymentBalance')+'</div>';
+    html+='<div class="vd-field-value" style="font-weight:700;color:var(--brand)">'+esc(v.paymentBalance)+'</div>';
+    html+='</div>';
+  }
+
+  // Vehicle attachments
+  if(v.ownershipDoc||v.insuranceDoc||v.paymentDoc){
+    html+='<div class="vd-log" style="margin-bottom:18px">';
+    html+='<div class="vd-log-title">'+t('attachments')+'</div>';
+    html+='<div class="attach-grid" style="margin-top:10px">';
+    [['ownership','ownershipDoc'],['insurance','insuranceDoc'],['payment','paymentDoc']].forEach(function(pair){
+      var labelKey=pair[0]==='ownership'?'ownershipDoc':pair[0]==='insurance'?'insuranceDoc':'paymentReceipt';
+      var data=v[pair[1]];
+      if(!data) return;
+      html+='<div class="attach-slot">';
+      html+='<div class="attach-label">'+t(labelKey)+'</div>';
+      html+='<div class="attach-preview"><img src="'+data+'" alt="'+pair[0]+'" onclick="showImageFullscreen(this.src)"></div>';
+      html+='</div>';
+    });
+    html+='</div></div>';
   }
 
   // Clearance log — simple per-year history
@@ -4932,17 +5234,16 @@ function renderDamageDiagramCanvas(damages, scale, rep){
     });
   })();
 
-  // ══ 3. CAR DIAGRAM ══
-  // Clean splayed-door car, drawn with light hand-drawn feel (no numbers on markers)
-  var CAR_X = 90, CAR_Y = 140;   // top-left of the car block
-  var CAR_W = 415, CAR_H = 580;  // width/height of the car block
+  // ══ 3. CAR DIAGRAM — realistic multi-view (top + front + rear + left + right) ══
+  var CAR_X = 30, CAR_Y = 130;
+  var CAR_W = 535, CAR_H = 600;  // internal coords 500x920
 
-  // Soft paper background behind the car
+  // Soft paper background behind the car diagram
   ctx.fillStyle = '#fcfaff';
   ctx.strokeStyle = '#e7dff3';
   ctx.lineWidth = 1;
   (function(){
-    var x=CAR_X-18, y=CAR_Y-12, w=CAR_W+36, h=CAR_H+24, r=18;
+    var x=CAR_X-10, y=CAR_Y-10, w=CAR_W+20, h=CAR_H+20, r=14;
     ctx.beginPath();
     ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
     ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
@@ -4953,34 +5254,28 @@ function renderDamageDiagramCanvas(damages, scale, rep){
     ctx.stroke();
   })();
 
-  // Draw car shape (pen-drawn look)
+  // Car coord space: viewBox 500 × 920 — same as the app SVG so marker %s match
   ctx.save();
   ctx.translate(CAR_X, CAR_Y);
-  // Scale from original 500x760 → CAR_W x CAR_H
-  var carScale = Math.min(CAR_W/500, CAR_H/760);
+  var carScale = Math.min(CAR_W/500, CAR_H/920);
   var offX = (CAR_W - 500*carScale)/2;
-  var offY = (CAR_H - 760*carScale)/2;
+  var offY = (CAR_H - 920*carScale)/2;
   ctx.translate(offX, offY);
   ctx.scale(carScale, carScale);
 
-  function penStroke(){
-    ctx.strokeStyle = '#2a2046';
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
-  function softFill(color){
-    ctx.fillStyle = color;
-    ctx.fill();
-  }
-  function carShape(path, fill){
-    ctx.beginPath();
-    path();
-    softFill(fill);
-    penStroke();
-  }
-  function carRoundRect(x, y, w, h, r, fill){
+  // ── palette ──
+  var GLASS = '#b8d0ed';
+  var BODY  = '#f0ebf5';
+  var ROOF  = '#ebe4f0';
+  var BUMP  = '#bcb5c8';
+  var TIRE  = '#24202c';
+  var HEAD  = '#fff4b0';
+  var TAIL  = '#f4a9a9';
+  var LINE  = '#6A5288';
+  var LABEL = '#6A5288';
+
+  // ── helpers ──
+  function rrectPath(x, y, w, h, r){
     ctx.beginPath();
     ctx.moveTo(x+r, y);
     ctx.lineTo(x+w-r, y);
@@ -4992,118 +5287,361 @@ function renderDamageDiagramCanvas(damages, scale, rep){
     ctx.lineTo(x, y+r);
     ctx.quadraticCurveTo(x, y, x+r, y);
     ctx.closePath();
-    softFill(fill);
-    penStroke();
+  }
+  function fillStroke(fill, stroke, sw){
+    if(fill){ ctx.fillStyle = fill; ctx.fill(); }
+    if(stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = sw||1; ctx.stroke(); }
+  }
+  function lbl(text, x, y, size, color, weight){
+    ctx.save();
+    ctx.fillStyle = color || '#6A5288';
+    ctx.font = (weight||'bold')+' '+(size||10)+'px Tahoma, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+    ctx.restore();
   }
 
-  var GLASS = '#e8f0fc';
-  var BODY  = '#f7f5fb';
+  // ══ Section Titles ══
+  lbl('▲ TOP VIEW (bird\'s eye) ▼', 250, 14, 11, LINE);
 
-  // FRONT / REAR markers
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 14px Tahoma, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('▲ FRONT', 250, 10);
-  ctx.fillText('▼ REAR', 250, 750);
+  // ══ TOP VIEW — translate(130,30), body 240×460 ══
+  ctx.save();
+  ctx.translate(130, 30);
+
+  // Wheels behind body
+  rrectPath(-10, 72, 24, 56, 6); fillStroke(TIRE);
+  rrectPath(226, 72, 24, 56, 6); fillStroke(TIRE);
+  rrectPath(-10, 334, 24, 56, 6); fillStroke(TIRE);
+  rrectPath(226, 334, 24, 56, 6); fillStroke(TIRE);
+
+  // Main body (rounded at front/rear corners)
+  ctx.beginPath();
+  ctx.moveTo(20, 35);
+  ctx.quadraticCurveTo(20, 0, 60, 0);
+  ctx.lineTo(180, 0);
+  ctx.quadraticCurveTo(220, 0, 220, 35);
+  ctx.lineTo(220, 425);
+  ctx.quadraticCurveTo(220, 460, 180, 460);
+  ctx.lineTo(60, 460);
+  ctx.quadraticCurveTo(20, 460, 20, 425);
+  ctx.closePath();
+  fillStroke(BODY, LINE, 2);
 
   // Front bumper
-  carRoundRect(185, 20, 130, 16, 6, BODY);
+  ctx.beginPath();
+  ctx.moveTo(28, 10); ctx.lineTo(212, 10);
+  ctx.lineTo(220, 28); ctx.lineTo(20, 28); ctx.closePath();
+  fillStroke(BUMP);
+  lbl('F. BUMPER', 120, 20, 7, '#6A5288');
+
+  // Headlights
+  ctx.beginPath(); ctx.ellipse(45, 16, 14, 9, 0, 0, Math.PI*2); fillStroke(HEAD, '#c79a2b', 1.5);
+  ctx.beginPath(); ctx.ellipse(195, 16, 14, 9, 0, 0, Math.PI*2); fillStroke(HEAD, '#c79a2b', 1.5);
+
   // Hood
-  carShape(function(){
-    ctx.moveTo(185, 36); ctx.lineTo(315, 36);
-    ctx.lineTo(345, 112); ctx.lineTo(155, 112); ctx.closePath();
-  }, BODY);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 13px Tahoma, Arial, sans-serif';
-  ctx.fillText('HOOD', 250, 78);
-
-  // Wheels
-  carRoundRect(150, 158, 28, 74, 8, '#d8d4dd');
-  carRoundRect(322, 158, 28, 74, 8, '#d8d4dd');
-  carRoundRect(150, 528, 28, 74, 8, '#d8d4dd');
-  carRoundRect(322, 528, 28, 74, 8, '#d8d4dd');
-
-  // Main cabin
-  carRoundRect(178, 112, 144, 540, 14, BODY);
+  ctx.beginPath();
+  ctx.moveTo(30, 30); ctx.lineTo(210, 30);
+  ctx.lineTo(206, 96); ctx.lineTo(34, 96); ctx.closePath();
+  fillStroke('#eae3f0', LINE, 1);
+  lbl('HOOD', 120, 65, 13, LINE);
 
   // Windshield
-  carShape(function(){
-    ctx.moveTo(185, 122); ctx.lineTo(315, 122);
-    ctx.lineTo(305, 177); ctx.lineTo(195, 177); ctx.closePath();
-  }, GLASS);
+  ctx.beginPath();
+  ctx.moveTo(34, 98);
+  ctx.lineTo(206, 98);
+  ctx.quadraticCurveTo(214, 132, 206, 166);
+  ctx.lineTo(34, 166);
+  ctx.quadraticCurveTo(26, 132, 34, 98);
+  ctx.closePath();
+  fillStroke(GLASS, LINE, 1.3);
+  lbl('WINDSHIELD', 120, 134, 10, '#1e3a8a');
 
-  // Roof (split line subtle)
-  carRoundRect(195, 177, 110, 410, 4, BODY);
+  // Wipers
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(80, 162); ctx.lineTo(72, 108); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(160, 162); ctx.lineTo(168, 108); ctx.stroke();
+
+  // Side mirrors
+  ctx.beginPath(); ctx.ellipse(8, 140, 12, 8, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1.2);
+  ctx.beginPath(); ctx.ellipse(232, 140, 12, 8, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1.2);
+
+  // Roof
+  rrectPath(34, 166, 172, 150, 8); fillStroke(ROOF, LINE, 1.3);
+  lbl('ROOF', 120, 232, 13, LINE);
+
+  // Center spine
   ctx.save();
   ctx.setLineDash([4,4]);
-  ctx.strokeStyle = '#c7c2d0';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(250, 177); ctx.lineTo(250, 587);
+  ctx.strokeStyle = '#c8c0d4'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120, 172); ctx.lineTo(120, 310); ctx.stroke();
+  ctx.restore();
+
+  // Sunroof outline
+  ctx.save();
+  ctx.setLineDash([2,2]);
+  ctx.strokeStyle = LINE; ctx.lineWidth = 0.9;
+  rrectPath(78, 188, 84, 54, 5);
   ctx.stroke();
   ctx.restore();
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 13px Tahoma, Arial, sans-serif';
-  ctx.fillText('ROOF', 250, 382);
+  lbl('SUNROOF', 120, 255, 7, '#9691a4', 'normal');
+
+  // Door division line
+  ctx.save();
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle = '#9a8ca8'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(22, 241); ctx.lineTo(218, 241); ctx.stroke();
+  ctx.restore();
+
+  // Door handles
+  rrectPath(17, 186, 11, 3.5, 1); fillStroke(LINE);
+  rrectPath(212, 186, 11, 3.5, 1); fillStroke(LINE);
+  rrectPath(17, 282, 11, 3.5, 1); fillStroke(LINE);
+  rrectPath(212, 282, 11, 3.5, 1); fillStroke(LINE);
+
+  // Door labels
+  ctx.save();
+  ctx.fillStyle = LINE;
+  ctx.font = 'bold 9px Tahoma, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FL', 30, 212);
+  ctx.fillText('RL', 30, 278);
+  ctx.textAlign = 'right';
+  ctx.fillText('FR', 210, 212);
+  ctx.fillText('RR', 210, 278);
+  ctx.restore();
 
   // Rear window
-  carShape(function(){
-    ctx.moveTo(195, 587); ctx.lineTo(305, 587);
-    ctx.lineTo(315, 642); ctx.lineTo(185, 642); ctx.closePath();
-  }, GLASS);
-
-  // FL DOOR
-  carRoundRect(18, 150, 128, 150, 10, BODY);
-  carRoundRect(28, 160, 108, 36, 4, GLASS);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 12px Tahoma, Arial, sans-serif';
-  ctx.fillText('FRONT LEFT', 82, 248);
-  ctx.font = '10px Tahoma, Arial, sans-serif';
-  ctx.fillStyle = '#9691a4';
-  ctx.fillText('door', 82, 265);
-
-  // RL DOOR
-  carRoundRect(18, 455, 128, 150, 10, BODY);
-  carRoundRect(28, 465, 108, 36, 4, GLASS);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 12px Tahoma, Arial, sans-serif';
-  ctx.fillText('REAR LEFT', 82, 553);
-  ctx.font = '10px Tahoma, Arial, sans-serif';
-  ctx.fillStyle = '#9691a4';
-  ctx.fillText('door', 82, 570);
-
-  // FR DOOR
-  carRoundRect(354, 150, 128, 150, 10, BODY);
-  carRoundRect(364, 160, 108, 36, 4, GLASS);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 12px Tahoma, Arial, sans-serif';
-  ctx.fillText('FRONT RIGHT', 418, 248);
-  ctx.font = '10px Tahoma, Arial, sans-serif';
-  ctx.fillStyle = '#9691a4';
-  ctx.fillText('door', 418, 265);
-
-  // RR DOOR
-  carRoundRect(354, 455, 128, 150, 10, BODY);
-  carRoundRect(364, 465, 108, 36, 4, GLASS);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 12px Tahoma, Arial, sans-serif';
-  ctx.fillText('REAR RIGHT', 418, 553);
-  ctx.font = '10px Tahoma, Arial, sans-serif';
-  ctx.fillStyle = '#9691a4';
-  ctx.fillText('door', 418, 570);
+  ctx.beginPath();
+  ctx.moveTo(34, 316);
+  ctx.lineTo(206, 316);
+  ctx.quadraticCurveTo(214, 348, 206, 378);
+  ctx.lineTo(34, 378);
+  ctx.quadraticCurveTo(26, 348, 34, 316);
+  ctx.closePath();
+  fillStroke(GLASS, LINE, 1.3);
+  lbl('REAR WINDOW', 120, 350, 9, '#1e3a8a');
 
   // Trunk
-  carShape(function(){
-    ctx.moveTo(155, 652); ctx.lineTo(345, 652);
-    ctx.lineTo(315, 728); ctx.lineTo(185, 728); ctx.closePath();
-  }, BODY);
-  ctx.fillStyle = '#6A5288';
-  ctx.font = 'bold 13px Tahoma, Arial, sans-serif';
-  ctx.fillText('TRUNK', 250, 692);
+  ctx.beginPath();
+  ctx.moveTo(34, 380); ctx.lineTo(206, 380);
+  ctx.lineTo(210, 432); ctx.lineTo(30, 432); ctx.closePath();
+  fillStroke('#eae3f0', LINE, 1);
+  lbl('TRUNK', 120, 408, 13, LINE);
+
+  // Taillights
+  ctx.beginPath(); ctx.ellipse(45, 440, 14, 8, 0, 0, Math.PI*2); fillStroke(TAIL, '#b91c1c', 1.3);
+  ctx.beginPath(); ctx.ellipse(195, 440, 14, 8, 0, 0, Math.PI*2); fillStroke(TAIL, '#b91c1c', 1.3);
 
   // Rear bumper
-  carRoundRect(185, 728, 130, 16, 6, BODY);
+  ctx.beginPath();
+  ctx.moveTo(20, 432); ctx.lineTo(220, 432);
+  ctx.lineTo(212, 450); ctx.lineTo(28, 450); ctx.closePath();
+  fillStroke(BUMP);
+  lbl('R. BUMPER', 120, 441, 7, '#6A5288');
+
+  ctx.restore();  // end TOP VIEW
+
+  // ══ divider + titles for FRONT & REAR ══
+  ctx.strokeStyle = '#e7dff3'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(30, 502); ctx.lineTo(470, 502); ctx.stroke();
+  lbl('FRONT VIEW', 120, 516, 10, LINE);
+  lbl('REAR VIEW', 380, 516, 10, LINE);
+
+  // ── FRONT VIEW (translate 30,528) ──
+  ctx.save();
+  ctx.translate(30, 528);
+  // Body
+  ctx.beginPath();
+  ctx.moveTo(12, 75);
+  ctx.quadraticCurveTo(12, 16, 38, 16);
+  ctx.lineTo(142, 16);
+  ctx.quadraticCurveTo(168, 16, 168, 75);
+  ctx.lineTo(168, 100); ctx.lineTo(12, 100); ctx.closePath();
+  fillStroke(BODY, LINE, 1.5);
+  // Windshield
+  ctx.beginPath();
+  ctx.moveTo(38, 22); ctx.lineTo(142, 22);
+  ctx.quadraticCurveTo(152, 22, 158, 50);
+  ctx.lineTo(22, 50);
+  ctx.quadraticCurveTo(28, 22, 38, 22);
+  ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  // Grille
+  rrectPath(50, 76, 80, 16, 2); fillStroke('#3a3544');
+  ctx.strokeStyle = '#5a5464'; ctx.lineWidth = 0.5;
+  [80,84,88].forEach(function(gy){ ctx.beginPath(); ctx.moveTo(52,gy); ctx.lineTo(128,gy); ctx.stroke(); });
+  // Headlights
+  ctx.beginPath(); ctx.ellipse(30, 66, 13, 8, 0, 0, Math.PI*2); fillStroke(HEAD, '#c79a2b', 1.3);
+  ctx.beginPath(); ctx.ellipse(150, 66, 13, 8, 0, 0, Math.PI*2); fillStroke(HEAD, '#c79a2b', 1.3);
+  // Mirrors
+  ctx.beginPath(); ctx.ellipse(10, 52, 7, 4, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1);
+  ctx.beginPath(); ctx.ellipse(170, 52, 7, 4, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1);
+  // License plate
+  rrectPath(60, 96, 60, 10, 1); fillStroke('#fff', LINE, 0.8);
+  // Bumper
+  rrectPath(8, 100, 164, 8, 2); fillStroke(BUMP);
+  // Tires
+  rrectPath(2, 96, 18, 22, 3); fillStroke(TIRE);
+  rrectPath(160, 96, 18, 22, 3); fillStroke(TIRE);
+  ctx.restore();
+
+  // ── REAR VIEW (translate 290,528) ──
+  ctx.save();
+  ctx.translate(290, 528);
+  ctx.beginPath();
+  ctx.moveTo(12, 75);
+  ctx.quadraticCurveTo(12, 16, 38, 16);
+  ctx.lineTo(142, 16);
+  ctx.quadraticCurveTo(168, 16, 168, 75);
+  ctx.lineTo(168, 100); ctx.lineTo(12, 100); ctx.closePath();
+  fillStroke(BODY, LINE, 1.5);
+  // Rear window
+  ctx.beginPath();
+  ctx.moveTo(38, 22); ctx.lineTo(142, 22);
+  ctx.quadraticCurveTo(152, 22, 158, 50);
+  ctx.lineTo(22, 50);
+  ctx.quadraticCurveTo(28, 22, 38, 22);
+  ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  // Trunk
+  rrectPath(20, 52, 140, 32, 3); fillStroke('#eae3f0', LINE, 0.8);
+  lbl('TRUNK', 90, 70, 9, LINE);
+  // Taillights
+  rrectPath(22, 60, 38, 22, 3); fillStroke(TAIL, '#b91c1c', 1.3);
+  rrectPath(120, 60, 38, 22, 3); fillStroke(TAIL, '#b91c1c', 1.3);
+  // License
+  rrectPath(60, 84, 60, 14, 1); fillStroke('#fff', LINE, 0.8);
+  // Bumper
+  rrectPath(8, 100, 164, 8, 2); fillStroke(BUMP);
+  rrectPath(2, 96, 18, 22, 3); fillStroke(TIRE);
+  rrectPath(160, 96, 18, 22, 3); fillStroke(TIRE);
+  ctx.restore();
+
+  // ══ divider + titles for LEFT & RIGHT SIDES ══
+  ctx.strokeStyle = '#e7dff3'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(30, 678); ctx.lineTo(470, 678); ctx.stroke();
+  lbl('LEFT SIDE VIEW', 120, 692, 10, LINE);
+  lbl('RIGHT SIDE VIEW', 380, 692, 10, LINE);
+
+  // ── LEFT SIDE (translate 15, 706) ──
+  ctx.save();
+  ctx.translate(15, 706);
+  // Body profile
+  ctx.beginPath();
+  ctx.moveTo(10, 105);
+  ctx.lineTo(10, 82);
+  ctx.quadraticCurveTo(14, 60, 28, 55);
+  ctx.lineTo(42, 50);
+  ctx.lineTo(58, 22);
+  ctx.quadraticCurveTo(66, 10, 84, 10);
+  ctx.lineTo(164, 10);
+  ctx.quadraticCurveTo(182, 10, 190, 22);
+  ctx.lineTo(200, 50);
+  ctx.lineTo(212, 55);
+  ctx.quadraticCurveTo(222, 62, 222, 85);
+  ctx.lineTo(222, 105);
+  ctx.closePath();
+  fillStroke(BODY, LINE, 1.5);
+  // Windshield slant
+  ctx.beginPath();
+  ctx.moveTo(58, 48); ctx.lineTo(84, 15); ctx.lineTo(124, 15); ctx.lineTo(124, 48); ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  // Rear window slant
+  ctx.beginPath();
+  ctx.moveTo(128, 15); ctx.lineTo(164, 15);
+  ctx.quadraticCurveTo(174, 18, 182, 48);
+  ctx.lineTo(128, 48); ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  // Door divider
+  ctx.save();
+  ctx.setLineDash([3,2]);
+  ctx.strokeStyle = '#9a8ca8'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(126, 48); ctx.lineTo(126, 95); ctx.stroke();
+  ctx.restore();
+  lbl('FL DOOR', 90, 78, 9, LINE);
+  lbl('RL DOOR', 168, 78, 9, LINE);
+  rrectPath(80, 62, 18, 4, 1.5); fillStroke(LINE);
+  rrectPath(150, 62, 18, 4, 1.5); fillStroke(LINE);
+  // Side mirror
+  ctx.beginPath(); ctx.ellipse(58, 40, 6, 4, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1);
+  // Wheel arches
+  ctx.beginPath();
+  ctx.moveTo(28, 102); ctx.quadraticCurveTo(46, 76, 64, 102); ctx.closePath();
+  fillStroke('#d9d4e0', LINE, 1.2);
+  ctx.beginPath();
+  ctx.moveTo(170, 102); ctx.quadraticCurveTo(188, 76, 206, 102); ctx.closePath();
+  fillStroke('#d9d4e0', LINE, 1.2);
+  // Wheels
+  ctx.beginPath(); ctx.arc(46, 105, 16, 0, Math.PI*2); fillStroke(TIRE);
+  ctx.beginPath(); ctx.arc(46, 105, 7, 0, Math.PI*2); fillStroke('#8a8192');
+  ctx.beginPath(); ctx.arc(188, 105, 16, 0, Math.PI*2); fillStroke(TIRE);
+  ctx.beginPath(); ctx.arc(188, 105, 7, 0, Math.PI*2); fillStroke('#8a8192');
+  // Direction indicators
+  ctx.save();
+  ctx.fillStyle = '#9691a4'; ctx.font = 'bold 8px Tahoma, Arial, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('◄ FRONT', 12, 2);
+  ctx.textAlign = 'right';
+  ctx.fillText('REAR ►', 220, 2);
+  ctx.restore();
+  ctx.restore();
+
+  // ── RIGHT SIDE (translate 270, 706) ──
+  ctx.save();
+  ctx.translate(270, 706);
+  ctx.beginPath();
+  ctx.moveTo(222, 105);
+  ctx.lineTo(222, 82);
+  ctx.quadraticCurveTo(218, 60, 204, 55);
+  ctx.lineTo(190, 50);
+  ctx.lineTo(174, 22);
+  ctx.quadraticCurveTo(166, 10, 148, 10);
+  ctx.lineTo(68, 10);
+  ctx.quadraticCurveTo(50, 10, 42, 22);
+  ctx.lineTo(32, 50);
+  ctx.lineTo(20, 55);
+  ctx.quadraticCurveTo(10, 62, 10, 85);
+  ctx.lineTo(10, 105);
+  ctx.closePath();
+  fillStroke(BODY, LINE, 1.5);
+  ctx.beginPath();
+  ctx.moveTo(174, 48); ctx.lineTo(148, 15); ctx.lineTo(108, 15); ctx.lineTo(108, 48); ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  ctx.beginPath();
+  ctx.moveTo(104, 15); ctx.lineTo(68, 15);
+  ctx.quadraticCurveTo(58, 18, 50, 48);
+  ctx.lineTo(104, 48); ctx.closePath();
+  fillStroke(GLASS, LINE, 1);
+  ctx.save();
+  ctx.setLineDash([3,2]);
+  ctx.strokeStyle = '#9a8ca8'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(106, 48); ctx.lineTo(106, 95); ctx.stroke();
+  ctx.restore();
+  lbl('FR DOOR', 142, 78, 9, LINE);
+  lbl('RR DOOR', 64, 78, 9, LINE);
+  rrectPath(134, 62, 18, 4, 1.5); fillStroke(LINE);
+  rrectPath(64, 62, 18, 4, 1.5); fillStroke(LINE);
+  ctx.beginPath(); ctx.ellipse(174, 40, 6, 4, 0, 0, Math.PI*2); fillStroke('#d4d0dc', LINE, 1);
+  ctx.beginPath();
+  ctx.moveTo(168, 102); ctx.quadraticCurveTo(186, 76, 204, 102); ctx.closePath();
+  fillStroke('#d9d4e0', LINE, 1.2);
+  ctx.beginPath();
+  ctx.moveTo(26, 102); ctx.quadraticCurveTo(44, 76, 62, 102); ctx.closePath();
+  fillStroke('#d9d4e0', LINE, 1.2);
+  ctx.beginPath(); ctx.arc(186, 105, 16, 0, Math.PI*2); fillStroke(TIRE);
+  ctx.beginPath(); ctx.arc(186, 105, 7, 0, Math.PI*2); fillStroke('#8a8192');
+  ctx.beginPath(); ctx.arc(44, 105, 16, 0, Math.PI*2); fillStroke(TIRE);
+  ctx.beginPath(); ctx.arc(44, 105, 7, 0, Math.PI*2); fillStroke('#8a8192');
+  ctx.save();
+  ctx.fillStyle = '#9691a4'; ctx.font = 'bold 8px Tahoma, Arial, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('◄ REAR', 12, 2);
+  ctx.textAlign = 'right';
+  ctx.fillText('FRONT ►', 220, 2);
+  ctx.restore();
+  ctx.restore();
 
   // ══ PEN-MARK DAMAGE MARKERS (no numbers, shape + color) ══
   var colorMap = {
@@ -5169,10 +5707,10 @@ function renderDamageDiagramCanvas(damages, scale, rep){
     ctx.restore();
   }
 
-  // Draw damage marks on the car. Convert d.x/d.y (0-100%) → original 500x760 coords
+  // Draw damage marks on the car. Convert d.x/d.y (0-100%) → original 500x920 coords
   (damages||[]).forEach(function(d){
     var cx = (d.x/100) * 500;
-    var cy = (d.y/100) * 760;
+    var cy = (d.y/100) * 920;
     var color = colorMap[d.type] || colorMap.other;
     var isNew = d._origin === 'in';
 
