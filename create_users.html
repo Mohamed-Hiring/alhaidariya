@@ -107,6 +107,28 @@ input:focus{border-color:#6A5288;box-shadow:0 0 0 2px rgba(106,82,136,.12);}
         </div>
       </div>
 
+      <div class="user-row admin-row">
+        <div class="row-head">
+          <span class="name-line">SKD — HR</span>
+          <span class="role-badge rb-admin">Admin</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e5" value="hr@skd.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p5" value="SKD@2026"></div>
+        </div>
+      </div>
+
+      <div class="user-row admin-row">
+        <div class="row-head">
+          <span class="name-line">SKD — Mohamed</span>
+          <span class="role-badge rb-admin">Admin</span>
+        </div>
+        <div class="fields">
+          <div class="fg"><label>Email</label><input type="email" id="e6" value="mohamed@skd.com"></div>
+          <div class="fg"><label>Password</label><input type="text" id="p6" value="SKD@2026"></div>
+        </div>
+      </div>
+
     </div>
 
     <button class="btn btn-p" id="createBtn" onclick="createAll()" style="margin-top:14px">
@@ -148,7 +170,9 @@ var USERS = [
   {name:'Mohamed Saeed',   role:'supervisor', supName:'Mohamed Saeed',   ei:1},
   {name:'Al Aqib',         role:'supervisor', supName:'Al Aqib',         ei:2},
   {name:'Haroun',          role:'supervisor', supName:'Haroun',          ei:3},
-  {name:'IT / Full Access',role:'admin',      supName:null,              ei:4}
+  {name:'IT / Full Access',role:'admin',      supName:null,              ei:4},
+  {name:'SKD — HR',        role:'admin',      supName:null,              ei:5},
+  {name:'SKD — Mohamed',   role:'admin',      supName:null,              ei:6}
 ];
 
 function setResult(idx, state, msg){
