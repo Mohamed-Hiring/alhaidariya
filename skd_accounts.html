@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKD Accounts · Al Haidariya</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#3a2c52,#6A5288,#8b6fb0);min-height:100vh;padding:20px;display:flex;align-items:center;justify-content:center}
+.box{width:100%;max-width:440px;background:#fff;border-radius:20px;padding:28px 22px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.logo{width:64px;height:64px;margin:0 auto 14px;display:block;background:#6A5288;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;letter-spacing:1px;box-shadow:0 10px 24px rgba(106,82,136,.35)}
+h1{font-size:20px;color:#1a1229;text-align:center;margin-bottom:4px}
+.sub{font-size:12px;color:#6b6578;text-align:center;margin-bottom:22px}
+.acc{background:#faf7fc;border:1.5px solid #e7dff3;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.acc .info{flex:1;min-width:0}
+.acc .email{font-weight:800;color:#1a1229;font-size:14px;word-break:break-all}
+.acc .pass{font-size:12px;color:#6b6578;margin-top:2px;font-family:monospace}
+.status{min-width:70px;text-align:center;padding:6px 10px;border-radius:20px;font-size:11px;font-weight:800}
+.s-wait{background:#f4f1f8;color:#6b6578}
+.s-ok{background:#d1fae5;color:#065f46}
+.s-err{background:#fee2e2;color:#991b1b}
+.btn{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#6A5288,#8b6fb0);color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px;box-shadow:0 8px 20px rgba(106,82,136,.35);transition:transform .15s,box-shadow .15s;font-family:Tahoma}
+.btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(106,82,136,.45)}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.link{display:block;text-align:center;color:#6A5288;font-size:13px;margin-top:14px;text-decoration:none;font-weight:700}
+.link:hover{text-decoration:underline}
+.note{background:#f3f0fa;border-left:3px solid #6A5288;padding:10px 12px;border-radius:6px;font-size:12px;color:#3a2c52;margin-bottom:16px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">AH</div>
+  <h1>SKD Account Setup</h1>
+  <p class="sub">Tap once to create both accounts</p>
+
+  <div class="note">
+    <b>Password for both:</b> <span style="font-family:monospace">SKD@2026</span><br>
+    If an account already exists, it will be marked as already created.
+  </div>
+
+  <div class="acc">
+    <div class="info">
+      <div class="email">hr@skd.com</div>
+      <div class="pass">SKD@2026 · Admin</div>
+    </div>
+    <div class="status s-wait" id="st0">Ready</div>
+  </div>
+
+  <div class="acc">
+    <div class="info">
+      <div class="email">mohamed@skd.com</div>
+      <div class="pass">SKD@2026 · Admin</div>
+    </div>
+    <div class="status s-wait" id="st1">Ready</div>
+  </div>
+
+  <button class="btn" id="go" onclick="run()">Create Accounts</button>
+  <a class="link" href="clearance.html">Open the App &rarr;</a>
+</div>
+
+<script>
+var SUPA_URL = 'https://utjraxkqkrelgrqgllpj.supabase.co';
+var SUPA_SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
+
+var ACCOUNTS = [
+  {email:'hr@skd.com',       password:'SKD@2026', full_name:'SKD — HR',      role:'admin'},
+  {email:'mohamed@skd.com',  password:'SKD@2026', full_name:'SKD — Mohamed', role:'admin'}
+];
+
+function setStatus(i, cls, text){
+  var el = document.getElementById('st'+i);
+  el.className = 'status ' + cls;
+  el.textContent = text;
+}
+
+async function createOne(i, acc){
+  setStatus(i, 's-wait', 'Working…');
+  try{
+    // Step 1: create auth user (idempotent handling below)
+    var r = await fetch(SUPA_URL+'/auth/v1/admin/users', {
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+SUPA_SVC,
+        'apikey':SUPA_SVC,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        email:acc.email,
+        password:acc.password,
+        email_confirm:true
+      })
+    });
+    var data = await r.json();
+    var userId = data.id || (data.user && data.user.id);
+    var already = false;
+
+    if(!userId){
+      // Might already exist — try to look up
+      var msg = (data.msg || data.error_description || data.message || '').toLowerCase();
+      if(msg.indexOf('already') !== -1 || msg.indexOf('exist') !== -1 || msg.indexOf('registered') !== -1){
+        // List users to find existing id
+        var lu = await fetch(SUPA_URL+'/auth/v1/admin/users?per_page=200', {
+          headers:{'Authorization':'Bearer '+SUPA_SVC,'apikey':SUPA_SVC}
+        });
+        var listData = await lu.json();
+        var users = listData.users || [];
+        var found = users.find(function(u){ return u.email === acc.email; });
+        if(found){
+          userId = found.id;
+          already = true;
+          // Reset password so it's always SKD@2026
+          await fetch(SUPA_URL+'/auth/v1/admin/users/'+userId, {
+            method:'PUT',
+            headers:{
+              'Authorization':'Bearer '+SUPA_SVC,
+              'apikey':SUPA_SVC,
+              'Content-Type':'application/json'
+            },
+            body:JSON.stringify({password:acc.password, email_confirm:true})
+          });
+        }
+      }
+      if(!userId) throw new Error(data.msg || data.error_description || JSON.stringify(data));
+    }
+
+    // Step 2: upsert profile row
+    await fetch(SUPA_URL+'/rest/v1/user_profiles', {
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+SUPA_SVC,
+        'apikey':SUPA_SVC,
+        'Content-Type':'application/json',
+        'Prefer':'resolution=merge-duplicates'
+      },
+      body:JSON.stringify({
+        id:userId,
+        full_name:acc.full_name,
+        role:acc.role,
+        supervisor_name:null
+      })
+    });
+
+    setStatus(i, 's-ok', already ? 'Updated' : 'Created');
+    return true;
+  } catch(e){
+    setStatus(i, 's-err', 'Failed');
+    console.error(acc.email, e);
+    return false;
+  }
+}
+
+async function run(){
+  var btn = document.getElementById('go');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  for(var i=0;i<ACCOUNTS.length;i++){
+    await createOne(i, ACCOUNTS[i]);
+  }
+  btn.textContent = 'Done — Open the App';
+  btn.disabled = false;
+  btn.onclick = function(){ window.location.href = 'clearance.html'; };
+}
+</script>
+</body>
+</html>
