@@ -31,11 +31,12 @@ h1{font-size:20px;color:#1a1229;text-align:center;margin-bottom:4px}
 <div class="box">
   <div class="logo">AH</div>
   <h1>SKD Account Setup</h1>
-  <p class="sub">Tap once to create both accounts</p>
+  <p class="sub">Tap once to create all 3 accounts</p>
 
   <div class="note">
-    <b>Password for both:</b> <span style="font-family:monospace">SKD@2026</span><br>
-    If an account already exists, it will be marked as already created.
+    <b>SKD accounts password:</b> <span style="font-family:monospace">SKD@2026</span><br>
+    <b>Test employee password:</b> <span style="font-family:monospace">Test@2026</span><br>
+    If an account already exists, it will be updated.
   </div>
 
   <div class="acc">
@@ -54,6 +55,14 @@ h1{font-size:20px;color:#1a1229;text-align:center;margin-bottom:4px}
     <div class="status s-wait" id="st1">Ready</div>
   </div>
 
+  <div class="acc" style="border-color:#c4b5e0;background:#f0ebfa">
+    <div class="info">
+      <div class="email">test@alhaidariya.com</div>
+      <div class="pass">Test@2026 · Supervisor (Test)</div>
+    </div>
+    <div class="status s-wait" id="st2">Ready</div>
+  </div>
+
   <button class="btn" id="go" onclick="run()">Create Accounts</button>
   <a class="link" href="clearance.html">Open the App &rarr;</a>
 </div>
@@ -63,8 +72,9 @@ var SUPA_URL = 'https://utjraxkqkrelgrqgllpj.supabase.co';
 var SUPA_SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
 
 var ACCOUNTS = [
-  {email:'hr@skd.com',       password:'SKD@2026', full_name:'SKD — HR',      role:'admin'},
-  {email:'mohamed@skd.com',  password:'SKD@2026', full_name:'SKD — Mohamed', role:'admin'}
+  {email:'hr@skd.com',             password:'SKD@2026',  full_name:'SKD — HR',      role:'admin'},
+  {email:'mohamed@skd.com',        password:'SKD@2026',  full_name:'SKD — Mohamed', role:'admin'},
+  {email:'test@alhaidariya.com',   password:'Test@2026', full_name:'Test Employee', role:'supervisor', supervisor_name:'Test Employee'}
 ];
 
 function setStatus(i, cls, text){
@@ -136,7 +146,7 @@ async function createOne(i, acc){
         id:userId,
         full_name:acc.full_name,
         role:acc.role,
-        supervisor_name:null
+        supervisor_name:acc.supervisor_name||null
       })
     });
 
