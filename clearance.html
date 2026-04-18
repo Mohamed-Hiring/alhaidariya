@@ -947,6 +947,16 @@ body.rtl .toast-container{right:auto;left:20px;}
     <p style="font-size:12px;color:var(--g400);margin:8px 0 16px" data-i18n="userMgmtDesc">Manage system users and their roles.</p>
     <div id="userList"></div>
   </div>
+  <div class="card" style="margin-top:16px" id="svcKeyCard">
+    <div class="card-title">Service Role Key</div>
+    <p style="font-size:12px;color:var(--g400);margin:8px 0 12px">Required for user management and account creation. Paste once — saved in your browser forever.</p>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="password" id="svcKeyField" placeholder="sb_secret_…" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:12px;background:var(--surface-2);color:var(--text)">
+      <button class="btn btn-p" style="width:auto;padding:10px 16px;font-size:13px" onclick="saveSvcKeyFromSettings()">Save</button>
+      <button class="btn btn-s" style="width:auto;padding:10px 14px;font-size:13px" onclick="clearSvcKey()">Clear</button>
+    </div>
+    <div id="svcKeyStatus" style="font-size:12px;margin-top:8px;color:var(--g400)"></div>
+  </div>
   <div class="card" style="margin-top:16px">
     <div class="card-title" data-i18n="systemInfo">System Info</div>
     <div style="font-size:12px;color:var(--g600);margin-top:8px" id="sysInfo"></div>
@@ -6323,6 +6333,40 @@ async function renderSettings(){
     '<div>Vehicles: '+vehicles.length+'</div>'+
     '<div>Records: '+records.length+'</div>'+
     '<div>Version: 1.0</div>';
+
+  // Service key card status
+  var skEl=document.getElementById('svcKeyStatus');
+  var sk=localStorage.getItem('clr_svc_key')||'';
+  if(sk){
+    skEl.textContent='Key is saved — User Management active';
+    skEl.style.color='#059669';
+    document.getElementById('svcKeyField').value='••••••••••••••••••';
+    document.getElementById('svcKeyCard').style.borderColor='#a7f3d0';
+  } else {
+    skEl.textContent='No key saved — paste to enable User Management & account creation';
+    skEl.style.color='#d97706';
+  }
+}
+
+function saveSvcKeyFromSettings(){
+  var val=document.getElementById('svcKeyField').value.trim();
+  if(!val||val.indexOf('•')!==-1){alert('Please paste the actual service role key');return;}
+  localStorage.setItem('clr_svc_key',val);
+  SUPA_SVC=val;
+  if(SUPA_SVC) supaAdmin=supabase.createClient(SUPA_URL,SUPA_SVC);
+  document.getElementById('svcKeyStatus').textContent='Saved! Reload to fully activate.';
+  document.getElementById('svcKeyStatus').style.color='#059669';
+  document.getElementById('svcKeyField').value='••••••••••••••••••';
+  showToast('Service key saved');
+}
+
+function clearSvcKey(){
+  localStorage.removeItem('clr_svc_key');
+  SUPA_SVC='';supaAdmin=null;
+  document.getElementById('svcKeyField').value='';
+  document.getElementById('svcKeyStatus').textContent='Key cleared';
+  document.getElementById('svcKeyStatus').style.color='#d97706';
+  showToast('Key cleared');
 }
 
 /* ═══════════════════════════════════════════
