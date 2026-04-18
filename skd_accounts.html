@@ -63,13 +63,35 @@ h1{font-size:20px;color:#1a1229;text-align:center;margin-bottom:4px}
     <div class="status s-wait" id="st2">Ready</div>
   </div>
 
+  <div class="note" id="svcKeyBox" style="display:none">
+    <b>Service Role Key required:</b><br>
+    <span style="font-size:11px;color:#6b6578">Paste the Supabase service_role key from the dashboard. It will be saved in your browser.</span>
+    <input type="text" id="svcKeyInput" placeholder="Paste service_role key here…" style="width:100%;margin-top:8px;padding:10px;border:1.5px solid #d8d4e4;border-radius:8px;font-family:monospace;font-size:11px">
+    <button class="btn" style="margin-top:8px;font-size:13px;padding:10px" onclick="saveSvcKey()">Save Key &amp; Continue</button>
+  </div>
+
   <button class="btn" id="go" onclick="run()">Create Accounts</button>
   <a class="link" href="clearance.html">Open the App &rarr;</a>
 </div>
 
 <script>
-var SUPA_URL = 'https://utjraxkqkrelgrqgllpj.supabase.co';
-var SUPA_SVC = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0anJheGtxa3JlbGdycWdsbHBqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTI5NDgwMCwiZXhwIjoyMDkwODcwODAwfQ.1YwmpFwPWmyegPMWEq4dz38cp5ViGpAHQR-5_XzyujA';
+var SUPA_URL = 'https://phyvnqcmasqzpnxabcwr.supabase.co';
+var SUPA_SVC = localStorage.getItem('clr_svc_key') || '';
+
+// Show key input if no service role key saved
+if(!SUPA_SVC){
+  document.getElementById('svcKeyBox').style.display='block';
+  document.getElementById('go').style.display='none';
+}
+
+function saveSvcKey(){
+  var key=document.getElementById('svcKeyInput').value.trim();
+  if(!key){alert('Please paste the service role key');return;}
+  localStorage.setItem('clr_svc_key', key);
+  SUPA_SVC=key;
+  document.getElementById('svcKeyBox').style.display='none';
+  document.getElementById('go').style.display='block';
+}
 
 var ACCOUNTS = [
   {email:'hr@skd.com',             password:'SKD@2026',  full_name:'SKD — HR',      role:'admin'},
