@@ -793,6 +793,7 @@ body.rtl .toast-container{right:auto;left:20px;}
     <input type="email" id="loginEmail" placeholder="Email">
     <input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')signIn()">
     <button class="btn btn-p" style="width:100%;margin-top:4px" id="loginBtn" onclick="signIn()">Sign In</button>
+    <button type="button" style="width:100%;margin-top:8px;padding:10px;border:none;background:transparent;color:var(--p);font-size:13px;font-weight:700;cursor:pointer;font-family:Tahoma;text-decoration:underline" onclick="forgotPassword()">Forgot Password?</button>
   </div>
 </div>
 
@@ -2390,10 +2391,41 @@ async function initApp(){
         document.getElementById('appWrapper').style.display='none';
         document.getElementById('loginScreen').style.display='flex';
       }
+      if(ev==='PASSWORD_RECOVERY'){
+        var newPass=prompt('Enter your new password:');
+        if(newPass&&newPass.length>=6){
+          supa.auth.updateUser({password:newPass}).then(function(r){
+            if(r.error) alert('Error: '+r.error.message);
+            else alert('Password updated! You can now sign in.');
+          });
+        }
+      }
     });
   }catch(e){
     document.getElementById('loginErr').innerHTML='Startup error: '+(e.message||e);
     document.getElementById('loginErr').style.display='block';
+  }
+}
+
+async function forgotPassword(){
+  var email=document.getElementById('loginEmail').value.trim();
+  var errEl=document.getElementById('loginErr');
+  if(!email){errEl.textContent='Enter your email first';errEl.style.display='block';return;}
+  if(!supa){errEl.textContent='No connection';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  try{
+    var res=await supa.auth.resetPasswordForEmail(email,{
+      redirectTo:window.location.origin+window.location.pathname
+    });
+    if(res.error) throw res.error;
+    errEl.style.color='#059669';
+    errEl.textContent='Password reset email sent to '+email+'. Check your inbox!';
+    errEl.style.display='block';
+    setTimeout(function(){errEl.style.color='';},10000);
+  }catch(e){
+    errEl.style.color='';
+    errEl.textContent=e.message||'Failed to send reset email';
+    errEl.style.display='block';
   }
 }
 
