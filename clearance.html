@@ -2444,8 +2444,14 @@ async function signIn(){
     applyRole();
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('appWrapper').style.display='block';
+    document.getElementById('loginBtn').textContent=t('signIn');
+    document.getElementById('loginBtn').disabled=false;
+    if(supa) await loadAllData();
     checkDueVehicles();
     buildSupervisorDropdown();
+    renderDashboard();
+    if(typeof updateNotifBadge==='function') updateNotifBadge();
+    if(supa) setupRealtime();
     return;
   }
 
