@@ -336,6 +336,8 @@ tr.gr td{
   transition:all var(--t);white-space:nowrap;letter-spacing:.2px;
 }
 .btn-logout:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.6);}
+.btn-app-switch{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:white;font-family:Tahoma,sans-serif;font-size:11px;font-weight:bold;text-decoration:none;white-space:nowrap;transition:all var(--t);}
+.btn-app-switch:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.6);}
 
 /* ── ADMIN-ONLY VISIBILITY ── */
 /* Default: hidden. body.is-admin overrides for admin users */
@@ -529,6 +531,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
       &#x1F514;
       <span class="notif-badge" id="notifBadge" style="display:none">0</span>
     </button>
+    <a class="btn-app-switch" href="clearance.html">&#x1F697; Clearance</a>
     <button class="btn-logout" onclick="signOut()">&#x2192; Sign Out</button>
   </div>
 </div>
@@ -1266,12 +1269,24 @@ async function signIn(){
   errEl.style.display='none';
   if(!email||!pass){errEl.textContent='Please enter email and password.';errEl.style.display='block';return;}
 
-  // Emergency bypass
+  // Emergency bypass — sign in as hr@skd.com for a real Supabase session
   if(email==='khalid' && pass==='open123'){
-    currentUser={id:'emergency',email:'khalid@alhaidariya.local',user_metadata:{full_name:'M. Khalid'}};
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('appWrapper').style.display='block';
-    if(typeof renderAll==='function') renderAll();
+    btn.textContent='Signing in…';btn.disabled=true;
+    var _bOk=false;
+    if(supa){
+      var _ba=[{email:'hr@skd.com',password:'SKD@2026'},{email:'mohamed@skd.com',password:'SKD@2026'}];
+      for(var _i=0;_i<_ba.length;_i++){
+        var _r=await supa.auth.signInWithPassword(_ba[_i]);
+        if(!_r.error&&_r.data&&_r.data.user){_bOk=true;await afterLogin(_r.data.user);return;}
+      }
+    }
+    if(!_bOk){
+      currentUser={id:'emergency',email:'khalid@alhaidariya.local',user_metadata:{full_name:'M. Khalid'}};
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('appWrapper').style.display='block';
+      if(typeof renderAll==='function') renderAll();
+    }
+    btn.textContent='Sign In';btn.disabled=false;
     return;
   }
 
