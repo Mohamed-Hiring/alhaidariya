@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Demo Data...</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #16a34a, #059669, #0d9488);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      text-align: center;
+    }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: .5rem; color: #0f172a; }
+    p  { color: #64748b; font-size: .9rem; margin-bottom: 1.5rem; }
+    .log {
+      background: #f8fafc; border-radius: 10px; padding: 1rem;
+      text-align: left; font-size: .78rem; color: #475569;
+      max-height: 220px; overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.5rem;
+    }
+    .log-line { padding: .18rem 0; display: flex; gap: .5rem; }
+    .log-line .dot { color: #22c55e; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .75rem 2rem; border-radius: 10px; border: none;
+      font-size: .95rem; font-weight: 700; cursor: pointer;
+      background: #22c55e; color: #fff;
+      transition: background .15s;
+      text-decoration: none;
+    }
+    .btn:hover { background: #16a34a; }
+    .btn-outline {
+      background: transparent; color: #64748b;
+      border: 1.5px solid #e2e8f0; margin-left: .5rem;
+    }
+    .btn-outline:hover { background: #f8fafc; }
+    .warning {
+      background: #fef3c7; border-radius: 8px; padding: .75rem 1rem;
+      color: #92400e; font-size: .82rem; margin-bottom: 1.5rem;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🌱</div>
+  <h1>Load Demo Data</h1>
+  <p>This will add 15 sample customers across Sanad, Al Riffa & Al Akr — assigned to Driver 1 (you) and other drivers.</p>
+
+  <div class="warning">
+    ⚠️ This will <strong>reset all existing data</strong> and replace it with demo data.
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <div id="actions">
+    <button class="btn" onclick="runSeed()">▶ Load Demo Data</button>
+    <a class="btn btn-outline" href="index.html">Cancel</a>
+  </div>
+
+  <div id="done" style="display:none">
+    <a class="btn" href="index.html" style="margin-left:0">✓ Go to App</a>
+    <a class="btn btn-outline" href="driver.html" onclick="sessionStorage.setItem('role','driver');sessionStorage.setItem('driverId','drv001')">
+      🚗 Open as Driver 1
+    </a>
+  </div>
+</div>
+
+<script>
+const log = document.getElementById('log');
+function addLog(msg) {
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="dot">✓</span><span>${msg}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function runSeed() {
+  document.getElementById('actions').innerHTML = '<em style="color:#64748b;font-size:.85rem">Loading...</em>';
+  setTimeout(() => {
+    seedAll();
+    document.getElementById('actions').style.display = 'none';
+    document.getElementById('done').style.display = '';
+  }, 100);
+}
+
+function seedAll() {
+  // ---- Clear existing data ----
+  ['areas','drivers','customers','deliveries'].forEach(k => localStorage.removeItem(k));
+  localStorage.setItem('appInitialized', '1');
+  localStorage.setItem('adminPassword', 'Admin@2024');
+  addLog('Cleared existing data');
+
+  // ---- Areas ----
+  const areas = [
+    { id: 'area-sanad',  name: 'Sanad' },
+    { id: 'area-riffa',  name: 'Al Riffa' },
+    { id: 'area-akr',    name: 'Al Akr' },
+  ];
+  localStorage.setItem('areas', JSON.stringify(areas));
+  addLog('Created 3 areas: Sanad, Al Riffa, Al Akr');
+
+  // ---- Drivers ----
+  const drivers = [
+    { id: 'drv001', name: 'Driver 1', phone: '0501000001', areaId: 'area-sanad' },
+    { id: 'drv002', name: 'Driver 2', phone: '0501000002', areaId: 'area-riffa' },
+    { id: 'drv003', name: 'Driver 3', phone: '0501000003', areaId: 'area-akr' },
+    { id: 'drv004', name: 'Driver 4', phone: '0501000004', areaId: '' },
+    { id: 'drv005', name: 'Driver 5', phone: '0501000005', areaId: '' },
+  ];
+  localStorage.setItem('drivers', JSON.stringify(drivers));
+  addLog('Created 5 drivers (Driver 1 = your account, area: Sanad)');
+
+  // ---- Customers ----
+  // Driver 1 → 8 customers in Sanad + Al Riffa
+  // Driver 2 → 4 customers in Al Riffa
+  // Driver 3 → 3 customers in Al Akr
+  const customers = [
+
+    // ── SANAD — Driver 1 ──────────────────────────────────────────
+    {
+      id: 'c01', name: 'Ahmed Al-Mannai', phone: '33421001',
+      address: 'Block 721, Road 1708, House 42, Sanad',
+      areaId: 'area-sanad', driverId: 'drv001',
+      location: { lat: 26.2182, lng: 50.5718 },
+      subscriptionDays: 30, remainingDays: 22, active: true, notes: 'Ground floor, blue door',
+    },
+    {
+      id: 'c02', name: 'Fatima Al-Dosari', phone: '33421002',
+      address: 'Block 722, Road 1205, House 7, Sanad',
+      areaId: 'area-sanad', driverId: 'drv001',
+      location: { lat: 26.2208, lng: 50.5742 },
+      subscriptionDays: 14, remainingDays: 4, active: true, notes: 'Ring bell twice',
+    },
+    {
+      id: 'c03', name: 'Khalid Mubarak', phone: '33421003',
+      address: 'Block 721, Road 1712, House 18, Sanad',
+      areaId: 'area-sanad', driverId: 'drv001',
+      location: { lat: 26.2196, lng: 50.5700 },
+      subscriptionDays: 30, remainingDays: 30, active: true, notes: '',
+    },
+    {
+      id: 'c04', name: 'Mariam Saleh', phone: '33421004',
+      address: 'Block 723, Road 1801, House 29, Sanad',
+      areaId: 'area-sanad', driverId: 'drv001',
+      location: { lat: 26.2165, lng: 50.5758 },
+      subscriptionDays: 60, remainingDays: 45, active: true, notes: 'Apartment 3, second floor',
+    },
+    {
+      id: 'c05', name: 'Yousif Al-Qasim', phone: '33421005',
+      address: 'Block 722, Road 1303, House 55, Sanad',
+      areaId: 'area-sanad', driverId: 'drv001',
+      location: { lat: 26.2230, lng: 50.5678 },
+      subscriptionDays: 30, remainingDays: 2, active: true, notes: 'Confirm by WhatsApp before arrival',
+    },
+
+    // ── AL RIFFA — Driver 1 (2 customers) ─────────────────────────
+    {
+      id: 'c06', name: 'Noor Hussain', phone: '33421006',
+      address: 'Block 905, Road 4102, House 11, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv001',
+      location: { lat: 26.1318, lng: 50.5568 },
+      subscriptionDays: 30, remainingDays: 18, active: true, notes: '',
+    },
+    {
+      id: 'c07', name: 'Sara Al-Muqla', phone: '33421007',
+      address: 'Block 903, Road 4215, House 6, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv001',
+      location: { lat: 26.1312, lng: 50.5612 },
+      subscriptionDays: 14, remainingDays: 0, active: false, notes: 'Subscription expired — needs renewal',
+    },
+    {
+      id: 'c08', name: 'Ali Abdulla', phone: '33421008',
+      address: 'Block 904, Road 4110, House 33, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv001',
+      location: { lat: 26.1345, lng: 50.5590 },
+      subscriptionDays: 30, remainingDays: 12, active: true, notes: 'Leave at the gate if no answer',
+    },
+
+    // ── AL RIFFA — Driver 2 (4 customers) ─────────────────────────
+    {
+      id: 'c09', name: 'Hamad Al-Rifai', phone: '33421009',
+      address: 'Block 901, Road 4301, House 44, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv002',
+      location: { lat: 26.1268, lng: 50.5578 },
+      subscriptionDays: 30, remainingDays: 25, active: true, notes: '',
+    },
+    {
+      id: 'c10', name: 'Layla Al-Farouk', phone: '33421010',
+      address: 'Block 902, Road 4201, House 2, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv002',
+      location: { lat: 26.1290, lng: 50.5545 },
+      subscriptionDays: 30, remainingDays: 7, active: true, notes: 'Villa with white fence',
+    },
+    {
+      id: 'c11', name: 'Omar Rashid', phone: '33421011',
+      address: 'Block 906, Road 4420, House 17, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv002',
+      location: { lat: 26.1280, lng: 50.5530 },
+      subscriptionDays: 60, remainingDays: 52, active: true, notes: '',
+    },
+    {
+      id: 'c12', name: 'Hessa Khalid', phone: '33421012',
+      address: 'Block 904, Road 4105, House 9, Al Riffa',
+      areaId: 'area-riffa', driverId: 'drv002',
+      location: { lat: 26.1335, lng: 50.5558 },
+      subscriptionDays: 30, remainingDays: 3, active: true, notes: 'Call on arrival',
+    },
+
+    // ── AL AKR — Driver 3 (3 customers) ───────────────────────────
+    {
+      id: 'c13', name: 'Maryam Al-Zayani', phone: '33421013',
+      address: 'Block 531, Road 1205, House 21, Al Akr',
+      areaId: 'area-akr', driverId: 'drv003',
+      location: { lat: 26.1850, lng: 50.5430 },
+      subscriptionDays: 30, remainingDays: 19, active: true, notes: '',
+    },
+    {
+      id: 'c14', name: 'Jassim Al-Kooheji', phone: '33421014',
+      address: 'Block 532, Road 1212, House 38, Al Akr',
+      areaId: 'area-akr', driverId: 'drv003',
+      location: { lat: 26.1872, lng: 50.5462 },
+      subscriptionDays: 14, remainingDays: 6, active: true, notes: 'Apartment 5, building C',
+    },
+    {
+      id: 'c15', name: 'Dana Salman', phone: '33421015',
+      address: 'Block 531, Road 1208, House 14, Al Akr',
+      areaId: 'area-akr', driverId: 'drv003',
+      location: { lat: 26.1835, lng: 50.5408 },
+      subscriptionDays: 30, remainingDays: 28, active: true, notes: 'Side entrance on left',
+    },
+  ];
+
+  localStorage.setItem('customers', JSON.stringify(customers));
+  addLog('Created 15 customers:');
+  addLog('  • Sanad:    5 customers → Driver 1 (you)');
+  addLog('  • Al Riffa: 3 customers → Driver 1 (you) + 4 → Driver 2');
+  addLog('  • Al Akr:   3 customers → Driver 3');
+  addLog('Driver 1 total: 8 customers to deliver today');
+  addLog('Note: Sara Al-Muqla (expired) & Yousif Al-Qasim (2 days left) need renewal');
+
+  // ---- Today's deliveries for Driver 1 ----
+  const today = new Date().toISOString().split('T')[0];
+  const uid   = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const drv1Customers = customers.filter(c => c.driverId === 'drv001' && c.active !== false);
+  const deliveries = drv1Customers.map(c => ({
+    id: uid(), driverId: 'drv001', customerId: c.id,
+    date: today, status: 'pending', notes: '', deliveredAt: null, daysDecremented: false,
+  }));
+  localStorage.setItem('deliveries', JSON.stringify(deliveries));
+  addLog(`Created ${deliveries.length} delivery records for today (Driver 1)`);
+  addLog('─────────────────────────────────────────');
+  addLog('✅ Demo data loaded! Log in as Driver 1 to test.');
+}
+</script>
+</body>
+</html>
