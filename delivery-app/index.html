@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام توصيل الوجبات</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="page-login">
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="login-logo-icon">🥗</div>
+      <h1>نظام توصيل الوجبات</h1>
+      <p>اختر طريقة الدخول</p>
+    </div>
+
+    <!-- Role Selection -->
+    <div id="roleSection">
+      <div class="role-cards">
+        <div class="role-card" id="adminCard" onclick="selectRole('admin')">
+          <i class="fas fa-user-shield"></i>
+          <h3>مدير النظام</h3>
+          <p>إدارة الكستمرز والدرايفرز والمناطق</p>
+        </div>
+        <div class="role-card" id="driverCard" onclick="selectRole('driver')">
+          <i class="fas fa-motorcycle"></i>
+          <h3>درايفر</h3>
+          <p>عرض قائمة التوصيل اليومية</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Login Form -->
+    <div id="adminLogin" class="login-form hidden">
+      <h3><i class="fas fa-lock" style="color:var(--primary)"></i> دخول المدير</h3>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="adminPassword" class="input-field" placeholder="أدخل كلمة المرور"
+               onkeydown="if(event.key==='Enter') loginAdmin()">
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
+        <i class="fas fa-arrow-left"></i> دخول
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="backToRoles()">
+        <i class="fas fa-arrow-right"></i> رجوع
+      </button>
+    </div>
+
+    <!-- Driver Login Form -->
+    <div id="driverLogin" class="login-form hidden">
+      <h3><i class="fas fa-user" style="color:var(--primary)"></i> اختر اسمك</h3>
+      <div class="form-group">
+        <label>الدرايفر</label>
+        <select id="driverSelect" class="input-field">
+          <option value="">-- اختر من القائمة --</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="loginDriver()">
+        <i class="fas fa-arrow-left"></i> دخول
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="backToRoles()">
+        <i class="fas fa-arrow-right"></i> رجوع
+      </button>
+    </div>
+
+    <!-- Error -->
+    <p id="loginError" class="error-msg hidden"></p>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+  <script>
+    // Redirect if already logged in
+    (function() {
+      const role = sessionStorage.getItem('role');
+      if (role === 'admin') location.href = 'admin.html';
+      if (role === 'driver') location.href = 'driver.html';
+    })();
+
+    function selectRole(role) {
+      document.getElementById('adminCard').classList.toggle('selected', role === 'admin');
+      document.getElementById('driverCard').classList.toggle('selected', role === 'driver');
+      document.getElementById('adminLogin').classList.toggle('hidden', role !== 'admin');
+      document.getElementById('driverLogin').classList.toggle('hidden', role !== 'driver');
+      document.getElementById('loginError').classList.add('hidden');
+
+      if (role === 'driver') loadDriverOptions();
+      if (role === 'admin') setTimeout(() => document.getElementById('adminPassword').focus(), 50);
+    }
+
+    function backToRoles() {
+      document.getElementById('adminCard').classList.remove('selected');
+      document.getElementById('driverCard').classList.remove('selected');
+      document.getElementById('adminLogin').classList.add('hidden');
+      document.getElementById('driverLogin').classList.add('hidden');
+      document.getElementById('loginError').classList.add('hidden');
+    }
+
+    function loadDriverOptions() {
+      const drivers = DB.getDrivers();
+      const sel = document.getElementById('driverSelect');
+      sel.innerHTML = '<option value="">-- اختر من القائمة --</option>';
+      drivers.forEach(d => {
+        sel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+      });
+      if (!drivers.length) {
+        sel.innerHTML = '<option value="">لا يوجد درايفرز — اطلب من المدير يضيف</option>';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('loginError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function loginAdmin() {
+      const pass = document.getElementById('adminPassword').value;
+      if (!pass) { showError('أدخل كلمة المرور'); return; }
+      if (pass === DB.getAdminPassword()) {
+        sessionStorage.setItem('role', 'admin');
+        location.href = 'admin.html';
+      } else {
+        showError('كلمة المرور غلط، حاول مرة ثانية');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+      }
+    }
+
+    function loginDriver() {
+      const id = document.getElementById('driverSelect').value;
+      if (!id) { showError('اختر اسمك من القائمة'); return; }
+      sessionStorage.setItem('role', 'driver');
+      sessionStorage.setItem('driverId', id);
+      location.href = 'driver.html';
+    }
+  </script>
+</body>
+</html>

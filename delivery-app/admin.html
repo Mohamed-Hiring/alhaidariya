@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة — توصيل الوجبات</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🥗</div>
+      <span>توصيل الوجبات</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="section-title">القائمة الرئيسية</div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <i class="fas fa-chart-pie"></i> لوحة التحكم
+      </div>
+      <div class="nav-item" onclick="showPage('customers')" id="nav-customers">
+        <i class="fas fa-users"></i> الكستمرز
+        <span class="badge badge-success" id="nav-customers-count"></span>
+      </div>
+      <div class="nav-item" onclick="showPage('drivers')" id="nav-drivers">
+        <i class="fas fa-motorcycle"></i> الدرايفرز
+        <span class="badge badge-info" id="nav-drivers-count"></span>
+      </div>
+      <div class="nav-item" onclick="showPage('areas')" id="nav-areas">
+        <i class="fas fa-map-marker-alt"></i> المناطق
+      </div>
+      <div class="divider"></div>
+      <div class="nav-item" onclick="showPage('today')" id="nav-today">
+        <i class="fas fa-box"></i> توصيل اليوم
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-full" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> خروج
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="btn btn-ghost btn-icon menu-btn" onclick="openSidebar()" id="menuBtn">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h2 id="pageTitle">لوحة التحكم</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="todayDate" class="text-sm text-muted"></span>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ======================== DASHBOARD ======================== -->
+      <div id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+              <div class="val" id="stat-customers">0</div>
+              <div class="lbl">كستمر نشط</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-motorcycle"></i></div>
+            <div class="stat-info">
+              <div class="val" id="stat-drivers">0</div>
+              <div class="lbl">درايفر</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="stat-info">
+              <div class="val" id="stat-areas">0</div>
+              <div class="lbl">منطقة</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+              <div class="val" id="stat-delivered">0</div>
+              <div class="lbl">تم التوصيل اليوم</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's delivery overview per driver -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-route" style="color:var(--primary)"></i> تقرير التوصيل اليوم</h3>
+            <span id="todayDateBadge" class="badge badge-info"></span>
+          </div>
+          <div class="card-body" id="todayOverview">
+            <div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد بيانات لليوم</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== CUSTOMERS ======================== -->
+      <div id="page-customers" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-users" style="color:var(--primary)"></i> الكستمرز</h3>
+            <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">
+              <i class="fas fa-plus"></i> إضافة كستمر
+            </button>
+          </div>
+          <div class="card-body" style="padding:.75rem">
+            <!-- Filters -->
+            <div class="flex gap-2 flex-wrap" style="margin-bottom:.75rem">
+              <div class="search-bar" style="flex:1;min-width:180px">
+                <i class="fas fa-search"></i>
+                <input type="text" class="input-field" id="customerSearch"
+                       placeholder="بحث بالاسم أو الجوال..." oninput="renderCustomers()">
+              </div>
+              <select class="input-field" style="width:auto" id="customerFilterDriver" onchange="renderCustomers()">
+                <option value="">كل الدرايفرز</option>
+              </select>
+              <select class="input-field" style="width:auto" id="customerFilterArea" onchange="renderCustomers()">
+                <option value="">كل المناطق</option>
+              </select>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="data-table" id="customersTable">
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>الجوال</th>
+                    <th>المنطقة</th>
+                    <th>الدرايفر</th>
+                    <th>الموقع</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="customersBody"></tbody>
+              </table>
+            </div>
+            <div id="customersEmpty" class="empty-state hidden">
+              <i class="fas fa-users"></i>
+              <p>لا يوجد كستمرز — ابدأ بإضافة أول كستمر</p>
+              <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">
+                <i class="fas fa-plus"></i> إضافة الآن
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== DRIVERS ======================== -->
+      <div id="page-drivers" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-motorcycle" style="color:var(--primary)"></i> الدرايفرز</h3>
+            <button class="btn btn-primary btn-sm" onclick="openDriverModal()">
+              <i class="fas fa-plus"></i> إضافة درايفر
+            </button>
+          </div>
+          <div class="card-body" style="padding:.75rem">
+            <div style="overflow-x:auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>الاسم</th>
+                    <th>الجوال</th>
+                    <th>المنطقة</th>
+                    <th>عدد الكستمرز</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="driversBody"></tbody>
+              </table>
+            </div>
+            <div id="driversEmpty" class="empty-state hidden">
+              <i class="fas fa-motorcycle"></i>
+              <p>لا يوجد درايفرز — ابدأ بإضافة أول درايفر</p>
+              <button class="btn btn-primary btn-sm" onclick="openDriverModal()">
+                <i class="fas fa-plus"></i> إضافة الآن
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== AREAS ======================== -->
+      <div id="page-areas" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> المناطق</h3>
+            <button class="btn btn-primary btn-sm" onclick="openAreaModal()">
+              <i class="fas fa-plus"></i> إضافة منطقة
+            </button>
+          </div>
+          <div class="card-body" style="padding:.75rem">
+            <div style="overflow-x:auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>اسم المنطقة</th>
+                    <th>عدد الدرايفرز</th>
+                    <th>عدد الكستمرز</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="areasBody"></tbody>
+              </table>
+            </div>
+            <div id="areasEmpty" class="empty-state hidden">
+              <i class="fas fa-map"></i>
+              <p>لا توجد مناطق — ابدأ بتحديد المناطق</p>
+              <button class="btn btn-primary btn-sm" onclick="openAreaModal()">
+                <i class="fas fa-plus"></i> إضافة الآن
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== TODAY ======================== -->
+      <div id="page-today" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-box" style="color:var(--primary)"></i> توصيلات اليوم</h3>
+            <span id="todayFullDate" class="badge badge-info"></span>
+          </div>
+          <div class="card-body" id="todayContent">
+            <div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد توصيلات لليوم</p></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- Customer Modal -->
+<div class="modal-overlay hidden" id="customerModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="customerModalTitle">إضافة كستمر جديد</h3>
+      <button class="modal-close" onclick="closeCustomerModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="customerId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>الاسم <span style="color:red">*</span></label>
+          <input type="text" id="customerName" class="input-field" placeholder="اسم الكستمر">
+        </div>
+        <div class="form-group">
+          <label>رقم الجوال <span style="color:red">*</span></label>
+          <input type="tel" id="customerPhone" class="input-field" placeholder="05xxxxxxxx">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>العنوان (وصف)</label>
+        <input type="text" id="customerAddress" class="input-field" placeholder="مثال: حي الروضة، شارع الملك فهد، المبنى رقم 5">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>المنطقة</label>
+          <select id="customerArea" class="input-field" onchange="onAreaChange()">
+            <option value="">-- اختر المنطقة --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الدرايفر</label>
+          <select id="customerDriver" class="input-field">
+            <option value="">-- اختر الدرايفر --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ملاحظات</label>
+        <textarea id="customerNotes" class="input-field" placeholder="أي ملاحظات خاصة بالكستمر أو التوصيل..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>
+          <i class="fas fa-map-marker-alt" style="color:var(--danger)"></i>
+          الموقع على الخريطة
+          <span class="text-muted text-xs">(اضغط على الخريطة لتحديد الموقع، أو ابحث)</span>
+        </label>
+        <div class="map-search-wrap" style="margin-bottom:.5rem">
+          <input type="text" id="locationSearch" class="input-field" placeholder="ابحث عن الموقع..." style="flex:1">
+          <button class="btn btn-outline-primary" onclick="searchLocation()">
+            <i class="fas fa-search"></i> بحث
+          </button>
+        </div>
+        <div id="locationMap"></div>
+        <div class="map-coords" id="coordsDisplay" style="margin-top:.4rem">
+          <i class="fas fa-crosshairs"></i>
+          <span id="coordsText">لم يتم تحديد الموقع بعد — اضغط على الخريطة</span>
+        </div>
+      </div>
+      <div class="form-group flex flex-row items-center gap-3" style="flex-direction:row">
+        <label style="margin:0">نشط</label>
+        <label class="flex items-center gap-2" style="cursor:pointer">
+          <input type="checkbox" id="customerActive" checked style="width:18px;height:18px;cursor:pointer">
+          <span class="text-sm">الكستمر يستقبل توصيل يومياً</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveCustomer()">
+        <i class="fas fa-save"></i> حفظ
+      </button>
+      <button class="btn btn-ghost" onclick="closeCustomerModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Driver Modal -->
+<div class="modal-overlay hidden" id="driverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="driverModalTitle">إضافة درايفر جديد</h3>
+      <button class="modal-close" onclick="closeDriverModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="driverId">
+      <div class="form-group">
+        <label>الاسم <span style="color:red">*</span></label>
+        <input type="text" id="driverName" class="input-field" placeholder="اسم الدرايفر">
+      </div>
+      <div class="form-group">
+        <label>رقم الجوال <span style="color:red">*</span></label>
+        <input type="tel" id="driverPhone" class="input-field" placeholder="05xxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label>المنطقة الرئيسية</label>
+        <select id="driverArea" class="input-field">
+          <option value="">-- اختر المنطقة --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ملاحظات</label>
+        <input type="text" id="driverNotes" class="input-field" placeholder="أي ملاحظات...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveDriver()">
+        <i class="fas fa-save"></i> حفظ
+      </button>
+      <button class="btn btn-ghost" onclick="closeDriverModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Area Modal -->
+<div class="modal-overlay hidden" id="areaModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="areaModalTitle">إضافة منطقة جديدة</h3>
+      <button class="modal-close" onclick="closeAreaModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="areaId">
+      <div class="form-group">
+        <label>اسم المنطقة <span style="color:red">*</span></label>
+        <input type="text" id="areaName" class="input-field" placeholder="مثال: حي النزهة">
+      </div>
+      <div class="form-group">
+        <label>ملاحظات</label>
+        <input type="text" id="areaNotes" class="input-field" placeholder="أي ملاحظات...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveArea()">
+        <i class="fas fa-save"></i> حفظ
+      </button>
+      <button class="btn btn-ghost" onclick="closeAreaModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>تأكيد الحذف</h3>
+      <button class="modal-close" onclick="closeConfirm()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="font-size:1rem"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">
+        <i class="fas fa-trash"></i> حذف
+      </button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
