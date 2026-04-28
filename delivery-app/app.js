@@ -1,5 +1,5 @@
 // =====================================================
-// Data Layer - localStorage CRUD
+// Data Layer — localStorage CRUD
 // =====================================================
 
 const DB = {
@@ -14,90 +14,76 @@ const DB = {
   nowISO: () => new Date().toISOString(),
 
   // ---- Areas ----
-  getAreas: () => DB._get('areas', []),
-  saveAreas: (v) => DB._set('areas', v),
-  addArea(data) {
-    const areas = DB.getAreas();
-    const area = { id: DB.uuid(), ...data };
-    areas.push(area);
-    DB.saveAreas(areas);
-    return area;
-  },
-  updateArea(id, data) {
-    DB.saveAreas(DB.getAreas().map(a => a.id === id ? { ...a, ...data } : a));
-  },
-  deleteArea(id) { DB.saveAreas(DB.getAreas().filter(a => a.id !== id)); },
+  getAreas:   () => DB._get('areas', []),
+  saveAreas:  (v) => DB._set('areas', v),
+  addArea(data)    { const a = { id: DB.uuid(), ...data }; DB.saveAreas([...DB.getAreas(), a]); return a; },
+  updateArea(id, data) { DB.saveAreas(DB.getAreas().map(a => a.id === id ? { ...a, ...data } : a)); },
+  deleteArea(id)   { DB.saveAreas(DB.getAreas().filter(a => a.id !== id)); },
 
   // ---- Drivers ----
-  getDrivers: () => DB._get('drivers', []),
-  saveDrivers: (v) => DB._set('drivers', v),
-  addDriver(data) {
-    const drivers = DB.getDrivers();
-    const driver = { id: DB.uuid(), ...data };
-    drivers.push(driver);
-    DB.saveDrivers(drivers);
-    return driver;
-  },
-  updateDriver(id, data) {
-    DB.saveDrivers(DB.getDrivers().map(d => d.id === id ? { ...d, ...data } : d));
-  },
-  deleteDriver(id) { DB.saveDrivers(DB.getDrivers().filter(d => d.id !== id)); },
+  getDrivers:   () => DB._get('drivers', []),
+  saveDrivers:  (v) => DB._set('drivers', v),
+  addDriver(data)    { const d = { id: DB.uuid(), ...data }; DB.saveDrivers([...DB.getDrivers(), d]); return d; },
+  updateDriver(id, data) { DB.saveDrivers(DB.getDrivers().map(d => d.id === id ? { ...d, ...data } : d)); },
+  deleteDriver(id)   { DB.saveDrivers(DB.getDrivers().filter(d => d.id !== id)); },
   getDriverById: (id) => DB.getDrivers().find(d => d.id === id),
 
   // ---- Customers ----
-  getCustomers: () => DB._get('customers', []),
-  saveCustomers: (v) => DB._set('customers', v),
+  getCustomers:   () => DB._get('customers', []),
+  saveCustomers:  (v) => DB._set('customers', v),
   addCustomer(data) {
-    const customers = DB.getCustomers();
-    const customer = { id: DB.uuid(), active: true, ...data };
-    customers.push(customer);
-    DB.saveCustomers(customers);
-    return customer;
+    const c = { id: DB.uuid(), active: true, subscriptionDays: 30, remainingDays: 30, ...data };
+    DB.saveCustomers([...DB.getCustomers(), c]);
+    return c;
   },
-  updateCustomer(id, data) {
-    DB.saveCustomers(DB.getCustomers().map(c => c.id === id ? { ...c, ...data } : c));
-  },
-  deleteCustomer(id) { DB.saveCustomers(DB.getCustomers().filter(c => c.id !== id)); },
+  updateCustomer(id, data) { DB.saveCustomers(DB.getCustomers().map(c => c.id === id ? { ...c, ...data } : c)); },
+  deleteCustomer(id)   { DB.saveCustomers(DB.getCustomers().filter(c => c.id !== id)); },
   getCustomerById: (id) => DB.getCustomers().find(c => c.id === id),
   getCustomersByDriver: (driverId) =>
     DB.getCustomers().filter(c => c.driverId === driverId && c.active !== false),
 
+  // Decrement remaining days (called once per delivered delivery)
+  decrementCustomerDays(customerId) {
+    const c = DB.getCustomerById(customerId);
+    if (!c) return;
+    const newDays = Math.max(0, (c.remainingDays ?? c.subscriptionDays ?? 0) - 1);
+    DB.updateCustomer(customerId, {
+      remainingDays: newDays,
+      active: newDays > 0 ? (c.active !== false) : false,
+    });
+  },
+
+  renewSubscription(customerId, days) {
+    DB.updateCustomer(customerId, { subscriptionDays: days, remainingDays: days, active: true });
+  },
+
   // ---- Deliveries ----
-  getDeliveries: () => DB._get('deliveries', []),
-  saveDeliveries: (v) => DB._set('deliveries', v),
+  getDeliveries:   () => DB._get('deliveries', []),
+  saveDeliveries:  (v) => DB._set('deliveries', v),
 
-  getTodayDeliveries(driverId) {
-    const today = DB.today();
-    return DB.getDeliveries().filter(d => d.date === today && d.driverId === driverId);
-  },
+  getTodayDeliveries: (driverId) =>
+    DB.getDeliveries().filter(d => d.date === DB.today() && d.driverId === driverId),
 
-  getAllTodayDeliveries() {
-    const today = DB.today();
-    return DB.getDeliveries().filter(d => d.date === today);
-  },
+  getAllTodayDeliveries: () =>
+    DB.getDeliveries().filter(d => d.date === DB.today()),
 
   initTodayDeliveries(driverId) {
     const today = DB.today();
     const existing = DB.getDeliveries().filter(d => d.date === today && d.driverId === driverId);
     const existingIds = new Set(existing.map(d => d.customerId));
     const customers = DB.getCustomersByDriver(driverId);
-    const deliveries = DB.getDeliveries();
+    const all = DB.getDeliveries();
 
     customers.forEach(c => {
       if (!existingIds.has(c.id)) {
-        deliveries.push({
-          id: DB.uuid(),
-          driverId,
-          customerId: c.id,
-          date: today,
-          status: 'pending',
-          notes: '',
-          deliveredAt: null,
+        all.push({
+          id: DB.uuid(), driverId, customerId: c.id, date: today,
+          status: 'pending', notes: '', deliveredAt: null, daysDecremented: false,
         });
       }
     });
 
-    DB.saveDeliveries(deliveries);
+    DB.saveDeliveries(all);
     return DB.getTodayDeliveries(driverId);
   },
 
@@ -106,7 +92,7 @@ const DB = {
   },
 
   // ---- Auth ----
-  getAdminPassword: () => localStorage.getItem('adminPassword') || 'admin123',
+  getAdminPassword: () => localStorage.getItem('adminPassword') || 'Admin@2024',
   setAdminPassword: (p) => localStorage.setItem('adminPassword', p),
 };
 
@@ -114,18 +100,18 @@ const DB = {
 // Route Optimization — nearest-neighbor TSP
 // =====================================================
 function optimizeRoute(customers) {
-  const hasloc = customers.filter(c => c.location?.lat && c.location?.lng);
-  const noloc  = customers.filter(c => !c.location?.lat || !c.location?.lng);
-  if (!hasloc.length) return customers;
+  const hasLoc = customers.filter(c => c.location?.lat && c.location?.lng);
+  const noLoc  = customers.filter(c => !c.location?.lat || !c.location?.lng);
+  if (!hasLoc.length) return customers;
 
   const dist = (a, b) => {
     const dLat = a.lat - b.lat, dLng = a.lng - b.lng;
     return Math.sqrt(dLat * dLat + dLng * dLng);
   };
 
-  const remaining = [...hasloc];
+  const remaining = [...hasLoc];
   const result = [];
-  let cur = hasloc[0].location;
+  let cur = hasLoc[0].location;
 
   while (remaining.length) {
     let best = remaining[0], bestD = dist(cur, best.location);
@@ -138,11 +124,36 @@ function optimizeRoute(customers) {
     remaining.splice(remaining.indexOf(best), 1);
   }
 
-  return [...result, ...noloc];
+  return [...result, ...noLoc];
 }
 
 // =====================================================
-// Shared helpers
+// Seed Initial Data (runs once on first load)
+// =====================================================
+function seedInitialData() {
+  if (localStorage.getItem('appInitialized')) return;
+
+  // Set admin password
+  localStorage.setItem('adminPassword', 'Admin@2024');
+
+  // Seed 5 drivers
+  const drivers = [
+    { id: 'drv001', name: 'Driver 1', phone: '0501000001', areaId: '', notes: '' },
+    { id: 'drv002', name: 'Driver 2', phone: '0501000002', areaId: '', notes: '' },
+    { id: 'drv003', name: 'Driver 3', phone: '0501000003', areaId: '', notes: '' },
+    { id: 'drv004', name: 'Driver 4', phone: '0501000004', areaId: '', notes: '' },
+    { id: 'drv005', name: 'Driver 5', phone: '0501000005', areaId: '', notes: '' },
+  ];
+  DB.saveDrivers(drivers);
+
+  localStorage.setItem('appInitialized', '1');
+}
+
+// Run seed on every page load (safe — checks flag first)
+seedInitialData();
+
+// =====================================================
+// Shared Helpers
 // =====================================================
 function requireAuth(role) {
   const r = sessionStorage.getItem('role');
@@ -155,23 +166,18 @@ function logout() {
   window.location.href = 'index.html';
 }
 
-function formatPhone(phone) {
-  return phone ? phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : '';
-}
-
 function toast(msg, type = 'success') {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
   el.className = 'toast show ' + type;
-  setTimeout(() => el.classList.remove('show'), 3000);
+  setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-function openGoogleMaps(lat, lng, label) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-  window.open(url, '_blank');
-}
-
-function openWaze(lat, lng) {
-  window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+function subscriptionBadge(remaining, total) {
+  if (remaining === undefined || remaining === null) return '';
+  if (remaining <= 0)  return `<span class="badge badge-gray">Expired</span>`;
+  if (remaining <= 3)  return `<span class="badge badge-danger">${remaining} days left</span>`;
+  if (remaining <= 7)  return `<span class="badge badge-warning">${remaining} days left</span>`;
+  return `<span class="badge badge-success">${remaining} days left</span>`;
 }

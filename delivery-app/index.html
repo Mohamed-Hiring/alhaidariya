@@ -1,84 +1,86 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>نظام توصيل الوجبات</title>
+  <title>Meal Delivery System</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="page-login">
 
   <div class="login-card">
-    <!-- Logo -->
+
     <div class="login-logo">
       <div class="login-logo-icon">🥗</div>
-      <h1>نظام توصيل الوجبات</h1>
-      <p>اختر طريقة الدخول</p>
+      <h1>Meal Delivery System</h1>
+      <p>Select your role to continue</p>
     </div>
 
     <!-- Role Selection -->
-    <div id="roleSection">
-      <div class="role-cards">
-        <div class="role-card" id="adminCard" onclick="selectRole('admin')">
-          <i class="fas fa-user-shield"></i>
-          <h3>مدير النظام</h3>
-          <p>إدارة الكستمرز والدرايفرز والمناطق</p>
-        </div>
-        <div class="role-card" id="driverCard" onclick="selectRole('driver')">
-          <i class="fas fa-motorcycle"></i>
-          <h3>درايفر</h3>
-          <p>عرض قائمة التوصيل اليومية</p>
-        </div>
+    <div class="role-cards" id="roleCards">
+      <div class="role-card" id="adminCard" onclick="selectRole('admin')">
+        <i class="fas fa-user-shield"></i>
+        <h3>Admin</h3>
+        <p>Manage customers, drivers & areas</p>
+      </div>
+      <div class="role-card" id="driverCard" onclick="selectRole('driver')">
+        <i class="fas fa-motorcycle"></i>
+        <h3>Driver</h3>
+        <p>View your daily delivery list</p>
       </div>
     </div>
 
-    <!-- Admin Login Form -->
+    <!-- Admin Login -->
     <div id="adminLogin" class="login-form hidden">
-      <h3><i class="fas fa-lock" style="color:var(--primary)"></i> دخول المدير</h3>
+      <h3><i class="fas fa-lock" style="color:var(--primary)"></i> Admin Login</h3>
       <div class="form-group">
-        <label>كلمة المرور</label>
-        <input type="password" id="adminPassword" class="input-field" placeholder="أدخل كلمة المرور"
+        <label>Password</label>
+        <input type="password" id="adminPassword" class="input-field" placeholder="Enter admin password"
                onkeydown="if(event.key==='Enter') loginAdmin()">
       </div>
       <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
-        <i class="fas fa-arrow-left"></i> دخول
+        <i class="fas fa-sign-in-alt"></i> Sign In
       </button>
       <button class="btn btn-ghost btn-full" onclick="backToRoles()">
-        <i class="fas fa-arrow-right"></i> رجوع
+        <i class="fas fa-arrow-left"></i> Back
       </button>
     </div>
 
-    <!-- Driver Login Form -->
+    <!-- Driver Login -->
     <div id="driverLogin" class="login-form hidden">
-      <h3><i class="fas fa-user" style="color:var(--primary)"></i> اختر اسمك</h3>
+      <h3><i class="fas fa-user" style="color:var(--primary)"></i> Driver Login</h3>
       <div class="form-group">
-        <label>الدرايفر</label>
+        <label>Select Your Name</label>
         <select id="driverSelect" class="input-field">
-          <option value="">-- اختر من القائمة --</option>
+          <option value="">-- Select driver --</option>
         </select>
       </div>
       <button class="btn btn-primary btn-full btn-lg" onclick="loginDriver()">
-        <i class="fas fa-arrow-left"></i> دخول
+        <i class="fas fa-sign-in-alt"></i> Continue
       </button>
       <button class="btn btn-ghost btn-full" onclick="backToRoles()">
-        <i class="fas fa-arrow-right"></i> رجوع
+        <i class="fas fa-arrow-left"></i> Back
       </button>
     </div>
 
-    <!-- Error -->
     <p id="loginError" class="error-msg hidden"></p>
+
+    <p style="font-size:.72rem;color:var(--text-light);text-align:center">
+      Meal Delivery Management &copy; 2024
+    </p>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script src="app.js"></script>
   <script>
-    // Redirect if already logged in
+    // Redirect if already authenticated
     (function() {
       const role = sessionStorage.getItem('role');
-      if (role === 'admin') location.href = 'admin.html';
+      if (role === 'admin')  location.href = 'admin.html';
       if (role === 'driver') location.href = 'driver.html';
     })();
 
@@ -90,27 +92,25 @@
       document.getElementById('loginError').classList.add('hidden');
 
       if (role === 'driver') loadDriverOptions();
-      if (role === 'admin') setTimeout(() => document.getElementById('adminPassword').focus(), 50);
+      if (role === 'admin')  setTimeout(() => document.getElementById('adminPassword').focus(), 60);
     }
 
     function backToRoles() {
-      document.getElementById('adminCard').classList.remove('selected');
-      document.getElementById('driverCard').classList.remove('selected');
-      document.getElementById('adminLogin').classList.add('hidden');
-      document.getElementById('driverLogin').classList.add('hidden');
-      document.getElementById('loginError').classList.add('hidden');
+      ['adminCard','driverCard'].forEach(id => document.getElementById(id).classList.remove('selected'));
+      ['adminLogin','driverLogin','loginError'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
     function loadDriverOptions() {
       const drivers = DB.getDrivers();
       const sel = document.getElementById('driverSelect');
-      sel.innerHTML = '<option value="">-- اختر من القائمة --</option>';
+      sel.innerHTML = '<option value="">-- Select driver --</option>';
+      if (!drivers.length) {
+        sel.innerHTML = '<option value="">No drivers available — contact admin</option>';
+        return;
+      }
       drivers.forEach(d => {
         sel.innerHTML += `<option value="${d.id}">${d.name}</option>`;
       });
-      if (!drivers.length) {
-        sel.innerHTML = '<option value="">لا يوجد درايفرز — اطلب من المدير يضيف</option>';
-      }
     }
 
     function showError(msg) {
@@ -121,12 +121,12 @@
 
     function loginAdmin() {
       const pass = document.getElementById('adminPassword').value;
-      if (!pass) { showError('أدخل كلمة المرور'); return; }
+      if (!pass) { showError('Please enter the password.'); return; }
       if (pass === DB.getAdminPassword()) {
         sessionStorage.setItem('role', 'admin');
         location.href = 'admin.html';
       } else {
-        showError('كلمة المرور غلط، حاول مرة ثانية');
+        showError('Incorrect password. Please try again.');
         document.getElementById('adminPassword').value = '';
         document.getElementById('adminPassword').focus();
       }
@@ -134,7 +134,7 @@
 
     function loginDriver() {
       const id = document.getElementById('driverSelect').value;
-      if (!id) { showError('اختر اسمك من القائمة'); return; }
+      if (!id) { showError('Please select your name from the list.'); return; }
       sessionStorage.setItem('role', 'driver');
       sessionStorage.setItem('driverId', id);
       location.href = 'driver.html';

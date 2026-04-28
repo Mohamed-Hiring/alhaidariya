@@ -7,8 +7,8 @@ const driverId = sessionStorage.getItem('driverId');
 const driver   = DB.getDriverById(driverId);
 
 if (!driver) {
-  toast('درايفر غير موجود', 'error');
-  setTimeout(() => logout(), 2000);
+  toast('Driver not found — contact admin', 'error');
+  setTimeout(logout, 2500);
 }
 
 // State
@@ -18,8 +18,6 @@ let driverMap    = null;
 let mapMarkers   = [];
 let routeLine    = null;
 let activeCardId = null;
-let pendingNotesDel = null;
-let pendingNotesAction = null;
 
 // =====================================================
 // Init
@@ -28,11 +26,10 @@ function init() {
   const area = driver.areaId ? DB.getAreas().find(a => a.id === driver.areaId) : null;
 
   document.getElementById('driverName').textContent = driver.name;
-  document.getElementById('driverArea').textContent = area ? area.name : 'بدون منطقة محددة';
+  document.getElementById('driverArea').textContent = area ? area.name : 'No area assigned';
   document.getElementById('headerDate').textContent =
-    new Date().toLocaleDateString('ar-SA', { weekday:'long', month:'long', day:'numeric' });
+    new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
 
-  // Init deliveries for today (creates entries if missing)
   DB.initTodayDeliveries(driverId);
   reload();
 }
@@ -41,21 +38,17 @@ function reload() {
   deliveries = DB.getTodayDeliveries(driverId);
   customers  = DB.getCustomersByDriver(driverId);
 
-  // Attach customer data to deliveries
-  deliveries.forEach(d => {
-    d._customer = DB.getCustomerById(d.customerId);
-  });
+  // Attach customer to each delivery
+  deliveries.forEach(d => { d._customer = DB.getCustomerById(d.customerId); });
 
-  // Optimized order using only customers with location
+  // Optimized order
   const withLoc    = customers.filter(c => c.location?.lat);
   const withoutLoc = customers.filter(c => !c.location?.lat);
-  const optimized  = optimizeRoute([...withLoc]);
-  const orderedCustomers = [...optimized, ...withoutLoc];
+  const ordered    = [...optimizeRoute([...withLoc]), ...withoutLoc];
 
-  // Reorder deliveries by optimized customer order
   deliveries.sort((a, b) => {
-    const ai = orderedCustomers.findIndex(c => c.id === a.customerId);
-    const bi = orderedCustomers.findIndex(c => c.id === b.customerId);
+    const ai = ordered.findIndex(c => c.id === a.customerId);
+    const bi = ordered.findIndex(c => c.id === b.customerId);
     return ai - bi;
   });
 
@@ -72,7 +65,6 @@ function updateProgress() {
   const total     = deliveries.length;
   const delivered = deliveries.filter(d => d.status === 'delivered').length;
   const pct       = total > 0 ? Math.round((delivered / total) * 100) : 0;
-
   document.getElementById('headerProgress').textContent = `${delivered} / ${total}`;
   document.getElementById('headerProgressBar').style.width = pct + '%';
 }
@@ -87,37 +79,35 @@ function renderList() {
     container.innerHTML = `
       <div class="empty-state" style="margin-top:3rem">
         <i class="fas fa-box-open"></i>
-        <p>لا توجد توصيلات لليوم</p>
-        <p class="text-sm">تواصل مع المدير لإضافة كستمرز</p>
+        <p>No deliveries for today</p>
+        <p class="text-sm">Contact admin to add customers</p>
       </div>`;
     return;
   }
 
   container.innerHTML = deliveries.map((d, i) => {
-    const c = d._customer;
+    const c       = d._customer;
     if (!c) return '';
-
-    const isDone = d.status === 'delivered';
-    const isFail = d.status === 'failed';
-    const statusClass = isDone ? 'delivered' : isFail ? 'failed' : '';
-    const numClass    = isDone ? 'done' : isFail ? 'fail' : '';
-    const isActive    = d.id === activeCardId;
+    const isDone  = d.status === 'delivered';
+    const isFail  = d.status === 'failed';
+    const rem     = c.remainingDays ?? c.subscriptionDays ?? 0;
+    const isActive = d.id === activeCardId;
 
     return `
-      <div class="delivery-card ${statusClass} ${isActive ? 'active-card' : ''}" id="card-${d.id}">
+      <div class="delivery-card ${isDone ? 'delivered' : isFail ? 'failed' : ''} ${isActive ? 'active-card' : ''}" id="card-${d.id}">
         <div class="delivery-card-top">
-          <div class="delivery-num ${numClass}">${isDone ? '✓' : isFail ? '✕' : i + 1}</div>
+          <div class="delivery-num ${isDone ? 'done' : isFail ? 'fail' : ''}">
+            ${isDone ? '✓' : isFail ? '✕' : i + 1}
+          </div>
           <div class="delivery-info">
             <div class="name">${c.name}</div>
-            ${c.address ? `<div class="addr"><i class="fas fa-map-marker-alt" style="color:var(--danger);font-size:.7rem"></i> ${c.address}</div>` : ''}
-            ${c.phone ? `
-              <a href="tel:${c.phone}" class="phone">
-                <i class="fas fa-phone"></i> ${c.phone}
-              </a>` : ''}
+            ${c.address ? `<div class="addr"><i class="fas fa-map-marker-alt" style="color:var(--danger);font-size:.65rem"></i> ${c.address}</div>` : ''}
+            ${c.phone ? `<a href="tel:${c.phone}" class="phone"><i class="fas fa-phone"></i> ${c.phone}</a>` : ''}
             ${d.notes ? `<div class="text-xs text-muted" style="margin-top:.2rem"><i class="fas fa-sticky-note"></i> ${d.notes}</div>` : ''}
+            <div style="margin-top:.3rem">${subscriptionBadge(rem)}</div>
           </div>
           ${c.location?.lat ? `
-            <button class="btn btn-ghost btn-sm" onclick="focusOnMap('${d.id}')" title="عرض على الخريطة">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="focusOnMap('${d.id}')" title="Show on map">
               <i class="fas fa-map-marker-alt"></i>
             </button>` : ''}
         </div>
@@ -125,22 +115,22 @@ function renderList() {
         <div class="delivery-card-actions">
           ${!isDone && !isFail ? `
             <button class="btn btn-primary btn-sm" onclick="markDelivered('${d.id}')">
-              <i class="fas fa-check"></i> تم التوصيل
+              <i class="fas fa-check"></i> Delivered
             </button>
             <button class="btn btn-danger btn-sm" onclick="openNotesModal('${d.id}', 'failed')">
-              <i class="fas fa-times"></i> مشكلة
+              <i class="fas fa-times"></i> Problem
             </button>
             ${c.location?.lat ? `
               <button class="btn btn-info btn-sm" onclick="navigate('${d.id}')">
-                <i class="fas fa-directions"></i> توجيه
+                <i class="fas fa-directions"></i> Navigate
               </button>` : ''}
           ` : `
-            <span class="text-sm text-muted">
-              ${isDone ? '✅ تم التوصيل' : '❌ فشل التوصيل'}
-              ${d.deliveredAt ? ' — ' + new Date(d.deliveredAt).toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit'}) : ''}
+            <span class="text-sm text-muted" style="padding:.3rem 0">
+              ${isDone ? '✅ Delivered' : '❌ Failed'}
+              ${d.deliveredAt ? ' · ' + new Date(d.deliveredAt).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }) : ''}
             </span>
             <button class="btn btn-ghost btn-sm" onclick="resetDelivery('${d.id}')">
-              <i class="fas fa-undo"></i> تراجع
+              <i class="fas fa-undo"></i> Undo
             </button>
           `}
         </div>
@@ -153,64 +143,53 @@ function renderList() {
 // =====================================================
 function renderMap() {
   if (!driverMap) {
-    // Determine initial center
-    const firstWithLoc = deliveries.find(d => d._customer?.location?.lat);
-    const center = firstWithLoc
-      ? [firstWithLoc._customer.location.lat, firstWithLoc._customer.location.lng]
-      : [24.7136, 46.6753];
-
+    const first  = deliveries.find(d => d._customer?.location?.lat);
+    const center = first ? [first._customer.location.lat, first._customer.location.lng] : [24.7136, 46.6753];
     driverMap = L.map('driverMap').setView(center, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19,
+      attribution: '© OpenStreetMap', maxZoom: 19,
     }).addTo(driverMap);
   }
 
-  // Clear existing markers & route
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
   if (routeLine) { routeLine.remove(); routeLine = null; }
 
-  const points = [];
+  const allPoints = [];
 
   deliveries.forEach((d, i) => {
     const c = d._customer;
     if (!c?.location?.lat) return;
-
     const { lat, lng } = c.location;
-    points.push([lat, lng]);
+    allPoints.push([lat, lng]);
 
     const isDone = d.status === 'delivered';
     const isFail = d.status === 'failed';
+    const color  = isDone ? '#22c55e' : isFail ? '#ef4444' : '#3b82f6';
 
-    // Custom marker
-    const color = isDone ? '#22c55e' : isFail ? '#ef4444' : '#3b82f6';
     const icon = L.divIcon({
       className: '',
       html: `<div style="
-        background:${color};
-        color:#fff;
-        width:32px;height:32px;
-        border-radius:50% 50% 50% 0;
-        transform:rotate(-45deg);
-        display:flex;align-items:center;justify-content:center;
-        font-weight:800;font-size:12px;font-family:Tajawal,sans-serif;
-        border:2px solid #fff;
-        box-shadow:0 2px 6px rgba(0,0,0,.3);
+        background:${color};color:#fff;
+        width:32px;height:32px;border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;
+        font-weight:800;font-size:12px;font-family:Inter,sans-serif;
+        border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)
       "><span style="transform:rotate(45deg)">${isDone ? '✓' : isFail ? '✕' : i+1}</span></div>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -32],
+      iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -34],
     });
 
     const marker = L.marker([lat, lng], { icon }).addTo(driverMap);
+    const rem    = c.remainingDays ?? c.subscriptionDays ?? 0;
+
     marker.bindPopup(`
-      <div style="font-family:Tajawal,sans-serif;direction:rtl;min-width:160px">
+      <div style="font-family:Inter,sans-serif;min-width:160px">
         <strong>${c.name}</strong><br>
-        ${c.address ? `<small>${c.address}</small><br>` : ''}
-        ${c.phone ? `<a href="tel:${c.phone}" style="color:#3b82f6">${c.phone}</a><br>` : ''}
+        ${c.address ? `<small style="color:#64748b">${c.address}</small><br>` : ''}
+        ${c.phone   ? `<a href="tel:${c.phone}" style="color:#3b82f6">${c.phone}</a><br>` : ''}
+        <small style="color:#64748b">Sub: ${rem} days left</small><br>
         ${c.location?.lat ? `<a href="#" onclick="navigate('${d.id}');return false;" style="color:#22c55e;font-weight:600">
-          <i class="fas fa-directions"></i> توجيه
+          <i class="fas fa-directions"></i> Navigate
         </a>` : ''}
       </div>
     `);
@@ -218,43 +197,36 @@ function renderMap() {
     marker.on('click', () => {
       activeCardId = d.id;
       switchTab('list');
-      setTimeout(() => scrollToCard(d.id), 100);
+      setTimeout(() => scrollToCard(d.id), 120);
     });
 
     marker._deliveryId = d.id;
     mapMarkers.push(marker);
   });
 
-  // Draw route line for pending deliveries
-  const pendingPoints = deliveries
+  // Dashed route line for pending deliveries
+  const pending = deliveries
     .filter(d => d.status === 'pending' && d._customer?.location?.lat)
     .map(d => [d._customer.location.lat, d._customer.location.lng]);
 
-  if (pendingPoints.length > 1) {
-    routeLine = L.polyline(pendingPoints, {
-      color: '#3b82f6',
-      weight: 3,
-      opacity: .6,
-      dashArray: '8, 6',
+  if (pending.length > 1) {
+    routeLine = L.polyline(pending, {
+      color: '#3b82f6', weight: 3, opacity: .55, dashArray: '8, 6',
     }).addTo(driverMap);
   }
 
-  // Fit map to all markers
-  if (points.length) {
-    driverMap.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+  if (allPoints.length) {
+    driverMap.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40] });
   }
 }
 
 function focusOnMap(deliveryId) {
   const d = deliveries.find(x => x.id === deliveryId);
   if (!d?._customer?.location?.lat) return;
-
   activeCardId = deliveryId;
   switchTab('map');
-
   const { lat, lng } = d._customer.location;
   driverMap.setView([lat, lng], 17);
-
   const marker = mapMarkers.find(m => m._deliveryId === deliveryId);
   if (marker) marker.openPopup();
 }
@@ -270,16 +242,9 @@ function scrollToCard(id) {
 function navigate(deliveryId) {
   const d = deliveries.find(x => x.id === deliveryId);
   const c = d?._customer;
-  if (!c?.location?.lat) { toast('لا يوجد موقع لهذا الكستمر', 'warning'); return; }
-
-  // Open navigation options
-  const lat = c.location.lat, lng = c.location.lng;
-  const label = encodeURIComponent(c.name);
-
-  // Try to detect platform
+  if (!c?.location?.lat) { toast('No location set for this customer', 'warning'); return; }
+  const { lat, lng } = c.location;
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
-
   if (isIOS) {
     window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`, '_blank');
   } else {
@@ -291,39 +256,58 @@ function navigate(deliveryId) {
 // Delivery Actions
 // =====================================================
 function markDelivered(deliveryId, notes = '') {
+  const del = deliveries.find(x => x.id === deliveryId);
+  if (!del) return;
+
+  // Decrement subscription days once per delivery (only first time)
+  if (!del.daysDecremented) {
+    DB.decrementCustomerDays(del.customerId);
+  }
+
   DB.updateDelivery(deliveryId, {
     status: 'delivered',
     deliveredAt: DB.nowISO(),
     notes,
+    daysDecremented: true,
   });
-  toast('تم تسجيل التوصيل ✓', 'success');
+
+  // Check if customer ran out
+  const updatedCustomer = DB.getCustomerById(del.customerId);
+  const rem = updatedCustomer?.remainingDays ?? 1;
+  if (rem <= 0) {
+    toast(`${updatedCustomer?.name} — subscription expired! Notify admin.`, 'warning');
+  } else if (rem <= 3) {
+    toast(`Delivered ✓ — ${updatedCustomer?.name} has ${rem} days left`, 'warning');
+  } else {
+    toast('Marked as delivered ✓', 'success');
+  }
+
   reload();
 }
 
 function markFailed(deliveryId, notes = '') {
   DB.updateDelivery(deliveryId, {
-    status: 'failed',
-    deliveredAt: DB.nowISO(),
-    notes,
+    status: 'failed', deliveredAt: DB.nowISO(), notes,
   });
-  toast('تم تسجيل المشكلة', 'warning');
+  toast('Marked as failed', 'warning');
   reload();
 }
 
 function resetDelivery(deliveryId) {
   DB.updateDelivery(deliveryId, { status: 'pending', deliveredAt: null, notes: '' });
-  toast('تم التراجع');
+  // Note: we do NOT increment subscription days back when undoing
+  toast('Reset to pending');
   reload();
 }
 
+// =====================================================
 // Notes Modal
+// =====================================================
 function openNotesModal(deliveryId, action) {
-  pendingNotesDel    = deliveryId;
-  pendingNotesAction = action;
   document.getElementById('notesInput').value = '';
+  document.getElementById('notesModalTitle').textContent = action === 'failed' ? 'Report Problem' : 'Add Note';
   document.getElementById('notesModal').classList.remove('hidden');
 
-  // Setup buttons
   document.getElementById('notesSaveBtn').onclick = () => {
     const notes = document.getElementById('notesInput').value.trim();
     markDelivered(deliveryId, notes);
@@ -335,20 +319,11 @@ function openNotesModal(deliveryId, action) {
     closeNotesModal();
   };
 
-  if (action === 'failed') {
-    document.getElementById('notesSaveBtn').style.display = 'none';
-    document.getElementById('notesFailBtn').style.display = '';
-  } else {
-    document.getElementById('notesSaveBtn').style.display = '';
-    document.getElementById('notesFailBtn').style.display = '';
-  }
+  // Show/hide buttons based on action
+  document.getElementById('notesSaveBtn').style.display = action === 'failed' ? 'none' : '';
 }
 
-function closeNotesModal() {
-  document.getElementById('notesModal').classList.add('hidden');
-  pendingNotesDel = null;
-  pendingNotesAction = null;
-}
+function closeNotesModal() { document.getElementById('notesModal').classList.add('hidden'); }
 
 // =====================================================
 // Summary
@@ -360,30 +335,21 @@ function renderSummary() {
   const pending   = deliveries.filter(d => d.status === 'pending').length;
 
   document.getElementById('summaryGrid').innerHTML = `
-    <div class="summary-box green">
-      <div class="num">${delivered}</div>
-      <div class="lbl">تم التوصيل</div>
-    </div>
-    <div class="summary-box red">
-      <div class="num">${failed}</div>
-      <div class="lbl">فشل</div>
-    </div>
-    <div class="summary-box gray">
-      <div class="num">${pending}</div>
-      <div class="lbl">متبقي</div>
-    </div>`;
+    <div class="summary-box green"><div class="num">${delivered}</div><div class="lbl">Delivered</div></div>
+    <div class="summary-box red"><div class="num">${failed}</div><div class="lbl">Failed</div></div>
+    <div class="summary-box gray"><div class="num">${pending}</div><div class="lbl">Pending</div></div>`;
 
-  // List of failed/problem deliveries
+  let detail = '';
+
+  // Failed deliveries
   const failedDels = deliveries.filter(d => d.status === 'failed');
-  let detailHtml = '';
-
   if (failedDels.length) {
-    detailHtml += `
+    detail += `
       <div class="card" style="margin-bottom:.75rem">
         <div class="card-header" style="background:var(--danger-light)">
-          <h3 style="color:#b91c1c"><i class="fas fa-exclamation-triangle"></i> توصيلات فاشلة</h3>
+          <h3 style="color:#b91c1c"><i class="fas fa-exclamation-triangle"></i> Failed Deliveries</h3>
         </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="card-body" style="display:flex;flex-direction:column;gap:.45rem">
           ${failedDels.map(d => {
             const c = d._customer;
             return `
@@ -402,13 +368,13 @@ function renderSummary() {
       </div>`;
   }
 
-  // Without location
+  // No location customers
   const noLoc = deliveries.filter(d => !d._customer?.location?.lat && d.status === 'pending');
   if (noLoc.length) {
-    detailHtml += `
-      <div class="card">
+    detail += `
+      <div class="card" style="margin-bottom:.75rem">
         <div class="card-header" style="background:var(--warning-light)">
-          <h3 style="color:#92400e"><i class="fas fa-map-marker-alt"></i> بدون موقع محدد</h3>
+          <h3 style="color:#92400e"><i class="fas fa-map-marker-alt"></i> No Location Set</h3>
         </div>
         <div class="card-body" style="display:flex;flex-direction:column;gap:.4rem">
           ${noLoc.map(d => {
@@ -418,28 +384,52 @@ function renderSummary() {
                 <i class="fas fa-exclamation" style="color:var(--warning)"></i>
                 <div style="flex:1">
                   <strong>${c?.name || '—'}</strong>
-                  <div class="text-xs text-muted">تواصل مع الكستمر لأخذ الموقع</div>
+                  <div class="text-xs text-muted">Contact customer for location</div>
                 </div>
-                ${c?.phone ? `<a href="tel:${c.phone}" class="btn btn-info btn-sm">
-                  <i class="fas fa-phone"></i>
-                </a>` : ''}
+                ${c?.phone ? `<a href="tel:${c.phone}" class="btn btn-info btn-sm"><i class="fas fa-phone"></i></a>` : ''}
               </div>`;
           }).join('')}
         </div>
       </div>`;
   }
 
-  if (!detailHtml) {
-    if (pending === 0 && total > 0) {
-      detailHtml = `
-        <div style="text-align:center;padding:2rem;color:var(--primary-dark)">
-          <div style="font-size:2.5rem">🎉</div>
-          <strong style="font-size:1.1rem">أحسنت! اكتملت جميع التوصيلات</strong>
-        </div>`;
-    }
+  // Expiring subscriptions in today's list
+  const expiring = deliveries.filter(d => {
+    const rem = d._customer?.remainingDays ?? d._customer?.subscriptionDays ?? 99;
+    return rem <= 3 && d.status !== 'failed';
+  });
+  if (expiring.length) {
+    detail += `
+      <div class="card">
+        <div class="card-header" style="background:var(--danger-light)">
+          <h3 style="color:#b91c1c"><i class="fas fa-calendar-times"></i> Subscriptions Expiring Soon</h3>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:.4rem">
+          ${expiring.map(d => {
+            const c   = d._customer;
+            const rem = c?.remainingDays ?? c?.subscriptionDays ?? 0;
+            return `
+              <div class="flex items-center gap-2" style="padding:.4rem;background:var(--bg);border-radius:var(--radius-xs)">
+                <i class="fas fa-clock" style="color:var(--danger)"></i>
+                <div style="flex:1">
+                  <strong>${c?.name || '—'}</strong>
+                  <div class="text-xs text-muted">${rem <= 0 ? 'Expired' : `${rem} day${rem !== 1 ? 's' : ''} remaining`}</div>
+                </div>
+                ${c?.phone ? `<a href="tel:${c.phone}" class="btn btn-ghost btn-sm"><i class="fas fa-phone"></i></a>` : ''}
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
   }
 
-  document.getElementById('summaryDetails').innerHTML = detailHtml;
+  if (!detail && pending === 0 && total > 0) {
+    detail = `<div style="text-align:center;padding:2rem;color:var(--primary-dark)">
+      <div style="font-size:2.5rem">🎉</div>
+      <strong style="font-size:1.1rem">All deliveries completed!</strong>
+    </div>`;
+  }
+
+  document.getElementById('summaryDetails').innerHTML = detail;
 }
 
 // =====================================================
@@ -450,16 +440,8 @@ function switchTab(tab) {
     document.getElementById('panel-' + t).classList.toggle('active', t === tab);
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
-
-  // Invalidate map size when switching to map tab
-  if (tab === 'map' && driverMap) {
-    setTimeout(() => driverMap.invalidateSize(), 50);
-  }
-
-  // Scroll to active card if switching to list
-  if (tab === 'list' && activeCardId) {
-    setTimeout(() => scrollToCard(activeCardId), 100);
-  }
+  if (tab === 'map' && driverMap) setTimeout(() => driverMap.invalidateSize(), 60);
+  if (tab === 'list' && activeCardId) setTimeout(() => scrollToCard(activeCardId), 120);
 }
 
 // Close notes modal on overlay click

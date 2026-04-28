@@ -1,51 +1,36 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>توصيل الوجبات — الدرايفر</title>
+  <title>Driver — Meal Delivery</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body { overflow: hidden; height: 100vh; }
     .driver-layout { height: 100vh; overflow: hidden; }
-
-    /* Tab panels */
-    .tab-panel { display: none; flex-direction: column; height: calc(100vh - 56px - 60px); overflow: hidden; }
+    .tab-panel { display: none; flex-direction: column; height: calc(100vh - 56px - 58px); overflow: hidden; }
     .tab-panel.active { display: flex; }
-
-    /* Map panel */
     #panel-map { position: relative; }
     #driverMap { flex: 1; }
-
-    /* List panel */
-    #panel-list { overflow-y: auto; }
-
-    /* Summary panel */
+    #panel-list    { overflow-y: auto; }
     #panel-summary { overflow-y: auto; }
-
-    .done-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(34,197,94,.08);
-      border-radius: var(--radius);
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
-<div class="driver-layout" id="driverLayout">
+<div class="driver-layout">
 
   <!-- Header -->
-  <div class="driver-header" id="driverHeader">
+  <div class="driver-header">
     <div class="driver-header-info">
-      <h2 id="driverName">جاري التحميل...</h2>
+      <h2 id="driverName">Loading...</h2>
       <p id="driverArea">—</p>
     </div>
-    <div style="text-align:left;min-width:100px">
-      <div style="font-size:.8rem;opacity:.85" id="headerDate"></div>
+    <div style="text-align:right;min-width:110px">
+      <div style="font-size:.75rem;opacity:.85" id="headerDate"></div>
       <div style="font-size:1.1rem;font-weight:800" id="headerProgress">0 / 0</div>
       <div class="progress-bar-wrap" style="margin-top:.25rem">
         <div class="progress-bar-fill" id="headerProgressBar" style="width:0%"></div>
@@ -53,43 +38,35 @@
     </div>
   </div>
 
-  <!-- Tab Panels -->
-
-  <!-- MAP PANEL -->
+  <!-- MAP -->
   <div class="tab-panel active" id="panel-map">
     <div id="driverMap"></div>
   </div>
 
-  <!-- LIST PANEL -->
+  <!-- LIST -->
   <div class="tab-panel" id="panel-list">
     <div class="driver-list" id="deliveryList"></div>
   </div>
 
-  <!-- SUMMARY PANEL -->
+  <!-- SUMMARY -->
   <div class="tab-panel" id="panel-summary">
     <div class="summary-grid" id="summaryGrid"></div>
-    <div style="padding:0 .75rem .75rem">
-      <div id="summaryDetails"></div>
-    </div>
+    <div style="padding:0 .75rem .75rem" id="summaryDetails"></div>
   </div>
 
   <!-- Tab Bar -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-map" onclick="switchTab('map')">
-      <i class="fas fa-map-marked-alt"></i>
-      الخريطة
+      <i class="fas fa-map-marked-alt"></i> Map
     </button>
     <button class="tab-btn" id="tab-list" onclick="switchTab('list')">
-      <i class="fas fa-list-ul"></i>
-      القائمة
+      <i class="fas fa-list-ul"></i> List
     </button>
     <button class="tab-btn" id="tab-summary" onclick="switchTab('summary')">
-      <i class="fas fa-chart-bar"></i>
-      الملخص
+      <i class="fas fa-chart-bar"></i> Summary
     </button>
     <button class="tab-btn" onclick="logout()" style="color:var(--danger)">
-      <i class="fas fa-sign-out-alt"></i>
-      خروج
+      <i class="fas fa-sign-out-alt"></i> Exit
     </button>
   </div>
 </div>
@@ -98,23 +75,19 @@
 <div class="modal-overlay hidden" id="notesModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>إضافة ملاحظة</h3>
+      <h3 id="notesModalTitle">Add Note</h3>
       <button class="modal-close" onclick="closeNotesModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label>الملاحظة</label>
-        <textarea id="notesInput" class="input-field" placeholder="مثال: العميل غير موجود، تركت عند الجار..."></textarea>
+        <label>Note (optional)</label>
+        <textarea id="notesInput" class="input-field" placeholder="e.g. Left with neighbor, customer was not home..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-primary" id="notesSaveBtn">
-        <i class="fas fa-check-circle"></i> تم التوصيل
-      </button>
-      <button class="btn btn-danger" id="notesFailBtn">
-        <i class="fas fa-times-circle"></i> فشل التوصيل
-      </button>
-      <button class="btn btn-ghost" onclick="closeNotesModal()">إلغاء</button>
+      <button class="btn btn-primary" id="notesSaveBtn"><i class="fas fa-check-circle"></i> Mark Delivered</button>
+      <button class="btn btn-danger"  id="notesFailBtn"><i class="fas fa-times-circle"></i> Mark Failed</button>
+      <button class="btn btn-ghost"   onclick="closeNotesModal()">Cancel</button>
     </div>
   </div>
 </div>

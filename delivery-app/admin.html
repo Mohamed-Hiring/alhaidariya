@@ -1,154 +1,147 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة الإدارة — توصيل الوجبات</title>
+  <title>Admin — Meal Delivery</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-
 <div class="admin-layout">
 
-  <!-- Sidebar overlay (mobile) -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-icon">🥗</div>
-      <span>توصيل الوجبات</span>
+      <span>Meal Delivery</span>
     </div>
 
     <nav class="sidebar-nav">
-      <div class="section-title">القائمة الرئيسية</div>
+      <div class="nav-section">Main</div>
       <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
-        <i class="fas fa-chart-pie"></i> لوحة التحكم
+        <i class="fas fa-chart-pie"></i> Dashboard
       </div>
       <div class="nav-item" onclick="showPage('customers')" id="nav-customers">
-        <i class="fas fa-users"></i> الكستمرز
-        <span class="badge badge-success" id="nav-customers-count"></span>
+        <i class="fas fa-users"></i> Customers
+        <span class="nav-count" id="nav-customers-count" style="display:none"></span>
       </div>
       <div class="nav-item" onclick="showPage('drivers')" id="nav-drivers">
-        <i class="fas fa-motorcycle"></i> الدرايفرز
-        <span class="badge badge-info" id="nav-drivers-count"></span>
+        <i class="fas fa-motorcycle"></i> Drivers
+        <span class="nav-count" id="nav-drivers-count" style="display:none"></span>
       </div>
       <div class="nav-item" onclick="showPage('areas')" id="nav-areas">
-        <i class="fas fa-map-marker-alt"></i> المناطق
+        <i class="fas fa-map-marker-alt"></i> Areas
       </div>
       <div class="divider"></div>
+      <div class="nav-section">Operations</div>
       <div class="nav-item" onclick="showPage('today')" id="nav-today">
-        <i class="fas fa-box"></i> توصيل اليوم
+        <i class="fas fa-box"></i> Today's Deliveries
+      </div>
+      <div class="nav-item" onclick="showPage('expiring')" id="nav-expiring">
+        <i class="fas fa-exclamation-triangle"></i> Expiring Soon
+        <span class="nav-count" id="nav-expiring-count" style="display:none;background:var(--danger-light);color:#b91c1c"></span>
       </div>
     </nav>
 
     <div class="sidebar-footer">
       <button class="btn btn-ghost btn-full" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i> خروج
+        <i class="fas fa-sign-out-alt"></i> Sign Out
       </button>
     </div>
   </aside>
 
-  <!-- Main Content -->
+  <!-- Main -->
   <main class="main-content">
-    <!-- Top bar -->
     <div class="topbar">
       <div class="flex items-center gap-3">
-        <button class="btn btn-ghost btn-icon menu-btn" onclick="openSidebar()" id="menuBtn">
+        <button class="btn btn-ghost btn-icon menu-btn" onclick="openSidebar()">
           <i class="fas fa-bars"></i>
         </button>
-        <h2 id="pageTitle">لوحة التحكم</h2>
+        <h2 id="pageTitle">Dashboard</h2>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="todayDate" class="text-sm text-muted"></span>
-      </div>
+      <span id="topbarDate" class="text-sm text-muted"></span>
     </div>
 
     <div class="page-content">
 
-      <!-- ======================== DASHBOARD ======================== -->
+      <!-- DASHBOARD -->
       <div id="page-dashboard">
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon green"><i class="fas fa-users"></i></div>
-            <div class="stat-info">
-              <div class="val" id="stat-customers">0</div>
-              <div class="lbl">كستمر نشط</div>
-            </div>
+            <div class="stat-info"><div class="val" id="stat-customers">0</div><div class="lbl">Active Customers</div></div>
           </div>
           <div class="stat-card">
             <div class="stat-icon blue"><i class="fas fa-motorcycle"></i></div>
-            <div class="stat-info">
-              <div class="val" id="stat-drivers">0</div>
-              <div class="lbl">درايفر</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon orange"><i class="fas fa-map-marker-alt"></i></div>
-            <div class="stat-info">
-              <div class="val" id="stat-areas">0</div>
-              <div class="lbl">منطقة</div>
-            </div>
+            <div class="stat-info"><div class="val" id="stat-drivers">0</div><div class="lbl">Drivers</div></div>
           </div>
           <div class="stat-card">
             <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-info">
-              <div class="val" id="stat-delivered">0</div>
-              <div class="lbl">تم التوصيل اليوم</div>
-            </div>
+            <div class="stat-info"><div class="val" id="stat-delivered">0</div><div class="lbl">Delivered Today</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-info"><div class="val" id="stat-expiring">0</div><div class="lbl">Expiring ≤ 3 Days</div></div>
           </div>
         </div>
-
-        <!-- Today's delivery overview per driver -->
         <div class="card">
           <div class="card-header">
-            <h3><i class="fas fa-route" style="color:var(--primary)"></i> تقرير التوصيل اليوم</h3>
-            <span id="todayDateBadge" class="badge badge-info"></span>
+            <h3><i class="fas fa-route" style="color:var(--primary)"></i> Today's Driver Summary</h3>
+            <span id="dashDate" class="badge badge-info"></span>
           </div>
           <div class="card-body" id="todayOverview">
-            <div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد بيانات لليوم</p></div>
+            <div class="empty-state"><i class="fas fa-box-open"></i><p>No data for today</p></div>
           </div>
         </div>
       </div>
 
-      <!-- ======================== CUSTOMERS ======================== -->
+      <!-- CUSTOMERS -->
       <div id="page-customers" class="hidden">
         <div class="card">
           <div class="card-header">
-            <h3><i class="fas fa-users" style="color:var(--primary)"></i> الكستمرز</h3>
+            <h3><i class="fas fa-users" style="color:var(--primary)"></i> Customers</h3>
             <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">
-              <i class="fas fa-plus"></i> إضافة كستمر
+              <i class="fas fa-plus"></i> Add Customer
             </button>
           </div>
           <div class="card-body" style="padding:.75rem">
-            <!-- Filters -->
             <div class="flex gap-2 flex-wrap" style="margin-bottom:.75rem">
               <div class="search-bar" style="flex:1;min-width:180px">
                 <i class="fas fa-search"></i>
                 <input type="text" class="input-field" id="customerSearch"
-                       placeholder="بحث بالاسم أو الجوال..." oninput="renderCustomers()">
+                       placeholder="Search by name or phone..." oninput="renderCustomers()">
               </div>
               <select class="input-field" style="width:auto" id="customerFilterDriver" onchange="renderCustomers()">
-                <option value="">كل الدرايفرز</option>
+                <option value="">All Drivers</option>
               </select>
               <select class="input-field" style="width:auto" id="customerFilterArea" onchange="renderCustomers()">
-                <option value="">كل المناطق</option>
+                <option value="">All Areas</option>
+              </select>
+              <select class="input-field" style="width:auto" id="customerFilterStatus" onchange="renderCustomers()">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="expiring">Expiring Soon</option>
               </select>
             </div>
             <div style="overflow-x:auto">
-              <table class="data-table" id="customersTable">
+              <table class="data-table">
                 <thead>
                   <tr>
-                    <th>الاسم</th>
-                    <th>الجوال</th>
-                    <th>المنطقة</th>
-                    <th>الدرايفر</th>
-                    <th>الموقع</th>
-                    <th>الحالة</th>
-                    <th>إجراءات</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Area</th>
+                    <th>Driver</th>
+                    <th>Subscription</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="customersBody"></tbody>
@@ -156,22 +149,20 @@
             </div>
             <div id="customersEmpty" class="empty-state hidden">
               <i class="fas fa-users"></i>
-              <p>لا يوجد كستمرز — ابدأ بإضافة أول كستمر</p>
-              <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">
-                <i class="fas fa-plus"></i> إضافة الآن
-              </button>
+              <p>No customers yet — add your first customer</p>
+              <button class="btn btn-primary btn-sm" onclick="openCustomerModal()"><i class="fas fa-plus"></i> Add Now</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ======================== DRIVERS ======================== -->
+      <!-- DRIVERS -->
       <div id="page-drivers" class="hidden">
         <div class="card">
           <div class="card-header">
-            <h3><i class="fas fa-motorcycle" style="color:var(--primary)"></i> الدرايفرز</h3>
+            <h3><i class="fas fa-motorcycle" style="color:var(--primary)"></i> Drivers</h3>
             <button class="btn btn-primary btn-sm" onclick="openDriverModal()">
-              <i class="fas fa-plus"></i> إضافة درايفر
+              <i class="fas fa-plus"></i> Add Driver
             </button>
           </div>
           <div class="card-body" style="padding:.75rem">
@@ -179,11 +170,11 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>الاسم</th>
-                    <th>الجوال</th>
-                    <th>المنطقة</th>
-                    <th>عدد الكستمرز</th>
-                    <th>إجراءات</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Area</th>
+                    <th>Customers</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="driversBody"></tbody>
@@ -191,22 +182,20 @@
             </div>
             <div id="driversEmpty" class="empty-state hidden">
               <i class="fas fa-motorcycle"></i>
-              <p>لا يوجد درايفرز — ابدأ بإضافة أول درايفر</p>
-              <button class="btn btn-primary btn-sm" onclick="openDriverModal()">
-                <i class="fas fa-plus"></i> إضافة الآن
-              </button>
+              <p>No drivers yet</p>
+              <button class="btn btn-primary btn-sm" onclick="openDriverModal()"><i class="fas fa-plus"></i> Add Now</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ======================== AREAS ======================== -->
+      <!-- AREAS -->
       <div id="page-areas" class="hidden">
         <div class="card">
           <div class="card-header">
-            <h3><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> المناطق</h3>
+            <h3><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> Areas</h3>
             <button class="btn btn-primary btn-sm" onclick="openAreaModal()">
-              <i class="fas fa-plus"></i> إضافة منطقة
+              <i class="fas fa-plus"></i> Add Area
             </button>
           </div>
           <div class="card-body" style="padding:.75rem">
@@ -214,10 +203,10 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>اسم المنطقة</th>
-                    <th>عدد الدرايفرز</th>
-                    <th>عدد الكستمرز</th>
-                    <th>إجراءات</th>
+                    <th>Area Name</th>
+                    <th>Drivers</th>
+                    <th>Customers</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="areasBody"></tbody>
@@ -225,24 +214,51 @@
             </div>
             <div id="areasEmpty" class="empty-state hidden">
               <i class="fas fa-map"></i>
-              <p>لا توجد مناطق — ابدأ بتحديد المناطق</p>
-              <button class="btn btn-primary btn-sm" onclick="openAreaModal()">
-                <i class="fas fa-plus"></i> إضافة الآن
-              </button>
+              <p>No areas defined yet</p>
+              <button class="btn btn-primary btn-sm" onclick="openAreaModal()"><i class="fas fa-plus"></i> Add Now</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ======================== TODAY ======================== -->
+      <!-- TODAY -->
       <div id="page-today" class="hidden">
         <div class="card">
           <div class="card-header">
-            <h3><i class="fas fa-box" style="color:var(--primary)"></i> توصيلات اليوم</h3>
+            <h3><i class="fas fa-box" style="color:var(--primary)"></i> Today's Deliveries</h3>
             <span id="todayFullDate" class="badge badge-info"></span>
           </div>
           <div class="card-body" id="todayContent">
-            <div class="empty-state"><i class="fas fa-box-open"></i><p>لا توجد توصيلات لليوم</p></div>
+            <div class="empty-state"><i class="fas fa-box-open"></i><p>No deliveries today</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPIRING SOON -->
+      <div id="page-expiring" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-exclamation-triangle" style="color:var(--warning)"></i> Expiring Subscriptions</h3>
+          </div>
+          <div class="card-body" style="padding:.75rem">
+            <div style="overflow-x:auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Driver</th>
+                    <th>Remaining Days</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expiringBody"></tbody>
+              </table>
+            </div>
+            <div id="expiringEmpty" class="empty-state hidden">
+              <i class="fas fa-check-circle" style="color:var(--primary)"></i>
+              <p>No subscriptions expiring soon</p>
+            </div>
           </div>
         </div>
       </div>
@@ -257,74 +273,103 @@
 <div class="modal-overlay hidden" id="customerModal">
   <div class="modal modal-lg">
     <div class="modal-header">
-      <h3 id="customerModalTitle">إضافة كستمر جديد</h3>
+      <h3 id="customerModalTitle">Add New Customer</h3>
       <button class="modal-close" onclick="closeCustomerModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="customerId">
       <div class="form-row">
         <div class="form-group">
-          <label>الاسم <span style="color:red">*</span></label>
-          <input type="text" id="customerName" class="input-field" placeholder="اسم الكستمر">
+          <label>Full Name <span style="color:red">*</span></label>
+          <input type="text" id="customerName" class="input-field" placeholder="Customer name">
         </div>
         <div class="form-group">
-          <label>رقم الجوال <span style="color:red">*</span></label>
+          <label>Phone <span style="color:red">*</span></label>
           <input type="tel" id="customerPhone" class="input-field" placeholder="05xxxxxxxx">
         </div>
       </div>
       <div class="form-group">
-        <label>العنوان (وصف)</label>
-        <input type="text" id="customerAddress" class="input-field" placeholder="مثال: حي الروضة، شارع الملك فهد، المبنى رقم 5">
+        <label>Address (description)</label>
+        <input type="text" id="customerAddress" class="input-field" placeholder="e.g. Al-Nuzha District, King Fahd St., Building 12">
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>المنطقة</label>
+          <label>Area</label>
           <select id="customerArea" class="input-field" onchange="onAreaChange()">
-            <option value="">-- اختر المنطقة --</option>
+            <option value="">-- Select area --</option>
           </select>
         </div>
         <div class="form-group">
-          <label>الدرايفر</label>
+          <label>Driver</label>
           <select id="customerDriver" class="input-field">
-            <option value="">-- اختر الدرايفر --</option>
+            <option value="">-- Select driver --</option>
           </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Subscription Days <span style="color:red">*</span></label>
+          <input type="number" id="customerSubDays" class="input-field" min="1" max="365" placeholder="e.g. 30" value="30">
+        </div>
+        <div class="form-group">
+          <label>Remaining Days</label>
+          <input type="number" id="customerRemDays" class="input-field" min="0" max="365" placeholder="e.g. 30" value="30">
+        </div>
+      </div>
       <div class="form-group">
-        <label>ملاحظات</label>
-        <textarea id="customerNotes" class="input-field" placeholder="أي ملاحظات خاصة بالكستمر أو التوصيل..."></textarea>
+        <label>Notes</label>
+        <textarea id="customerNotes" class="input-field" placeholder="Any special notes about this customer or delivery..."></textarea>
       </div>
       <div class="form-group">
         <label>
           <i class="fas fa-map-marker-alt" style="color:var(--danger)"></i>
-          الموقع على الخريطة
-          <span class="text-muted text-xs">(اضغط على الخريطة لتحديد الموقع، أو ابحث)</span>
+          Location Pin
+          <span class="text-muted text-xs">(click on the map to pin, or search)</span>
         </label>
         <div class="map-search-wrap" style="margin-bottom:.5rem">
-          <input type="text" id="locationSearch" class="input-field" placeholder="ابحث عن الموقع..." style="flex:1">
-          <button class="btn btn-outline-primary" onclick="searchLocation()">
-            <i class="fas fa-search"></i> بحث
-          </button>
+          <input type="text" id="locationSearch" class="input-field" placeholder="Search for location..." style="flex:1">
+          <button class="btn btn-outline-primary" onclick="searchLocation()"><i class="fas fa-search"></i> Search</button>
         </div>
         <div id="locationMap"></div>
-        <div class="map-coords" id="coordsDisplay" style="margin-top:.4rem">
+        <div class="map-coords" id="coordsDisplay">
           <i class="fas fa-crosshairs"></i>
-          <span id="coordsText">لم يتم تحديد الموقع بعد — اضغط على الخريطة</span>
+          <span id="coordsText">No location set — click on the map to pin</span>
         </div>
       </div>
-      <div class="form-group flex flex-row items-center gap-3" style="flex-direction:row">
-        <label style="margin:0">نشط</label>
-        <label class="flex items-center gap-2" style="cursor:pointer">
-          <input type="checkbox" id="customerActive" checked style="width:18px;height:18px;cursor:pointer">
-          <span class="text-sm">الكستمر يستقبل توصيل يومياً</span>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:.75rem">
+        <label style="margin:0">Active</label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:.5rem">
+          <input type="checkbox" id="customerActive" checked style="width:17px;height:17px;cursor:pointer;accent-color:var(--primary)">
+          <span class="text-sm">Customer receives daily deliveries</span>
         </label>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="saveCustomer()">
-        <i class="fas fa-save"></i> حفظ
-      </button>
-      <button class="btn btn-ghost" onclick="closeCustomerModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveCustomer()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-ghost" onclick="closeCustomerModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Renew Subscription Modal -->
+<div class="modal-overlay hidden" id="renewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Renew Subscription</h3>
+      <button class="modal-close" onclick="closeRenewModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="renewCustomerId">
+      <p id="renewCustomerName" style="font-weight:700;font-size:1rem;margin-bottom:.5rem"></p>
+      <div class="form-group">
+        <label>New Subscription Days</label>
+        <input type="number" id="renewDays" class="input-field" min="1" max="365" value="30" placeholder="Number of days">
+      </div>
+      <p class="text-sm text-muted">This will set both the subscription days and remaining days to the value above, and reactivate the customer.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveRenew()"><i class="fas fa-sync"></i> Renew</button>
+      <button class="btn btn-ghost" onclick="closeRenewModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -333,35 +378,29 @@
 <div class="modal-overlay hidden" id="driverModal">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="driverModalTitle">إضافة درايفر جديد</h3>
+      <h3 id="driverModalTitle">Add Driver</h3>
       <button class="modal-close" onclick="closeDriverModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="driverId">
       <div class="form-group">
-        <label>الاسم <span style="color:red">*</span></label>
-        <input type="text" id="driverName" class="input-field" placeholder="اسم الدرايفر">
+        <label>Full Name <span style="color:red">*</span></label>
+        <input type="text" id="driverName" class="input-field" placeholder="Driver name">
       </div>
       <div class="form-group">
-        <label>رقم الجوال <span style="color:red">*</span></label>
+        <label>Phone <span style="color:red">*</span></label>
         <input type="tel" id="driverPhone" class="input-field" placeholder="05xxxxxxxx">
       </div>
       <div class="form-group">
-        <label>المنطقة الرئيسية</label>
+        <label>Primary Area</label>
         <select id="driverArea" class="input-field">
-          <option value="">-- اختر المنطقة --</option>
+          <option value="">-- Select area --</option>
         </select>
-      </div>
-      <div class="form-group">
-        <label>ملاحظات</label>
-        <input type="text" id="driverNotes" class="input-field" placeholder="أي ملاحظات...">
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="saveDriver()">
-        <i class="fas fa-save"></i> حفظ
-      </button>
-      <button class="btn btn-ghost" onclick="closeDriverModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveDriver()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-ghost" onclick="closeDriverModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -370,44 +409,36 @@
 <div class="modal-overlay hidden" id="areaModal">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="areaModalTitle">إضافة منطقة جديدة</h3>
+      <h3 id="areaModalTitle">Add Area</h3>
       <button class="modal-close" onclick="closeAreaModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="areaId">
       <div class="form-group">
-        <label>اسم المنطقة <span style="color:red">*</span></label>
-        <input type="text" id="areaName" class="input-field" placeholder="مثال: حي النزهة">
-      </div>
-      <div class="form-group">
-        <label>ملاحظات</label>
-        <input type="text" id="areaNotes" class="input-field" placeholder="أي ملاحظات...">
+        <label>Area Name <span style="color:red">*</span></label>
+        <input type="text" id="areaName" class="input-field" placeholder="e.g. Al-Nuzha">
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="saveArea()">
-        <i class="fas fa-save"></i> حفظ
-      </button>
-      <button class="btn btn-ghost" onclick="closeAreaModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveArea()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-ghost" onclick="closeAreaModal()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Confirm Delete Modal -->
+<!-- Confirm Modal -->
 <div class="modal-overlay hidden" id="confirmModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>تأكيد الحذف</h3>
+      <h3>Confirm Delete</h3>
       <button class="modal-close" onclick="closeConfirm()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <p id="confirmMsg" style="font-size:1rem"></p>
+      <p id="confirmMsg"></p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">
-        <i class="fas fa-trash"></i> حذف
-      </button>
-      <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmAction()"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
     </div>
   </div>
 </div>
