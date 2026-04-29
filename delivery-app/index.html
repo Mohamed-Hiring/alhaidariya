@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Delivery System</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="page-login">
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="login-logo-icon">🥗</div>
+      <h1>Meal Delivery System</h1>
+      <p>Select your role to continue</p>
+    </div>
+
+    <div class="role-cards" id="roleCards">
+      <div class="role-card" id="adminCard" onclick="selectRole('admin')">
+        <i class="fas fa-user-shield"></i>
+        <h3>Admin</h3>
+        <p>Manage customers, drivers & areas</p>
+      </div>
+      <div class="role-card" id="driverCard" onclick="selectRole('driver')">
+        <i class="fas fa-motorcycle"></i>
+        <h3>Driver</h3>
+        <p>View your daily delivery list</p>
+      </div>
+    </div>
+
+    <div id="adminLogin" class="login-form hidden">
+      <h3><i class="fas fa-lock" style="color:var(--primary)"></i> Admin Login</h3>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminPassword" class="input-field" placeholder="Enter admin password"
+               onkeydown="if(event.key==='Enter') loginAdmin()">
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="loginAdmin()">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="backToRoles()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <div id="driverLogin" class="login-form hidden">
+      <h3><i class="fas fa-user" style="color:var(--primary)"></i> Driver Login</h3>
+      <div class="form-group">
+        <label>Select Your Name</label>
+        <select id="driverSelect" class="input-field">
+          <option value="">-- Select driver --</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="loginDriver()">
+        <i class="fas fa-sign-in-alt"></i> Continue
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="backToRoles()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+    </div>
+
+    <p id="loginError" class="error-msg hidden"></p>
+
+    <p style="font-size:.72rem;color:var(--text-light);text-align:center">
+      Meal Delivery Management &copy; 2024
+    </p>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+  <script>
+    (function() {
+      const role = sessionStorage.getItem('role');
+      if (role === 'admin')  location.href = 'admin.html';
+      if (role === 'driver') location.href = 'driver.html';
+    })();
+
+    function selectRole(role) {
+      document.getElementById('adminCard').classList.toggle('selected', role === 'admin');
+      document.getElementById('driverCard').classList.toggle('selected', role === 'driver');
+      document.getElementById('adminLogin').classList.toggle('hidden', role !== 'admin');
+      document.getElementById('driverLogin').classList.toggle('hidden', role !== 'driver');
+      document.getElementById('loginError').classList.add('hidden');
+      if (role === 'driver') loadDriverOptions();
+      if (role === 'admin')  setTimeout(() => document.getElementById('adminPassword').focus(), 60);
+    }
+
+    function backToRoles() {
+      ['adminCard','driverCard'].forEach(id => document.getElementById(id).classList.remove('selected'));
+      ['adminLogin','driverLogin','loginError'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    }
+
+    function loadDriverOptions() {
+      const drivers = DB.getDrivers();
+      const sel = document.getElementById('driverSelect');
+      sel.innerHTML = '<option value="">-- Select driver --</option>';
+      if (!drivers.length) { sel.innerHTML = '<option value="">No drivers available — contact admin</option>'; return; }
+      drivers.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.name}</option>`; });
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('loginError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function loginAdmin() {
+      const pass = document.getElementById('adminPassword').value;
+      if (!pass) { showError('Please enter the password.'); return; }
+      if (pass === DB.getAdminPassword()) {
+        sessionStorage.setItem('role', 'admin');
+        location.href = 'admin.html';
+      } else {
+        showError('Incorrect password. Please try again.');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+      }
+    }
+
+    function loginDriver() {
+      const id = document.getElementById('driverSelect').value;
+      if (!id) { showError('Please select your name from the list.'); return; }
+      sessionStorage.setItem('role', 'driver');
+      sessionStorage.setItem('driverId', id);
+      location.href = 'driver.html';
+    }
+  </script>
+</body>
+</html>
